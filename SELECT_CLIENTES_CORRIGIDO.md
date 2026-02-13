@@ -6,7 +6,7 @@ O select de clientes estava vazio no formulário de criar pedido porque:
 2. **DEMANDANTE sem acesso**: Usuários DEMANDANTE não conseguiam listar clientes
 3. **JavaScript com erro**: `data.forEach is not a function` devido ao erro da API
 
-## ✅ **CORREÇÕES IMPLEMENTADAS**
+## ✅ **CORREÇÕES IMPLEMENTADAS** 
 
 ### **1. Permissões da API Ajustadas**
 ```python
