@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ setor.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* === RESPONSIVO MOBILE - DASHBOARD === */
+    @media (max-width: 400px) {
+        .card-stats {
+            margin-bottom: 12px !important;
+        }
+
+        .card-stats .card-body {
+            padding: 12px !important;
+        }
+
+        .card-stats .h2 {
+            font-size: 1.5rem !important;
+        }
+
+        .card-stats .card-title {
+            font-size: 0.8rem !important;
+        }
+
+        .icon {
+            width: 40px !important;
+            height: 40px !important;
+        }
+
+        .icon i {
+            font-size: 1.2rem !important;
+        }
+
+        .table-responsive {
+            font-size: 0.85rem;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.5rem !important;
+        }
+
+        .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .h1, .h2 {
+            font-size: 1.3rem !important;
+        }
+
+        .btn-toolbar {
+            margin-bottom: 1rem !important;
+        }
+
+        .badge {
+            font-size: 0.7rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-house"></i>
+        Dashboard - {{ setor.nome }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <span class="badge bg-info fs-6">
+            <i class="bi bi-person-check"></i>
+            Requisitante
+        </span>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Total de Pedidos</h5>
+                        <span class="h2 font-weight-bold mb-0">{{ stats.total_pedidos }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-primary text-white rounded-circle shadow">
+                            <i class="bi bi-list-ul fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats warning border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Pendentes</h5>
+                        <span class="h2 font-weight-bold mb-0">{{ stats.pendentes }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
+                            <i class="bi bi-clock fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats info border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Em Andamento</h5>
+                        <span class="h2 font-weight-bold mb-0">{{ stats.em_andamento }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-info text-white rounded-circle shadow">
+                            <i class="bi bi-arrow-repeat fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats success border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Concluídos</h5>
+                        <span class="h2 font-weight-bold mb-0">{{ stats.concluidos }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-success text-white rounded-circle shadow">
+                            <i class="bi bi-check-circle fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pedidos Recentes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i>
+                    Pedidos Recentes
+                </h5>
+                <a href="{% url 'listar_pedidos' %}" class="btn btn-sm btn-outline-primary">
+                    Ver Todos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if pedidos_recentes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th>Status</th>
+                                    <th>Prioridade</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pedido in pedidos_recentes %}
+                                <tr>
+                                    <td><strong>#{{ pedido.id }}</strong></td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ pedido.get_tipo_pedido_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ pedido.descricao|truncatechars:50 }}</td>
+                                    <td>
+                                        {% if pedido.status == 'PENDENTE' %}
+                                            <span class="badge bg-warning status-badge">{{ pedido.get_status_display }}</span>
+                                        {% elif pedido.status == 'EM_ANDAMENTO' %}
+                                            <span class="badge bg-info status-badge">{{ pedido.get_status_display }}</span>
+                                        {% elif pedido.status == 'CONCLUIDO' %}
+                                            <span class="badge bg-success status-badge">{{ pedido.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-danger status-badge">{{ pedido.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if pedido.prioridade == 'URGENTE' %}
+                                            <span class="badge bg-danger priority-badge">{{ pedido.get_prioridade_display }}</span>
+                                        {% elif pedido.prioridade == 'ALTA' %}
+                                            <span class="badge bg-warning priority-badge">{{ pedido.get_prioridade_display }}</span>
+                                        {% elif pedido.prioridade == 'MEDIA' %}
+                                            <span class="badge bg-primary priority-badge">{{ pedido.get_prioridade_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary priority-badge">{{ pedido.get_prioridade_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ pedido.data_solicitacao|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'detalhes_pedido' pedido.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox display-1 text-muted"></i>
+                        <h5 class="text-muted mt-3">Nenhum pedido encontrado</h5>
+                        <p class="text-muted">
+                            Você ainda não fez nenhum pedido. <br>
+                            Entre em contato com o setor de transportes para solicitar materiais ou equipamentos.
+                        </p>
+                        <div class="alert alert-success">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Faça sua solicitação:</strong> Você pode criar pedidos diretamente no sistema.
+                        </div>
+                        <a href="{% url 'criar_pedido' %}" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i>
+                            Fazer Nova Solicitação
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botão flutuante para nova solicitação -->
+<a href="{% url 'criar_pedido' %}" class="btn btn-success btn-floating" title="Nova Solicitação">
+    <i class="bi bi-plus fs-4"></i>
+</a>
+{% endblock %}

@@ -1,0 +1,3999 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}Sistema de Controle de Log Interna{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- 🎨 NOVO NAVBAR CSS - Agora é o padrão -->
+    {% load static %}
+    <link href="{% static 'css/navbar-novo.css' %}" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #0dcaf0;
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+        }
+
+        .main-content {
+            min-height: calc(100vh - 56px);
+            padding: 20px;
+        }
+        
+        .card-stats {
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .card-stats.success {
+            border-left-color: var(--success-color);
+        }
+        
+        .card-stats.warning {
+            border-left-color: var(--warning-color);
+        }
+        
+        .card-stats.danger {
+            border-left-color: var(--danger-color);
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 5px;
+        }
+        
+        .nav-link.active {
+            background-color: var(--primary-color);
+            color: white !important;
+            border-radius: 5px;
+        }
+        
+        .btn-custom {
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(0,0,0,0.02);
+        }
+        
+        .badge-custom {
+            font-size: 0.75em;
+            padding: 0.35em 0.65em;
+        }
+        
+        .alert-custom {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .modal-header {
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .modal-footer {
+            border-top: 2px solid #dee2e6;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        
+        .text-truncate-custom {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        .status-indicator.active {
+            background-color: var(--success-color);
+        }
+        
+        .status-indicator.inactive {
+            background-color: var(--danger-color);
+        }
+        
+        .status-indicator.maintenance {
+            background-color: var(--warning-color);
+        }
+        
+        .dropdown-menu {
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: white !important;
+            z-index: 1050;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Garantir que dropdown fique visível e clicável */
+        .dropdown-menu {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            z-index: 1060 !important;
+        }
+
+        .progress-custom {
+            height: 8px;
+            border-radius: 4px;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .btn-group-custom .btn {
+            border-radius: 0;
+        }
+
+        .btn-group-custom .btn:first-child {
+            border-top-left-radius: 6px;
+            border-bottom-left-radius: 6px;
+        }
+
+        .btn-group-custom .btn:last-child {
+            border-top-right-radius: 6px;
+            border-bottom-right-radius: 6px;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        }
+
+        /* === RESPONSIVO MOBILE GLOBAL === */
+        @media (max-width: 400px) {
+            .container-fluid {
+                padding-left: 12px !important;
+                padding-right: 12px !important;
+            }
+
+            .navbar-brand {
+                font-size: 1rem !important;
+            }
+
+            .navbar-brand i {
+                font-size: 1.2rem !important;
+            }
+
+            .main-content {
+                padding: 8px !important;
+            }
+
+            .border-bottom {
+                margin-bottom: 1rem !important;
+                padding-bottom: 0.5rem !important;
+            }
+
+            .pt-3 {
+                padding-top: 0.5rem !important;
+            }
+
+            .pb-2 {
+                padding-bottom: 0.5rem !important;
+            }
+
+            .mb-3 {
+                margin-bottom: 1rem !important;
+            }
+
+            .card {
+                margin-bottom: 1rem !important;
+            }
+
+            .card-body {
+                padding: 1rem !important;
+            }
+
+            .btn-group .btn {
+                font-size: 0.8rem !important;
+                padding: 0.4rem 0.6rem !important;
+            }
+
+            .table-responsive {
+                border-radius: 8px !important;
+            }
+
+            .table {
+                font-size: 0.8rem !important;
+            }
+
+            .table th,
+            .table td {
+                padding: 0.5rem !important;
+            }
+
+            .btn-sm {
+                font-size: 0.7rem !important;
+                padding: 0.3rem 0.5rem !important;
+            }
+
+            .badge {
+                font-size: 0.7rem !important;
+            }
+
+            .modal-dialog {
+                margin: 0.5rem !important;
+            }
+
+            .modal-body {
+                padding: 1rem !important;
+            }
+
+            .form-control,
+            .form-select {
+                font-size: 0.9rem !important;
+            }
+
+            .alert {
+                padding: 0.75rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .nav-link {
+                padding: 0.5rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .dropdown-item {
+                padding: 0.5rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .card-header {
+                padding: 0.75rem 1rem !important;
+            }
+
+            .card-title {
+                font-size: 1.1rem !important;
+            }
+
+            .btn {
+                font-size: 0.9rem !important;
+            }
+
+            .input-group-text {
+                font-size: 0.9rem !important;
+            }
+
+            .pagination .page-link {
+                padding: 0.5rem 0.75rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .breadcrumb-item {
+                font-size: 0.9rem !important;
+            }
+
+            .list-group-item {
+                padding: 0.75rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .progress {
+                height: 1rem !important;
+            }
+
+            .spinner-border-sm {
+                width: 1rem !important;
+                height: 1rem !important;
+            }
+
+            .text-truncate-custom {
+                max-width: 120px !important;
+            }
+
+            .sidebar-heading {
+                font-size: 0.8rem !important;
+                padding: 0.5rem 1rem !important;
+            }
+
+            .nav-pills .nav-link {
+                padding: 0.5rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .tab-content {
+                padding: 1rem !important;
+            }
+
+            .accordion-button {
+                padding: 0.75rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .accordion-body {
+                padding: 1rem !important;
+            }
+
+            .offcanvas-body {
+                padding: 1rem !important;
+            }
+
+            .toast {
+                font-size: 0.9rem !important;
+            }
+
+            .tooltip-inner {
+                font-size: 0.8rem !important;
+            }
+
+            .popover-body {
+                font-size: 0.9rem !important;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- 🎨 NOVO NAVBAR COM DROPDOWNS - Agora é o padrão -->
+    {% include 'components/navbar-novo.html' %}
+
+    <!-- Layout sem sidebar - Conteúdo em tela cheia -->
+    <div class="container-fluid">
+        <div class="row">
+            <main class="col-12 main-content">
+                <!-- Messages -->
+                {% if messages %}
+                    <div class="mt-3">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Page content -->
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Modais Globais (Admins e Supervisores) -->
+    {% if user.is_authenticated and user.perfil.is_admin_ou_supervisor %}
+        {% include 'core/modais_cadastros.html' %}
+
+        <!-- MODAL NOVO DE EQUIPAMENTOS - FUNCIONANDO -->
+        <div class="modal fade" id="modalEquipamentosNovo" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-gear"></i>
+                            Gerenciar Equipamentos
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Formulário -->
+                            <div class="col-md-5">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">Adicionar Equipamento</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="formEquipamentoNovo">
+                                            <!-- Nome -->
+                                            <div class="mb-3">
+                                                <label for="nomeEquipamentoNovo" class="form-label">Nome <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="nomeEquipamentoNovo" required>
+                                            </div>
+
+                                            <!-- Código -->
+                                            <div class="mb-3">
+                                                <label for="codigoEquipamentoNovo" class="form-label">Código</label>
+                                                <input type="text" class="form-control" id="codigoEquipamentoNovo">
+                                            </div>
+
+                                            <!-- Categoria -->
+                                            <div class="mb-3">
+                                                <label for="categoriaEquipamentoNovo" class="form-label">Categoria <span class="text-danger">*</span></label>
+                                                <div class="input-group">
+                                                    <select class="form-select" id="categoriaEquipamentoNovo" required>
+                                                        <option value="">Selecione uma categoria</option>
+                                                        <!-- Categorias serão carregadas via JavaScript -->
+                                                    </select>
+                                                    <button class="btn btn-outline-primary" type="button" onclick="abrirModalCategorias()" title="Gerenciar Categorias">
+                                                        <i class="bi bi-gear"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Status Operacional (SIMPLIFICADO) -->
+                                            <div class="mb-3">
+                                                <label for="statusEquipamentoNovo" class="form-label">Status Operacional <span class="text-danger">*</span></label>
+                                                <select class="form-select" id="statusEquipamentoNovo" required>
+                                                    <option value="">Selecione o status</option>
+                                                    <option value="OPERACIONAL">🟢 Operacional (disponível)</option>
+                                                    <option value="MANUTENCAO">🟡 Em Manutenção (bloqueado)</option>
+                                                    <option value="FORA_SERVICO">🔴 Fora de Serviço (não aparece)</option>
+                                                    <option value="INATIVO">⚫ Inativo (permanente)</option>
+                                                </select>
+                                                <small class="text-muted">
+                                                    Operacional = aparece e pode ser selecionado |
+                                                    Manutenção = aparece mas desabilitado |
+                                                    Fora de Serviço/Inativo = não aparece
+                                                </small>
+                                            </div>
+
+                                            <!-- Ativo no Sistema -->
+                                            <div class="mb-3">
+                                                <label for="ativoEquipamentoNovo" class="form-label">Ativo no Sistema <span class="text-danger">*</span></label>
+                                                <select class="form-select" id="ativoEquipamentoNovo" required>
+                                                    <option value="">Selecione</option>
+                                                    <option value="true" selected>✅ Sim</option>
+                                                    <option value="false">❌ Não (excluído)</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Descrição -->
+                                            <div class="mb-3">
+                                                <label for="descricaoEquipamentoNovo" class="form-label">Descrição</label>
+                                                <textarea class="form-control" id="descricaoEquipamentoNovo" rows="3"></textarea>
+                                            </div>
+
+                                            <!-- Quantidade de Litros -->
+                                            <div class="mb-3">
+                                                <label for="quantidadeLitrosEquipamentoNovo" class="form-label">Quantidade de Litros</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" id="quantidadeLitrosEquipamentoNovo"
+                                                           step="0.01" min="0" placeholder="Ex: 200.00">
+                                                    <span class="input-group-text">L</span>
+                                                </div>
+                                                <div class="form-text">Quantidade de litros que o equipamento pode armazenar ou consumir</div>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-success btn-lg w-100">
+                                                <i class="bi bi-plus-circle"></i> Adicionar Equipamento
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lista de Equipamentos -->
+                            <div class="col-md-7">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-list"></i>
+                                            Equipamentos Cadastrados
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover">
+                                                <thead class="table-dark">
+                                                    <tr>
+                                                        <th>Nome</th>
+                                                        <th>Código</th>
+                                                        <th>Categoria</th>
+                                                        <th>Status</th>
+                                                        <th>Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="listaEquipamentosNovo">
+                                                    <tr>
+                                                        <td colspan="5" class="text-center">
+                                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                                <span class="visually-hidden">Carregando...</span>
+                                                            </div>
+                                                            Carregando equipamentos...
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DE CATEGORIAS DE EQUIPAMENTOS -->
+        <div class="modal fade" id="modalCategorias" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-tags"></i>
+                            Gerenciar Categorias de Equipamentos
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Formulário -->
+                            <div class="col-md-5">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0" id="tituloFormCategoria">Adicionar Categoria</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="formCategoria">
+                                            <!-- Nome da Categoria -->
+                                            <div class="mb-3">
+                                                <label for="nomeCategoria" class="form-label">Nome da Categoria <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="nomeCategoria" required
+                                                       placeholder="Ex: Veículo, Ferramenta, Máquina...">
+                                            </div>
+
+                                            <!-- Descrição -->
+                                            <div class="mb-3">
+                                                <label for="descricaoCategoria" class="form-label">Descrição</label>
+                                                <textarea class="form-control" id="descricaoCategoria" rows="3"
+                                                          placeholder="Descrição opcional da categoria..."></textarea>
+                                            </div>
+
+                                            <!-- Cor da Categoria -->
+                                            <div class="mb-3">
+                                                <label for="corCategoria" class="form-label">Cor da Categoria</label>
+                                                <select class="form-select" id="corCategoria">
+                                                    <option value="primary">🔵 Azul (Padrão)</option>
+                                                    <option value="success">🟢 Verde</option>
+                                                    <option value="warning">🟡 Amarelo</option>
+                                                    <option value="danger">🔴 Vermelho</option>
+                                                    <option value="info">🔵 Azul Claro</option>
+                                                    <option value="secondary">⚫ Cinza</option>
+                                                    <option value="dark">⚫ Preto</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="d-grid gap-2">
+                                                <button type="submit" class="btn btn-success" id="btnSubmitCategoria">
+                                                    <i class="bi bi-plus-circle"></i> Adicionar Categoria
+                                                </button>
+                                                <button type="button" class="btn btn-secondary" id="btnCancelarCategoria" onclick="cancelarEdicaoCategoria()" style="display: none;">
+                                                    <i class="bi bi-x-circle"></i> Cancelar Edição
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lista de Categorias -->
+                            <div class="col-md-7">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-list"></i>
+                                            Categorias Cadastradas
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover">
+                                                <thead class="table-dark">
+                                                    <tr>
+                                                        <th>Nome</th>
+                                                        <th>Descrição</th>
+                                                        <th>Cor</th>
+                                                        <th>Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="listaCategorias">
+                                                    <tr>
+                                                        <td colspan="4" class="text-center">
+                                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                                <span class="visually-hidden">Carregando...</span>
+                                                            </div>
+                                                            Carregando categorias...
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DE USUÁRIOS -->
+        <div class="modal fade" id="modalUsuariosGlobal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-people"></i>
+                            Gerenciar Usuários
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Formulário de Novo Usuário -->
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-person-plus"></i>
+                                            <span id="tituloFormUsuario">Novo Usuário</span>
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="formUsuarioGlobal">
+                                            <div class="mb-3">
+                                                <label for="usernameUsuarioGlobal" class="form-label">Nome de Usuário *</label>
+                                                <input type="text" class="form-control" id="usernameUsuarioGlobal" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="firstNameUsuarioGlobal" class="form-label">Nome</label>
+                                                <input type="text" class="form-control" id="firstNameUsuarioGlobal">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="lastNameUsuarioGlobal" class="form-label">Sobrenome</label>
+                                                <input type="text" class="form-control" id="lastNameUsuarioGlobal">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="emailUsuarioGlobal" class="form-label">Email</label>
+                                                <input type="email" class="form-control" id="emailUsuarioGlobal">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="telefoneUsuarioGlobal" class="form-label">Telefone</label>
+                                                <input type="text" class="form-control" id="telefoneUsuarioGlobal">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="setorUsuarioGlobal" class="form-label">Setor *</label>
+                                                <select class="form-select" id="setorUsuarioGlobal" required>
+                                                    <option value="">Carregando...</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="perfilUsuarioGlobal" class="form-label">Perfil de Acesso *</label>
+                                                <select class="form-select" id="perfilUsuarioGlobal" required onchange="verificarPerfilTerceiro()">
+                                                    <option value="">Carregando perfis...</option>
+                                                </select>
+                                                <small class="form-text text-muted">Selecione o perfil de acesso do usuário</small>
+                                            </div>
+                                            <div class="mb-3" id="divEmpresaUsuario" style="display: none;">
+                                                <label for="empresaUsuarioGlobal" class="form-label">
+                                                    Empresa *
+                                                    <i class="bi bi-info-circle" title="Obrigatório para usuários terceirizados"></i>
+                                                </label>
+                                                <select class="form-select" id="empresaUsuarioGlobal">
+                                                    <option value="">Selecione a empresa...</option>
+                                                </select>
+                                                <small class="form-text text-muted">Empresa à qual o usuário pertence</small>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="disponivelUsuarioGlobal" checked>
+                                                    <label class="form-check-label" for="disponivelUsuarioGlobal">
+                                                        <i class="bi bi-check-circle"></i>
+                                                        Disponível para atender chamados
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">Técnicos disponíveis aparecem na lista de atribuição de chamados</small>
+                                            </div>
+                                            <div class="d-grid gap-2">
+                                                <button type="submit" class="btn btn-success" id="btnSubmitUsuario">
+                                                    <i class="bi bi-plus-circle"></i>
+                                                    Adicionar Usuário
+                                                </button>
+                                                <button type="button" class="btn btn-secondary" id="btnCancelarUsuario" onclick="cancelarEdicaoUsuario()" style="display: none;">
+                                                    <i class="bi bi-x-circle"></i>
+                                                    Cancelar Edição
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lista de Usuários -->
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-list"></i>
+                                            Lista de Usuários
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-hover">
+                                                <thead class="table-dark">
+                                                    <tr>
+                                                        <th>Usuário</th>
+                                                        <th>Nome Completo</th>
+                                                        <th>Email</th>
+                                                        <th>Setor</th>
+                                                        <th>Perfil</th>
+                                                        <th>Status Senha</th>
+                                                        <th>Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="listaUsuariosGlobal">
+                                                    <tr>
+                                                        <td colspan="7" class="text-center">
+                                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                                <span class="visually-hidden">Carregando...</span>
+                                                            </div>
+                                                            Carregando usuários...
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script para esconder sidebar quando dropdown aberto -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Detectar quando dropdown abre
+            document.addEventListener('shown.bs.dropdown', function(event) {
+                // Adicionar classe ao body para escurecer sidebar e conteúdo
+                document.body.classList.add('dropdown-open');
+            });
+
+            // Detectar quando dropdown fecha
+            document.addEventListener('hidden.bs.dropdown', function(event) {
+                // Remover classe do body para restaurar sidebar e conteúdo
+                document.body.classList.remove('dropdown-open');
+            });
+        });
+    </script>
+
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+
+    <!-- JavaScript para Geolocalização (apenas para transportes) -->
+    {% if user.is_authenticated and user.perfil.is_transportes %}
+    <script>
+        let geoWatchId = null;
+        let ultimaLocalizacao = null;
+        let intervaloPosicao = null;
+
+        function iniciarRastreamento() {
+            if (navigator.geolocation) {
+                console.log('🌍 Iniciando rastreamento de localização...');
+
+                // Opções de geolocalização
+                const opcoes = {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 30000
+                };
+
+                // Iniciar rastreamento contínuo
+                geoWatchId = navigator.geolocation.watchPosition(
+                    function(posicao) {
+                        const lat = posicao.coords.latitude;
+                        const lng = posicao.coords.longitude;
+                        const precisao = posicao.coords.accuracy;
+
+                        console.log(`📍 Nova posição: ${lat}, ${lng} (±${precisao}m)`);
+
+                        // Verificar se a posição mudou significativamente
+                        if (ultimaLocalizacao) {
+                            const distancia = calcularDistancia(
+                                ultimaLocalizacao.lat, ultimaLocalizacao.lng,
+                                lat, lng
+                            );
+
+                            // Só enviar se mudou mais de 10 metros
+                            if (distancia < 10) {
+                                console.log(`📍 Posição muito próxima (${distancia}m), ignorando...`);
+                                return;
+                            }
+                        }
+
+                        ultimaLocalizacao = { lat, lng };
+                        enviarPosicao(lat, lng, precisao);
+                    },
+                    function(erro) {
+                        console.warn('⚠️ Geolocalização:', erro.message);
+
+                        switch(erro.code) {
+                            case erro.PERMISSION_DENIED:
+                                console.log('🚫 Usuário negou permissão de localização');
+                                mostrarAvisoLocalizacao('negada');
+                                break;
+                            case erro.POSITION_UNAVAILABLE:
+                                console.log('📍 Localização indisponível');
+                                mostrarAvisoLocalizacao('indisponivel');
+                                break;
+                            case erro.TIMEOUT:
+                                console.log('⏰ Timeout na obtenção da localização');
+                                mostrarAvisoLocalizacao('timeout');
+                                break;
+                        }
+                    },
+                    opcoes
+                );
+
+                // Também enviar posição a cada 2 minutos
+                intervaloPosicao = setInterval(function() {
+                    if (ultimaLocalizacao) {
+                        console.log('⏰ Enviando posição por intervalo...');
+                        enviarPosicao(ultimaLocalizacao.lat, ultimaLocalizacao.lng, 0);
+                    }
+                }, 120000); // 2 minutos
+
+            } else {
+                console.error('❌ Geolocalização não suportada pelo navegador');
+            }
+        }
+
+        function enviarPosicao(latitude, longitude, precisao) {
+            console.log(`📡 Enviando posição: ${latitude}, ${longitude}`);
+
+            fetch('/api/atualizar-posicao/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookieLocal('csrftoken')
+                },
+                body: JSON.stringify({
+                    latitude: latitude,
+                    longitude: longitude,
+                    precisao: precisao,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Posição enviada com sucesso');
+                } else {
+                    console.error('❌ Erro ao enviar posição:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro na requisição:', error);
+            });
+        }
+
+        function calcularDistancia(lat1, lng1, lat2, lng2) {
+            const R = 6371e3; // Raio da Terra em metros
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lng2-lng1) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c; // Distância em metros
+        }
+
+        function pararRastreamento() {
+            if (geoWatchId) {
+                navigator.geolocation.clearWatch(geoWatchId);
+                geoWatchId = null;
+                console.log('🛑 Rastreamento parado');
+            }
+
+            if (intervaloPosicao) {
+                clearInterval(intervaloPosicao);
+                intervaloPosicao = null;
+                console.log('🛑 Intervalo de posição parado');
+            }
+        }
+
+        // Mostrar aviso visual sobre localização
+        function mostrarAvisoLocalizacao(tipo) {
+            // Evitar mostrar múltiplos avisos
+            if (document.getElementById('aviso-localizacao')) return;
+
+            let mensagem = '';
+            let icone = '';
+            let corFundo = '';
+
+            switch(tipo) {
+                case 'negada':
+                    icone = '📍';
+                    mensagem = 'Localização bloqueada! Para rastrear sua posição, permita o acesso à localização nas configurações do navegador.';
+                    corFundo = '#dc3545';
+                    break;
+                case 'indisponivel':
+                    icone = '📡';
+                    mensagem = 'Localização indisponível. Verifique se o GPS está ativado no seu dispositivo.';
+                    corFundo = '#fd7e14';
+                    break;
+                case 'timeout':
+                    icone = '⏰';
+                    mensagem = 'Não foi possível obter sua localização. Tentando novamente...';
+                    corFundo = '#ffc107';
+                    break;
+            }
+
+            // Criar elemento de aviso
+            const aviso = document.createElement('div');
+            aviso.id = 'aviso-localizacao';
+            aviso.innerHTML = `
+                <div style="
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: ${corFundo};
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                    z-index: 99999;
+                    max-width: 90%;
+                    width: 380px;
+                    font-size: 0.9rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    animation: slideUp 0.3s ease;
+                ">
+                    <span style="font-size: 1.5rem;">${icone}</span>
+                    <div style="flex: 1;">
+                        <strong>Atenção!</strong><br>
+                        <span style="font-size: 0.85rem;">${mensagem}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" style="
+                        background: rgba(255,255,255,0.2);
+                        border: none;
+                        color: white;
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 50%;
+                        cursor: pointer;
+                        font-size: 1rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">✕</button>
+                </div>
+            `;
+
+            // Adicionar estilo de animação se não existir
+            if (!document.getElementById('aviso-localizacao-style')) {
+                const style = document.createElement('style');
+                style.id = 'aviso-localizacao-style';
+                style.textContent = `
+                    @keyframes slideUp {
+                        from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+                        to { transform: translateX(-50%) translateY(0); opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            document.body.appendChild(aviso);
+
+            // Auto-remover após 10 segundos (exceto para permissão negada)
+            if (tipo !== 'negada') {
+                setTimeout(() => {
+                    if (aviso.parentElement) aviso.remove();
+                }, 10000);
+            }
+        }
+
+        // Iniciar rastreamento quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Página carregada, iniciando rastreamento...');
+            iniciarRastreamento();
+        });
+
+        // Parar rastreamento quando sair da página
+        window.addEventListener('beforeunload', function() {
+            console.log('👋 Saindo da página, parando rastreamento...');
+            pararRastreamento();
+        });
+
+        // Parar rastreamento quando a página ficar inativa
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                console.log('😴 Página inativa, parando rastreamento...');
+                pararRastreamento();
+            } else {
+                console.log('👀 Página ativa, reiniciando rastreamento...');
+                iniciarRastreamento();
+            }
+        });
+    </script>
+    {% endif %}
+
+    <!-- JAVASCRIPT GLOBAL PARA TODOS OS USUÁRIOS -->
+    {% if user.is_authenticated %}
+    <script>
+        // Função para obter cookie CSRF
+        function getCookieLocal(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // FUNÇÕES PARA MODAL DE USUÁRIOS (movidas para cima para resolver escopo)
+
+        // Função para carregar empresas nos dropdowns de usuário
+        function carregarEmpresasParaUsuario() {
+            console.log('🏢 Carregando empresas para dropdown...');
+
+            fetch('/api/empresas/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.empresas) {
+                        // Carregar no formulário de novo usuário
+                        const selectNovo = document.getElementById('empresaUsuarioGlobal');
+                        if (selectNovo) {
+                            // Limpar opções existentes (exceto a primeira)
+                            selectNovo.innerHTML = '<option value="">Nenhuma (Funcionário Interno)</option>';
+
+                            data.empresas.forEach(empresa => {
+                                const option = document.createElement('option');
+                                option.value = empresa.id;
+                                option.textContent = `${empresa.nome} (${empresa.tipo_display})`;
+                                selectNovo.appendChild(option);
+                            });
+                        }
+
+                        // Carregar no formulário de edição
+                        const selectEdit = document.getElementById('editEmpresaUsuarioGlobal');
+                        if (selectEdit) {
+                            selectEdit.innerHTML = '<option value="">Nenhuma (Funcionário Interno)</option>';
+
+                            data.empresas.forEach(empresa => {
+                                const option = document.createElement('option');
+                                option.value = empresa.id;
+                                option.textContent = `${empresa.nome} (${empresa.tipo_display})`;
+                                selectEdit.appendChild(option);
+                            });
+                        }
+
+                        console.log('✅ Empresas carregadas nos dropdowns');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao carregar empresas:', error);
+                });
+        }
+
+        function carregarUsuariosGlobal() {
+            console.log('📋 Carregando usuários...');
+
+            fetch('/api/usuarios/', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📋 Usuários recebidos:', data);
+
+                // A API retorna um array diretamente, não um objeto com success
+                if (!Array.isArray(data)) {
+                    console.error('❌ Erro ao carregar usuários - dados não são um array:', data);
+                    return;
+                }
+
+                let tbody = document.getElementById('listaUsuariosGlobal');
+                if (!tbody) {
+                    console.error('❌ Tabela de usuários não encontrada');
+                    console.error('🔍 Tentando encontrar elemento com outros seletores...');
+
+                    // Tentar outros seletores possíveis
+                    const tbody2 = document.querySelector('#modalUsuariosGlobal tbody');
+                    const tbody3 = document.querySelector('#modalUsuariosGlobal #listaUsuariosGlobal');
+
+                    console.error('🔍 tbody2 (modalUsuariosGlobal tbody):', tbody2);
+                    console.error('🔍 tbody3 (modalUsuariosGlobal #listaUsuariosGlobal):', tbody3);
+
+                    if (tbody2) {
+                        console.log('✅ Usando tbody2 como fallback');
+                        tbody = tbody2;
+                    } else if (tbody3) {
+                        console.log('✅ Usando tbody3 como fallback');
+                        tbody = tbody3;
+                    } else {
+                        console.error('❌ Nenhum elemento de tabela encontrado');
+                        return;
+                    }
+                }
+
+                tbody.innerHTML = '';
+
+                data.forEach(usuario => {
+                    const tr = document.createElement('tr');
+
+                    // Perfil badge
+                    const perfilBadge = `<span class="badge bg-info">${usuario.perfil_display || usuario.perfil || 'Sem perfil'}</span>`;
+
+                    // Nome do setor
+                    const setorNome = usuario.setor_nome || '-';
+
+                    // Nome completo
+                    const nomeCompleto = [usuario.first_name, usuario.last_name].filter(n => n).join(' ') || '-';
+
+                    // Email
+                    const email = usuario.email || '-';
+
+                    // Status da senha
+                    let statusSenha = '';
+                    if (usuario.precisa_alterar_senha) {
+                        statusSenha = '<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Precisa Alterar</span>';
+                    } else if (usuario.senha_alterada_em) {
+                        statusSenha = `<span class="badge bg-success"><i class="bi bi-check-circle"></i> Alterada</span><br><small class="text-muted">${usuario.senha_alterada_em}</small>`;
+                    } else {
+                        statusSenha = '<span class="badge bg-secondary">-</span>';
+                    }
+
+                    tr.innerHTML = `
+                        <td><strong>${usuario.username}</strong></td>
+                        <td>${nomeCompleto}</td>
+                        <td>${email}</td>
+                        <td>${setorNome}</td>
+                        <td>${perfilBadge}</td>
+                        <td>${statusSenha}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-warning" onclick="editarUsuarioGlobal(${usuario.id})" title="Editar usuário">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="resetarSenhaUsuario(${usuario.id}, '${usuario.username}')" title="Resetar senha">
+                                    <i class="bi bi-key"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="removerUsuarioGlobal(${usuario.id}, '${usuario.username}')" title="Remover usuário">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar usuários:', error);
+            });
+        }
+
+        // Função para carregar empresas
+        function carregarEmpresasParaUsuarios() {
+            console.log('🏢 Carregando empresas...');
+            fetch('/api/empresas/')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📋 Empresas recebidas:', data);
+                    const select = document.getElementById('empresaUsuarioGlobal');
+                    if (select && data.success) {
+                        select.innerHTML = '<option value="">Selecione a empresa...</option>';
+                        data.empresas.forEach(empresa => {
+                            const option = document.createElement('option');
+                            option.value = empresa.id;
+                            option.textContent = `${empresa.nome} (${empresa.tipo_display})`;
+                            select.appendChild(option);
+                        });
+                        console.log(`✅ ${data.empresas.length} empresas carregadas!`);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao carregar empresas:', error);
+                });
+        }
+
+        // Função para verificar se perfil é terceiro e mostrar campo empresa
+        function verificarPerfilTerceiro() {
+            const perfilSelect = document.getElementById('perfilUsuarioGlobal');
+            const divEmpresa = document.getElementById('divEmpresaUsuario');
+            const empresaSelect = document.getElementById('empresaUsuarioGlobal');
+
+            if (perfilSelect && divEmpresa) {
+                const perfilSelecionado = perfilSelect.value;
+                const isTerceiro = perfilSelecionado.startsWith('TERCEIRO_');
+
+                console.log('🔍 Perfil selecionado:', perfilSelecionado, '- É terceiro?', isTerceiro);
+
+                if (isTerceiro) {
+                    divEmpresa.style.display = 'block';
+                    empresaSelect.required = true;
+                } else {
+                    divEmpresa.style.display = 'none';
+                    empresaSelect.required = false;
+                    empresaSelect.value = '';
+                }
+            }
+        }
+
+        // Função para abrir modal de usuários (disponível para todos)
+        function abrirModalUsuariosGlobal() {
+            console.log('👤 Abrindo modal de usuários...');
+            const modal = new bootstrap.Modal(document.getElementById('modalUsuariosGlobal'));
+            modal.show();
+
+            // Aguardar modal abrir completamente antes de carregar dados
+            setTimeout(() => {
+                console.log('🔄 Carregando dados do modal...');
+                carregarUsuariosGlobal();
+                carregarSetoresParaUsuarios();
+                carregarPerfisParaSelect(); // Carregar perfis no select
+                carregarEmpresasParaUsuario(); // Carregar empresas no select
+                carregarEmpresasParaUsuarios(); // Carregar empresas
+            }, 300);
+        }
+
+        // Função para abrir modal de perfis de acesso (disponível para todos)
+        function abrirModalPerfisAcesso() {
+            console.log('🛡️ Abrindo modal de perfis de acesso...');
+            const modal = new bootstrap.Modal(document.getElementById('modalPerfisAcesso'));
+            modal.show();
+            carregarPerfisAcesso();
+        }
+
+        // Função para abrir modal de empresas
+        function abrirModalEmpresas() {
+            console.log('🏢 Abrindo modal de empresas...');
+            const modal = new bootstrap.Modal(document.getElementById('modalEmpresas'));
+            modal.show();
+            carregarEmpresas();
+        }
+
+        // Função para carregar empresas no modal
+        function carregarEmpresas() {
+            console.log('🔄 Carregando empresas...');
+            fetch('/api/empresas/')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📋 Empresas recebidas:', data);
+                    const tbody = document.getElementById('listaEmpresas');
+                    tbody.innerHTML = '';
+
+                    if (data.success && data.empresas.length > 0) {
+                        data.empresas.forEach(empresa => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td><strong>${empresa.nome}</strong></td>
+                                <td>${empresa.cnpj || '-'}</td>
+                                <td><span class="badge ${empresa.tipo === 'PROPRIA' ? 'bg-primary' : 'bg-info'}">${empresa.tipo_display}</span></td>
+                                <td>${empresa.contrato || '-'}</td>
+                                <td>
+                                    ${empresa.contato || '-'}
+                                    ${empresa.telefone ? '<br><small class="text-muted">' + empresa.telefone + '</small>' : ''}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-warning" onclick="editarEmpresa(${empresa.id})" title="Editar empresa">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="removerEmpresa(${empresa.id}, '${empresa.nome}')" title="Remover empresa">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                                    <p class="mb-0 mt-2">Nenhuma empresa cadastrada</p>
+                                    <small>Comece cadastrando a primeira empresa usando o formulário ao lado</small>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao carregar empresas:', error);
+                    const tbody = document.getElementById('listaEmpresas');
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">❌ Erro ao carregar empresas</td></tr>';
+                });
+        }
+
+        // Função para editar empresa
+        function editarEmpresa(id) {
+            console.log(`✏️ Editando empresa ${id}...`);
+
+            fetch(`/api/empresas/${id}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const empresa = data.empresa;
+                        console.log('📝 Dados da empresa:', empresa);
+
+                        // Preencher formulário
+                        document.getElementById('empresaId').value = empresa.id;
+                        document.getElementById('nomeEmpresa').value = empresa.nome || '';
+                        document.getElementById('cnpjEmpresa').value = empresa.cnpj || '';
+                        document.getElementById('tipoEmpresa').value = empresa.tipo || 'TERCEIRIZADA';
+                        document.getElementById('contratoEmpresa').value = empresa.contrato || '';
+                        document.getElementById('contatoEmpresa').value = empresa.contato || '';
+                        document.getElementById('telefoneEmpresa').value = empresa.telefone || '';
+                        document.getElementById('emailEmpresa').value = empresa.email || '';
+                        document.getElementById('observacoesEmpresa').value = empresa.observacoes || '';
+
+                        // Alterar título e botão para modo edição
+                        document.getElementById('tituloFormEmpresa').textContent = 'Editar Empresa';
+                        document.getElementById('btnSubmitEmpresa').innerHTML = '<i class="bi bi-check-circle"></i> Salvar Alterações';
+                        document.getElementById('btnSubmitEmpresa').className = 'btn btn-warning';
+                        document.getElementById('btnCancelarEmpresa').style.display = 'block';
+
+                        console.log('✅ Formulário preenchido para edição');
+                    } else {
+                        alert('❌ Erro ao carregar empresa: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao carregar empresa:', error);
+                    alert('❌ Erro ao carregar empresa');
+                });
+        }
+
+        // Função para cancelar edição de empresa
+        function cancelarEdicaoEmpresa() {
+            console.log('❌ Cancelando edição de empresa...');
+
+            // Limpar formulário
+            document.getElementById('formEmpresa').reset();
+            document.getElementById('empresaId').value = '';
+
+            // Restaurar título e botão para modo criação
+            document.getElementById('tituloFormEmpresa').textContent = 'Nova Empresa';
+            document.getElementById('btnSubmitEmpresa').innerHTML = '<i class="bi bi-plus-circle"></i> Adicionar Empresa';
+            document.getElementById('btnSubmitEmpresa').className = 'btn btn-success';
+            document.getElementById('btnCancelarEmpresa').style.display = 'none';
+
+            console.log('✅ Formulário limpo, voltando para modo criação');
+        }
+
+        // Função para remover empresa
+        function removerEmpresa(id, nome) {
+            if (confirm(`🗑️ Tem certeza que deseja remover a empresa "${nome}"?\n\n⚠️ ATENÇÃO: Esta ação não pode ser desfeita!`)) {
+                console.log(`🗑️ Removendo empresa ${id}...`);
+
+                fetch(`/api/empresas/${id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookieLocal('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Empresa removida com sucesso!');
+                        carregarEmpresas();
+                        carregarEmpresasParaUsuarios(); // Atualizar dropdown de usuários
+                    } else {
+                        alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao remover empresa:', error);
+                    alert('❌ Erro ao remover empresa');
+                });
+            }
+        }
+
+        // Funções básicas de carregamento - implementação completa está no bloco condicional
+
+        function carregarSetoresParaUsuarios() {
+            console.log('🏢 Carregando setores para select de usuários...');
+
+            return fetch('/api/setores/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('🏢 Setores recebidos para select:', data);
+
+                const setores = data.success ? data.setores : data;
+
+                if (!Array.isArray(setores)) {
+                    console.error('❌ Dados de setores não são um array:', setores);
+                    return;
+                }
+
+                // Atualizar select de criação
+                const selectCriacao = document.getElementById('setorUsuarioGlobal');
+                if (selectCriacao) {
+                    selectCriacao.innerHTML = '<option value="">Selecione um setor...</option>';
+                    setores.forEach(setor => {
+                        const option = document.createElement('option');
+                        option.value = setor.id;
+                        option.textContent = setor.nome;
+                        selectCriacao.appendChild(option);
+                    });
+                }
+
+                // Atualizar select de edição
+                const selectEdicao = document.getElementById('editSetorUsuarioGlobal');
+                if (selectEdicao) {
+                    selectEdicao.innerHTML = '<option value="">Selecione um setor...</option>';
+                    setores.forEach(setor => {
+                        const option = document.createElement('option');
+                        option.value = setor.id;
+                        option.textContent = setor.nome;
+                        selectEdicao.appendChild(option);
+                    });
+                }
+
+                console.log('✅ Setores carregados no select de criação');
+                console.log('✅ Setores carregados no select de edição');
+                console.log(`✅ ${setores.length} setores carregados em ambos os selects`);
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar setores para select:', error);
+            });
+        }
+
+        function carregarPerfisAcesso() {
+            console.log('📋 Carregando perfis de acesso...');
+
+            fetch('/api/perfis-disponiveis/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📋 Perfis recebidos:', data);
+                const tbody = document.getElementById('listaPerfisAcesso');
+                if (!tbody) {
+                    console.error('❌ Elemento listaPerfisAcesso não encontrado');
+                    return;
+                }
+
+                tbody.innerHTML = '';
+
+                if (!data.success || !data.perfis || data.perfis.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                <i class="bi bi-inbox"></i><br>
+                                Nenhum perfil cadastrado
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                data.perfis.forEach(perfil => {
+                    const tr = document.createElement('tr');
+
+                    // Aplicar estilo se inativo
+                    if (!perfil.ativo) {
+                        tr.classList.add('table-secondary');
+                        tr.style.opacity = '0.6';
+                    }
+
+                    // Indicador de personalização
+                    const indicadorPersonalizacao = perfil.tem_personalizacao ?
+                        '<i class="bi bi-star-fill text-warning" title="Perfil personalizado"></i> ' : '';
+
+                    // Badge de status
+                    const badgeStatus = perfil.ativo ?
+                        '<span class="badge bg-success ms-2" title="Perfil ativo">✓ Ativo</span>' :
+                        '<span class="badge bg-danger ms-2" title="Perfil desativado">✗ Inativo</span>';
+
+                    // Botões de ação baseados no status
+                    let botoesAcao = '';
+
+                    if (perfil.ativo) {
+                        // Perfil ATIVO - mostrar editar e remover
+                        const btnEditar = `<button class="btn btn-sm btn-warning me-1" onclick="editarPerfilAcesso('${perfil.codigo}', '${perfil.nome_exibicao}', '${perfil.descricao || ''}')" title="Editar perfil">
+                            <i class="bi bi-pencil"></i>
+                        </button>`;
+
+                        // BOTÃO REMOVER SEMPRE HABILITADO - pode desativar qualquer perfil
+                        const btnRemover = `<button class="btn btn-sm btn-danger" onclick="removerPerfilAcesso('${perfil.codigo}', '${perfil.nome_exibicao}')" title="Desativar ou excluir perfil">
+                            <i class="bi bi-trash"></i>
+                        </button>`;
+
+                        botoesAcao = btnEditar + btnRemover;
+                    } else {
+                        // Perfil INATIVO - mostrar apenas botão de reativar
+                        botoesAcao = `<button class="btn btn-sm btn-success" onclick="reativarPerfilAcesso('${perfil.codigo}', '${perfil.nome_exibicao}')" title="Reativar perfil">
+                            <i class="bi bi-arrow-clockwise"></i> Reativar
+                        </button>`;
+                    }
+
+                    tr.innerHTML = `
+                        <td><strong>${perfil.codigo}</strong>${badgeStatus}</td>
+                        <td>
+                            ${indicadorPersonalizacao}${perfil.nome_exibicao}
+                            ${perfil.tem_personalizacao && perfil.nome_exibicao !== perfil.nome ?
+                                `<br><small class="text-muted">Original: ${perfil.nome}</small>` : ''}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">${perfil.usuarios_count} usuários</span>
+                        </td>
+                        <td>
+                            ${botoesAcao}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                console.log(`✅ ${data.perfis.length} perfis carregados!`);
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar perfis:', error);
+                const tbody = document.getElementById('listaPerfisAcesso');
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-danger">
+                                <i class="bi bi-exclamation-triangle"></i><br>
+                                Erro ao carregar perfis: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+        }
+
+        // Função para editar perfil de acesso
+        function editarPerfilAcesso(codigo, nome, descricaoExistente = '') {
+            console.log(`✏️ Editando perfil de acesso: ${codigo} - ${nome}`);
+
+            // Preencher formulário de edição
+            document.getElementById('codigoPerfilAcesso').value = codigo;
+            document.getElementById('nomePerfilAcesso').value = nome;
+
+            // Usar descrição existente ou gerar uma baseada no tipo de perfil
+            let descricao = descricaoExistente;
+
+            if (!descricao) {
+                // Gerar descrição padrão se não houver uma personalizada
+                if (codigo.includes('ADMIN')) {
+                    descricao = 'Acesso total ao sistema, pode gerenciar usuários, perfis e todas as funcionalidades.';
+                } else if (codigo.includes('SUPERVISOR')) {
+                    descricao = 'Supervisiona operações, pode gerenciar pedidos e visualizar relatórios.';
+                } else if (codigo.includes('TRANSPORTES')) {
+                    descricao = 'Responsável por operações de transporte e movimentação de equipamentos.';
+                } else if (codigo.includes('MANUTENCAO')) {
+                    descricao = 'Responsável por manutenção e reparo de equipamentos específicos.';
+                } else if (codigo.includes('TERCEIRO')) {
+                    descricao = 'Prestador de serviços terceirizado com acesso limitado.';
+                } else if (codigo.includes('DEMANDANTE')) {
+                    descricao = 'Pode criar e acompanhar pedidos de serviços.';
+                } else {
+                    descricao = 'Perfil de acesso personalizado com permissões específicas.';
+                }
+            }
+
+            document.getElementById('descricaoPerfilAcesso').value = descricao;
+
+            // Alterar título e botão para modo edição
+            document.getElementById('tituloFormPerfil').textContent = 'Editar Perfil de Acesso';
+            document.getElementById('btnSubmitPerfil').innerHTML = '<i class="bi bi-check-circle"></i> Salvar Alterações';
+            document.getElementById('btnSubmitPerfil').className = 'btn btn-warning';
+            document.getElementById('btnCancelarPerfil').style.display = 'block';
+
+            // Desabilitar campo código na edição
+            document.getElementById('codigoPerfilAcesso').disabled = true;
+
+            // Marcar formulário como modo edição
+            document.getElementById('formPerfilAcesso').setAttribute('data-edit-codigo', codigo);
+        }
+
+
+
+        // Função para cancelar edição de perfil de acesso
+        function cancelarEdicaoPerfil() {
+            console.log('❌ Cancelando edição de perfil de acesso...');
+
+            // Limpar formulário
+            const form = document.getElementById('formPerfilAcesso');
+            form.reset();
+            form.removeAttribute('data-edit-codigo');
+
+            // Restaurar título e botão para modo criação
+            document.getElementById('tituloFormPerfil').textContent = 'Novo Perfil de Acesso';
+            document.getElementById('btnSubmitPerfil').innerHTML = '<i class="bi bi-plus-circle"></i> Adicionar Perfil';
+            document.getElementById('btnSubmitPerfil').className = 'btn btn-success';
+            document.getElementById('btnCancelarPerfil').style.display = 'none';
+
+            // Reabilitar campo código
+            document.getElementById('codigoPerfilAcesso').disabled = false;
+
+            console.log('✅ Edição cancelada, voltando para modo criação');
+        }
+
+        // Função para limpar formulário após sucesso (sem mensagem de cancelamento)
+        function limparFormularioPerfil() {
+            console.log('🧹 Limpando formulário de perfil após sucesso...');
+
+            const form = document.getElementById('formPerfilAcesso');
+            form.reset();
+            form.removeAttribute('data-edit-codigo');
+
+            // Restaurar título e botão para modo criação
+            document.getElementById('tituloFormPerfil').textContent = 'Novo Perfil de Acesso';
+            document.getElementById('btnSubmitPerfil').innerHTML = '<i class="bi bi-plus-circle"></i> Adicionar Perfil';
+            document.getElementById('btnSubmitPerfil').className = 'btn btn-success';
+            document.getElementById('btnCancelarPerfil').style.display = 'none';
+
+            // Reabilitar campo código
+            document.getElementById('codigoPerfilAcesso').disabled = false;
+
+            console.log('✅ Formulário limpo, voltando para modo criação');
+        }
+
+        // Função para remover perfil de acesso
+        function removerPerfilAcesso(codigo, nome) {
+            if (isAdminOuSupervisor) {
+                // ADMIN e SUPERVISOR têm funcionalidade real
+                // Perguntar se quer desativar ou excluir
+                const opcao = confirm(
+                    `🗑️ GERENCIAR PERFIL: "${nome}" (${codigo})\n\n` +
+                    `Escolha uma opção:\n\n` +
+                    `✅ OK = DESATIVAR (recomendado)\n` +
+                    `   • Perfil fica inativo mas não é excluído\n` +
+                    `   • Pode ser reativado depois\n` +
+                    `   • Dados preservados\n\n` +
+                    `❌ CANCELAR = EXCLUIR PERMANENTEMENTE\n` +
+                    `   • Remove completamente do banco\n` +
+                    `   • Não pode ser desfeito\n` +
+                    `   • Só funciona se nenhum usuário usar este perfil\n\n` +
+                    `O que deseja fazer?`
+                );
+
+                if (opcao === true) {
+                    // Usuário clicou OK = DESATIVAR
+                    executarRemocaoPerfil(codigo, nome, false);
+                } else if (opcao === false) {
+                    // Usuário clicou CANCELAR = Perguntar se quer EXCLUIR
+                    const confirmarExclusao = confirm(
+                        `⚠️ CONFIRMAR EXCLUSÃO PERMANENTE\n\n` +
+                        `Perfil: "${nome}" (${codigo})\n\n` +
+                        `ATENÇÃO:\n` +
+                        `• Esta ação é IRREVERSÍVEL!\n` +
+                        `• O perfil será REMOVIDO PERMANENTEMENTE\n` +
+                        `• Se houver usuários usando este perfil, a exclusão será BLOQUEADA\n\n` +
+                        `Tem CERTEZA ABSOLUTA que deseja EXCLUIR?`
+                    );
+
+                    if (confirmarExclusao) {
+                        executarRemocaoPerfil(codigo, nome, true);
+                    }
+                }
+            } else {
+                // Outros usuários veem simulação
+                if (confirm(`🗑️ Tem certeza que deseja remover o perfil "${nome}" (${codigo})?\n\n⚠️ ATENÇÃO: Esta é uma simulação!`)) {
+                    console.log(`🗑️ Simulando remoção do perfil ${codigo}...`);
+
+                    alert(`ℹ️ SIMULAÇÃO DE REMOÇÃO DE PERFIL\n\n` +
+                          `⚠️ Você não tem permissão para remover perfis.\n` +
+                          `Apenas ADMIN e SUPERVISOR podem gerenciar perfis.\n\n` +
+                          `Perfil: ${nome} (${codigo})\n\n` +
+                          `✅ Simulação concluída!`);
+
+                    // Recarregar lista para mostrar que nada mudou
+                    carregarPerfisAcesso();
+                }
+            }
+        }
+
+        // Função auxiliar para executar a remoção/exclusão
+        function executarRemocaoPerfil(codigo, nome, excluirCompletamente) {
+            const acao = excluirCompletamente ? 'EXCLUINDO' : 'DESATIVANDO';
+            console.log(`🗑️ ADMIN/SUPERVISOR - ${acao} perfil ${codigo}...`);
+
+            const csrfToken = getCookieLocal('csrftoken');
+            console.log('🔐 CSRF Token:', csrfToken ? 'OK' : 'FALTANDO');
+
+            fetch('/api/perfis/remover/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    codigo: codigo,
+                    excluir_completamente: excluirCompletamente
+                })
+            })
+            .then(response => {
+                console.log('📡 Resposta da API (remoção):', response.status, response.statusText);
+                return response.json();
+            })
+            .then(data => {
+                console.log('📋 Dados recebidos (remoção):', data);
+                if (data.success) {
+                    alert('🎉 ' + data.message);
+                    carregarPerfisAcesso();
+                } else {
+                    console.error('❌ Erro na API:', data);
+                    alert('❌ ERRO\n\n' + (data.error || 'Erro desconhecido'));
+                    // Recarregar lista de qualquer forma
+                    carregarPerfisAcesso();
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao remover perfil:', error);
+                alert('❌ Erro ao remover perfil: ' + error.message);
+            });
+        }
+
+        // Função para reativar perfil desativado
+        function reativarPerfilAcesso(codigo, nome) {
+            if (!isAdminOuSupervisor) {
+                alert('⚠️ Apenas ADMIN e SUPERVISOR podem reativar perfis.');
+                return;
+            }
+
+            if (confirm(`🔄 Tem certeza que deseja REATIVAR o perfil "${nome}" (${codigo})?\n\n` +
+                       `✅ O perfil voltará a ficar ativo e disponível para uso.`)) {
+
+                console.log(`🔄 ADMIN/SUPERVISOR - Reativando perfil ${codigo}...`);
+
+                const csrfToken = getCookieLocal('csrftoken');
+                console.log('🔐 CSRF Token:', csrfToken ? 'OK' : 'FALTANDO');
+
+                fetch('/api/perfis/reativar/', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        codigo: codigo
+                    })
+                })
+                .then(response => {
+                    console.log('📡 Resposta da API (reativação):', response.status, response.statusText);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('📋 Dados recebidos (reativação):', data);
+                    if (data.success) {
+                        alert('🎉 ' + data.message);
+                        carregarPerfisAcesso();
+                    } else {
+                        console.error('❌ Erro na API:', data);
+                        alert('❌ ERRO\n\n' + (data.error || 'Erro desconhecido'));
+                        carregarPerfisAcesso();
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao reativar perfil:', error);
+                    alert('❌ Erro ao reativar perfil: ' + error.message);
+                });
+            }
+        }
+
+
+
+        function carregarPerfisParaSelect(selectId = 'perfilUsuarioGlobal') {
+            console.log(`🎭 Carregando perfis para select ${selectId}...`);
+
+            // Verificar se o select existe antes de fazer a requisição
+            const select = document.getElementById(selectId);
+            if (!select) {
+                console.error(`❌ Select ${selectId} não encontrado no DOM!`);
+                return;
+            }
+
+            console.log(`✅ Select ${selectId} encontrado, fazendo requisição...`);
+
+            fetch('/api/perfis-disponiveis/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                console.log(`📡 Resposta da API: ${response.status} ${response.statusText}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('🎭 Dados recebidos da API:', data);
+
+                // Guardar valor atual se existir
+                const valorAtual = select.value;
+                console.log(`💾 Valor atual do select: "${valorAtual}"`);
+
+                // Limpar select
+                select.innerHTML = '<option value="">Selecione um perfil...</option>';
+                console.log('🧹 Select limpo');
+
+                if (!data.success) {
+                    console.error('❌ API retornou success: false');
+                    select.innerHTML = '<option value="">Erro: API retornou falha</option>';
+                    return;
+                }
+
+                if (!data.perfis || !Array.isArray(data.perfis)) {
+                    console.error('❌ Perfis não é um array:', data.perfis);
+                    select.innerHTML = '<option value="">Erro: Dados inválidos</option>';
+                    return;
+                }
+
+                if (data.perfis.length === 0) {
+                    console.error('❌ Array de perfis está vazio');
+                    select.innerHTML = '<option value="">Nenhum perfil encontrado</option>';
+                    return;
+                }
+
+                console.log(`📋 Processando ${data.perfis.length} perfis...`);
+
+                // Filtrar apenas perfis ATIVOS e adicionar como opção
+                let perfisAtivos = 0;
+                data.perfis.forEach((perfil, index) => {
+                    // Só adicionar perfis ativos
+                    if (!perfil.ativo) {
+                        console.log(`  ⏭️ ${perfil.codigo} - ${perfil.nome} (INATIVO - ignorado)`);
+                        return;
+                    }
+
+                    perfisAtivos++;
+                    console.log(`  ${perfisAtivos}. ${perfil.codigo} - ${perfil.nome}`);
+                    const option = document.createElement('option');
+                    option.value = perfil.codigo;
+                    option.textContent = perfil.nome;
+
+                    // Restaurar seleção anterior se existir
+                    if (perfil.codigo === valorAtual) {
+                        option.selected = true;
+                        console.log(`🎯 Restaurando seleção: ${perfil.codigo}`);
+                    }
+
+                    select.appendChild(option);
+                });
+
+                console.log(`✅ ${perfisAtivos} perfis ATIVOS carregados no select ${selectId}!`);
+                console.log(`📊 Total de opções no select: ${select.options.length}`);
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar perfis para select:', error);
+                const select = document.getElementById(selectId);
+                if (select) {
+                    select.innerHTML = '<option value="">Erro ao carregar perfis</option>';
+                }
+            });
+        }
+    </script>
+    {% endif %}
+
+    <!-- JAVASCRIPT PARA MODAIS DE CADASTROS -->
+    {% if user.is_authenticated and user.perfil.is_admin_ou_supervisor %}
+    <script>
+        // DEBUG: Verificar permissões
+        console.log('🔐 Usuário autenticado:', '{{ user.is_authenticated }}');
+        console.log('👤 Username:', '{{ user.username }}');
+        console.log('🎭 Perfil:', '{{ user.perfil.codigo_perfil }}');
+        console.log('🔑 É admin ou supervisor:', '{{ user.perfil.is_admin_ou_supervisor }}');
+
+        // Variáveis globais para controle de permissões
+        const isAdminOuSupervisor = {{ user.perfil.is_admin_ou_supervisor|yesno:"true,false" }};
+        const perfilUsuario = '{{ user.perfil.codigo_perfil }}';
+
+        console.log('🛡️ Permissões especiais ativas:', isAdminOuSupervisor);
+
+        // Teste simples de conectividade
+        function testarAPIs() {
+            console.log('🧪 TESTANDO CONECTIVIDADE DAS APIs...');
+
+            // Testar API de perfis disponíveis
+            fetch('/api/perfis-disponiveis/')
+                .then(response => {
+                    console.log('📡 API perfis-disponiveis:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('📋 Perfis disponíveis:', data);
+                })
+                .catch(error => {
+                    console.error('❌ Erro API perfis-disponiveis:', error);
+                });
+        }
+
+        // Executar teste ao carregar
+        setTimeout(testarAPIs, 2000);
+
+        // Função para testar CRUD de perfis
+        function testarCRUDPerfis() {
+            console.log('🧪 INICIANDO TESTE COMPLETO DE CRUD...');
+
+            if (!isAdminOuSupervisor) {
+                alert('❌ Você não tem permissão para testar CRUD de perfis!');
+                return;
+            }
+
+            // Teste 1: Criar perfil
+            console.log('🆕 Testando criação de perfil...');
+            fetch('/api/perfis/criar/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookieLocal('csrftoken')
+                },
+                body: JSON.stringify({
+                    codigo: 'TESTE_DEBUG',
+                    nome: 'Perfil de Teste Debug',
+                    descricao: 'Perfil criado para teste de funcionalidade'
+                })
+            })
+            .then(response => {
+                console.log('📡 Resposta criação:', response.status, response.statusText);
+                return response.json();
+            })
+            .then(data => {
+                console.log('📋 Resultado criação:', data);
+                if (data.success) {
+                    alert('✅ TESTE DE CRIAÇÃO: SUCESSO!\n\n' + data.message);
+
+                    // Teste 2: Editar perfil
+                    setTimeout(() => {
+                        console.log('✏️ Testando edição de perfil...');
+                        fetch('/api/perfis/editar/', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookieLocal('csrftoken')
+                            },
+                            body: JSON.stringify({
+                                codigo: 'ADMIN',
+                                nome: 'Administrador Testado',
+                                descricao: 'Descrição editada via teste'
+                            })
+                        })
+                        .then(response => {
+                            console.log('📡 Resposta edição:', response.status, response.statusText);
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('📋 Resultado edição:', data);
+                            if (data.success) {
+                                alert('✅ TESTE DE EDIÇÃO: SUCESSO!\n\n' + data.message);
+                            } else {
+                                alert('❌ TESTE DE EDIÇÃO: FALHOU!\n\n' + data.error);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('❌ Erro no teste de edição:', error);
+                            alert('❌ ERRO NO TESTE DE EDIÇÃO: ' + error.message);
+                        });
+                    }, 1000);
+
+                } else {
+                    alert('❌ TESTE DE CRIAÇÃO: FALHOU!\n\n' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro no teste de criação:', error);
+                alert('❌ ERRO NO TESTE DE CRIAÇÃO: ' + error.message);
+            });
+        }
+
+        // Função para obter cookie CSRF
+        function getCookieLocal(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // FUNCIONALIDADE DO MODAL DE EMPRESAS
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🏢 DOM carregado, configurando modal de empresas...');
+
+            // Event listener para formulário de empresas
+            const formEmpresa = document.getElementById('formEmpresa');
+            if (formEmpresa) {
+                formEmpresa.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const empresaId = document.getElementById('empresaId').value;
+                    const isEdit = empresaId !== '';
+
+                    console.log(isEdit ? `✏️ EDITANDO EMPRESA ${empresaId}!` : '🆕 CRIANDO NOVA EMPRESA!');
+
+                    const nome = document.getElementById('nomeEmpresa').value.trim();
+                    const cnpj = document.getElementById('cnpjEmpresa').value.trim();
+                    const tipo = document.getElementById('tipoEmpresa').value;
+                    const contrato = document.getElementById('contratoEmpresa').value.trim();
+                    const contato = document.getElementById('contatoEmpresa').value.trim();
+                    const telefone = document.getElementById('telefoneEmpresa').value.trim();
+                    const email = document.getElementById('emailEmpresa').value.trim();
+                    const observacoes = document.getElementById('observacoesEmpresa').value.trim();
+
+                    if (!nome || !tipo) {
+                        alert('❌ Por favor, preencha todos os campos obrigatórios!');
+                        return;
+                    }
+
+                    const data = {
+                        nome: nome,
+                        cnpj: cnpj,
+                        tipo: tipo,
+                        contrato: contrato,
+                        contato: contato,
+                        telefone: telefone,
+                        email: email,
+                        observacoes: observacoes
+                    };
+
+                    const url = isEdit ? `/api/empresas/${empresaId}/` : '/api/empresas/';
+                    const method = isEdit ? 'PUT' : 'POST';
+
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`✅ ${isEdit ? 'Empresa atualizada' : 'Empresa adicionada'} com sucesso!`);
+
+                            // Limpar formulário
+                            cancelarEdicaoEmpresa();
+
+                            // Recarregar listas
+                            carregarEmpresas();
+                            carregarEmpresasParaUsuarios();
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro na requisição:', error);
+                        alert('❌ Erro ao salvar empresa: ' + error.message);
+                    });
+                });
+            }
+        });
+
+        // FUNCIONALIDADE DO MODAL DE PERFIS DE ACESSO
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🛡️ DOM carregado, configurando modal de perfis de acesso...');
+
+            // Event listener para formulário de perfil de acesso
+            const formPerfil = document.getElementById('formPerfilAcesso');
+            if (formPerfil) {
+                formPerfil.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const isEdit = formPerfil.hasAttribute('data-edit-codigo');
+                    const editCodigo = formPerfil.getAttribute('data-edit-codigo');
+
+                    console.log('🔍 DEBUG SUBMIT FORMULÁRIO:');
+                    console.log('   - Formulário tem data-edit-codigo?', isEdit);
+                    console.log('   - Valor data-edit-codigo:', editCodigo);
+                    console.log('   - Texto do botão:', document.getElementById('btnSubmitPerfil').textContent);
+                    console.log('   - Classe do botão:', document.getElementById('btnSubmitPerfil').className);
+                    console.log(isEdit ? `✏️ EDITANDO PERFIL ${editCodigo}!` : '🆕 CRIANDO NOVO PERFIL!');
+
+                    const codigo = document.getElementById('codigoPerfilAcesso').value.trim();
+                    const nome = document.getElementById('nomePerfilAcesso').value.trim();
+                    const descricao = document.getElementById('descricaoPerfilAcesso').value.trim();
+
+                    if (!codigo || !nome) {
+                        alert('❌ Por favor, preencha todos os campos obrigatórios!');
+                        return;
+                    }
+
+                    if (isEdit) {
+                        // Edição REAL para ADMIN e SUPERVISOR
+                        console.log(`💾 ADMIN/SUPERVISOR - Editando perfil ${editCodigo}...`);
+                        console.log('📋 Dados:', { codigo: editCodigo, nome, descricao });
+                        console.log('🚀 FAZENDO REQUISIÇÃO PARA /api/perfis/editar/...');
+
+                        const csrfToken = getCookieLocal('csrftoken');
+                        console.log('🔐 CSRF Token:', csrfToken ? 'OK' : 'FALTANDO');
+
+                        // Fazer requisição para API de editar perfil
+                        fetch('/api/perfis/editar/', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: JSON.stringify({
+                                codigo: editCodigo,
+                                nome: nome,
+                                descricao: descricao
+                            })
+                        })
+                        .then(response => {
+                            console.log('📡 Resposta da API (edição):', response.status, response.statusText);
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('📋 Dados recebidos (edição):', data);
+                            if (data.success) {
+                                alert('🎉 ' + data.message);
+                                limparFormularioPerfil(); // Usar função específica para limpar após sucesso
+                                carregarPerfisAcesso();
+                            } else {
+                                console.error('❌ Erro na API:', data);
+                                alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('❌ Erro ao editar perfil:', error);
+                            alert('❌ Erro ao editar perfil: ' + error.message);
+                        });
+                    } else {
+                        // Criação REAL de perfil
+                        console.log(`🆕 ADMIN/SUPERVISOR - Criando novo perfil...`);
+                        console.log('📋 Dados:', { codigo, nome, descricao });
+
+                        // Fazer requisição para API de criar perfil
+                        fetch('/api/perfis/criar/', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookieLocal('csrftoken')
+                            },
+                            body: JSON.stringify({
+                                codigo: codigo,
+                                nome: nome,
+                                descricao: descricao
+                            })
+                        })
+                        .then(response => {
+                            console.log('📡 Resposta da API (criação):', response.status, response.statusText);
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('📋 Dados recebidos (criação):', data);
+                            if (data.success) {
+                                alert('🎉 ' + data.message);
+                                formPerfil.reset();
+                                carregarPerfisAcesso();
+                            } else {
+                                console.error('❌ Erro na API:', data);
+                                alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('❌ Erro ao criar perfil:', error);
+                            alert('❌ Erro ao criar perfil: ' + error.message);
+                        });
+                    }
+                });
+            }
+        });
+
+        // FUNCIONALIDADE DO MODAL DE EQUIPAMENTOS
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 DOM carregado, configurando modal de equipamentos...');
+
+            const formNovo = document.getElementById('formEquipamentoNovo');
+            if (formNovo) {
+                formNovo.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const isEdit = formNovo.hasAttribute('data-edit-id');
+                    const editId = formNovo.getAttribute('data-edit-id');
+
+                    console.log(isEdit ? `✏️ EDITANDO EQUIPAMENTO ${editId}!` : '🆕 CRIANDO NOVO EQUIPAMENTO!');
+
+                    const nome = document.getElementById('nomeEquipamentoNovo').value.trim();
+                    const codigo = document.getElementById('codigoEquipamentoNovo').value.trim();
+                    const categoria = document.getElementById('categoriaEquipamentoNovo').value;
+                    const status = document.getElementById('statusEquipamentoNovo').value;
+                    const ativo = document.getElementById('ativoEquipamentoNovo').value;
+                    const descricao = document.getElementById('descricaoEquipamentoNovo').value.trim();
+                    const quantidadeLitros = document.getElementById('quantidadeLitrosEquipamentoNovo').value;
+
+                    if (!nome || !categoria || !status || !ativo) {
+                        alert('❌ Por favor, preencha todos os campos obrigatórios!');
+                        return;
+                    }
+
+                    const data = {
+                        nome: nome,
+                        codigo: codigo,
+                        categoria: categoria,
+                        status_operacional: status,
+                        ativo: ativo === 'true',
+                        descricao: descricao,
+                        quantidade_litros: quantidadeLitros ? parseFloat(quantidadeLitros) : null
+                    };
+
+                    const url = isEdit ? `/api/equipamentos/${editId}/` : '/api/equipamentos/';
+                    const method = isEdit ? 'PUT' : 'POST';
+
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`✅ ${isEdit ? 'Equipamento atualizado' : 'Equipamento adicionado'} com sucesso!`);
+
+                            // Limpar formulário
+                            formNovo.reset();
+                            formNovo.removeAttribute('data-edit-id');
+
+                            // Restaurar botão
+                            const submitBtn = formNovo.querySelector('button[type="submit"]');
+                            submitBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Adicionar Equipamento';
+                            submitBtn.className = 'btn btn-success btn-lg w-100';
+
+                            // Recarregar lista
+                            carregarEquipamentosNovo();
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro na requisição:', error);
+                        alert('❌ Erro ao salvar equipamento: ' + error.message);
+                    });
+                });
+            }
+
+            // Carregar equipamentos quando o modal abrir
+            const modalElement = document.getElementById('modalEquipamentosNovo');
+            if (modalElement) {
+                modalElement.addEventListener('shown.bs.modal', function() {
+                    console.log('📋 Modal aberto, carregando equipamentos...');
+                    carregarEquipamentosNovo();
+                    // Carregar categorias para o select
+                    carregarCategoriasParaSelect();
+                });
+            }
+
+            // Event listener para formulário de categorias
+            const formCategoria = document.getElementById('formCategoria');
+            if (formCategoria) {
+                formCategoria.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const isEdit = formCategoria.hasAttribute('data-edit-id');
+                    const editId = formCategoria.getAttribute('data-edit-id');
+
+                    console.log(isEdit ? `✏️ EDITANDO CATEGORIA ${editId}!` : '🆕 CRIANDO NOVA CATEGORIA!');
+
+                    const nome = document.getElementById('nomeCategoria').value.trim();
+                    const descricao = document.getElementById('descricaoCategoria').value.trim();
+                    const cor = document.getElementById('corCategoria').value;
+
+                    if (!nome) {
+                        alert('❌ Por favor, preencha o nome da categoria!');
+                        return;
+                    }
+
+                    const data = {
+                        nome: nome,
+                        descricao: descricao,
+                        cor: cor
+                    };
+
+                    const url = isEdit ? `/api/categorias-equipamentos/${editId}/` : '/api/categorias-equipamentos/';
+                    const method = isEdit ? 'PUT' : 'POST';
+
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`✅ ${isEdit ? 'Categoria atualizada' : 'Categoria adicionada'} com sucesso!`);
+
+                            // Limpar formulário e restaurar interface
+                            cancelarEdicaoCategoria();
+
+                            // Recarregar lista
+                            carregarCategorias();
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro na requisição:', error);
+                        alert('❌ Erro ao salvar categoria: ' + error.message);
+                    });
+                });
+            }
+
+            // Event listener para formulário de usuários
+            const formUsuario = document.getElementById('formUsuarioGlobal');
+            if (formUsuario) {
+                formUsuario.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const isEdit = formUsuario.hasAttribute('data-edit-id');
+                    const editId = formUsuario.getAttribute('data-edit-id');
+
+                    console.log('🔍 DEBUG FORMULÁRIO:');
+                    console.log('   - Tem data-edit-id?', isEdit);
+                    console.log('   - Valor data-edit-id:', editId);
+                    console.log('   - Texto do botão:', document.getElementById('btnSubmitUsuario').textContent);
+                    console.log(isEdit ? `✏️ EDITANDO USUÁRIO ${editId}!` : '🆕 CRIANDO NOVO USUÁRIO!');
+
+                    const username = document.getElementById('usernameUsuarioGlobal').value.trim();
+                    const first_name = document.getElementById('firstNameUsuarioGlobal').value.trim();
+                    const last_name = document.getElementById('lastNameUsuarioGlobal').value.trim();
+                    const email = document.getElementById('emailUsuarioGlobal').value.trim();
+                    const telefone = document.getElementById('telefoneUsuarioGlobal').value.trim();
+                    const setor_id = document.getElementById('setorUsuarioGlobal').value;
+                    const perfil = document.getElementById('perfilUsuarioGlobal').value;
+                    const empresa_id = document.getElementById('empresaUsuarioGlobal').value || null;
+                    const disponivel = document.getElementById('disponivelUsuarioGlobal').checked;
+
+                    // Validar campos obrigatórios
+                    if (!username || !setor_id || !perfil) {
+                        alert('❌ Por favor, preencha todos os campos obrigatórios!');
+                        return;
+                    }
+
+                    // Validar empresa para terceiros
+                    const isTerceiro = perfil.startsWith('TERCEIRO_');
+                    if (isTerceiro && !empresa_id) {
+                        alert('❌ Para usuários terceirizados, é obrigatório selecionar uma empresa!');
+                        return;
+                    }
+
+                    const data = {
+                        username: username,
+                        first_name: first_name,
+                        last_name: last_name,
+                        email: email,
+                        telefone: telefone,
+                        setor_id: setor_id,
+                        perfil: perfil,
+                        empresa_id: empresa_id,
+                        disponivel: disponivel
+                    };
+
+                    const url = isEdit ? `/api/usuarios/${editId}/` : '/api/usuarios/';
+                    const method = isEdit ? 'PUT' : 'POST';
+
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`✅ ${isEdit ? 'Usuário atualizado' : 'Usuário criado'} com sucesso!${!isEdit ? ' Senha padrão: 123456' : ''}`);
+
+                            // Limpar formulário e restaurar interface
+                            cancelarEdicaoUsuario();
+
+                            // Recarregar lista
+                            carregarUsuariosGlobal();
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro na requisição:', error);
+                        alert('❌ Erro ao salvar usuário: ' + error.message);
+                    });
+                });
+            }
+
+            // Event listener para formulário de edição de usuários
+            const formEditarUsuario = document.getElementById('formEditarUsuarioGlobal');
+            if (formEditarUsuario) {
+                formEditarUsuario.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const editId = document.getElementById('editUsuarioIdGlobal').value;
+                    console.log(`✏️ EDITANDO USUÁRIO ${editId}!`);
+
+                    const username = document.getElementById('editUsernameUsuarioGlobal').value.trim();
+                    const first_name = document.getElementById('editFirstNameUsuarioGlobal').value.trim();
+                    const last_name = document.getElementById('editLastNameUsuarioGlobal').value.trim();
+                    const email = document.getElementById('editEmailUsuarioGlobal').value.trim();
+                    const telefone = document.getElementById('editTelefoneUsuarioGlobal').value.trim();
+                    const setor_id = document.getElementById('editSetorUsuarioGlobal').value;
+                    const perfil = document.getElementById('editPerfilUsuarioGlobal').value;
+                    const empresa_id = document.getElementById('editEmpresaUsuarioGlobal')?.value || null;
+                    const disponivel = document.getElementById('editDisponivelUsuarioGlobal')?.checked ?? true;
+                    const is_active = document.getElementById('editAtivoUsuarioGlobal').value === 'true';
+
+                    // Validar campos obrigatórios
+                    if (!username || !setor_id || !perfil) {
+                        alert('❌ Por favor, preencha todos os campos obrigatórios!');
+                        return;
+                    }
+
+                    // Validar empresa para terceiros
+                    const isTerceiro = perfil.startsWith('TERCEIRO_');
+                    if (isTerceiro && !empresa_id) {
+                        alert('❌ Para usuários terceirizados, é obrigatório selecionar uma empresa!');
+                        return;
+                    }
+
+                    const data = {
+                        username: username,
+                        first_name: first_name,
+                        last_name: last_name,
+                        email: email,
+                        telefone: telefone,
+                        setor_id: setor_id,
+                        perfil: perfil,
+                        empresa_id: empresa_id,
+                        disponivel: disponivel,
+                        is_active: is_active
+                    };
+
+                    fetch(`/api/usuarios/${editId}/`, {
+                        method: 'PUT',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ Usuário atualizado com sucesso!');
+
+                            // Cancelar edição (volta ao formulário de criação)
+                            cancelarEdicaoUsuario();
+
+                            // Recarregar lista
+                            carregarUsuariosGlobal();
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro na requisição:', error);
+                        alert('❌ Erro ao salvar usuário: ' + error.message);
+                    });
+                });
+            }
+
+            // Event listeners para formulários de clientes
+            const formNovoCliente = document.getElementById('formNovoClienteGlobal');
+            if (formNovoCliente) {
+                formNovoCliente.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('📝 Enviando novo cliente...');
+
+                    const nome = document.getElementById('nomeClienteGlobal').value.trim();
+                    const email = document.getElementById('emailClienteGlobal').value.trim();
+                    const telefone = document.getElementById('telefoneClienteGlobal').value.trim();
+                    const endereco = document.getElementById('enderecoClienteGlobal').value.trim();
+                    const ativo = document.getElementById('ativoClienteGlobal').checked;
+
+                    if (!nome) {
+                        alert('❌ Por favor, preencha o nome do cliente!');
+                        return;
+                    }
+
+                    const data = {
+                        nome: nome,
+                        email: email,
+                        telefone: telefone,
+                        endereco: endereco,
+                        ativo: ativo
+                    };
+
+                    fetch('/api/clientes/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ Cliente adicionado com sucesso!');
+                            formNovoCliente.reset();
+                            document.getElementById('ativoClienteGlobal').checked = true;
+                            carregarClientesGlobal();
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro na requisição:', error);
+                        alert('❌ Erro ao salvar cliente: ' + error.message);
+                    });
+                });
+            }
+
+            const formEditarCliente = document.getElementById('formEditarClienteGlobal');
+            if (formEditarCliente) {
+                formEditarCliente.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('📝 Atualizando cliente...');
+
+                    const id = document.getElementById('editClienteIdGlobal').value;
+                    const nome = document.getElementById('editNomeClienteGlobal').value.trim();
+                    const email = document.getElementById('editEmailClienteGlobal').value.trim();
+                    const telefone = document.getElementById('editTelefoneClienteGlobal').value.trim();
+                    const endereco = document.getElementById('editEnderecoClienteGlobal').value.trim();
+                    const ativo = document.getElementById('editAtivoClienteGlobal').checked;
+
+                    if (!nome) {
+                        alert('❌ Por favor, preencha o nome do cliente!');
+                        return;
+                    }
+
+                    const data = {
+                        nome: nome,
+                        email: email,
+                        telefone: telefone,
+                        endereco: endereco,
+                        ativo: ativo
+                    };
+
+                    fetch(`/api/clientes/${id}/`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ Cliente atualizado com sucesso!');
+                            cancelarEdicaoClienteGlobal();
+                            carregarClientesGlobal();
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro na requisição:', error);
+                        alert('❌ Erro ao atualizar cliente: ' + error.message);
+                    });
+                });
+            }
+
+            // Event listeners para formulários de usuários
+            const formNovoUsuario = document.getElementById('formNovoUsuarioGlobal');
+            if (formNovoUsuario) {
+                formNovoUsuario.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('📝 Enviando novo usuário...');
+
+                    const username = document.getElementById('usernameUsuarioGlobal').value.trim();
+                    const firstName = document.getElementById('firstNameUsuarioGlobal').value.trim();
+                    const lastName = document.getElementById('lastNameUsuarioGlobal').value.trim();
+                    const email = document.getElementById('emailUsuarioGlobal').value.trim();
+                    const telefone = document.getElementById('telefoneUsuarioGlobal').value.trim();
+                    const setorId = document.getElementById('setorUsuarioGlobal').value;
+                    const perfil = document.getElementById('perfilUsuarioGlobal').value;
+                    const empresaId = document.getElementById('empresaUsuarioGlobal').value;
+                    const disponivel = document.getElementById('disponivelUsuarioGlobal').checked;
+
+                    if (!username) {
+                        alert('❌ Nome de usuário é obrigatório!');
+                        return;
+                    }
+
+                    if (!setorId) {
+                        alert('❌ Setor é obrigatório!');
+                        return;
+                    }
+
+                    if (!perfil) {
+                        alert('❌ Perfil de acesso é obrigatório!');
+                        return;
+                    }
+
+                    // Validar empresa para perfis terceirizados
+                    if (perfil.startsWith('TERCEIRO_') && !empresaId) {
+                        alert('❌ Empresa é obrigatória para perfis terceirizados!');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('username', username);
+                    formData.append('first_name', firstName);
+                    formData.append('last_name', lastName);
+                    formData.append('email', email);
+                    formData.append('telefone', telefone);
+                    formData.append('setor_id', setorId);
+                    formData.append('perfil', perfil);
+                    if (empresaId) {
+                        formData.append('empresa_id', empresaId);
+                    }
+                    formData.append('disponivel', disponivel ? 'true' : 'false');
+
+                    fetch('/api/usuarios/', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: formData,
+                        credentials: 'same-origin'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ Usuário criado com sucesso!');
+                            formNovoUsuario.reset();
+                            carregarUsuariosGlobal();
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro ao criar usuário:', error);
+                        alert('❌ Erro ao criar usuário');
+                    });
+                });
+            }
+        });
+
+        // FUNÇÃO PARA CARREGAR CATEGORIAS NO SELECT
+        function carregarCategoriasParaSelect() {
+            console.log('🏷️ Carregando categorias para select...');
+
+            fetch('/api/categorias-equipamentos/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // Se não existir API, usar categorias padrão
+                    console.log('⚠️ API de categorias não encontrada, usando padrões...');
+                    const categoriasDefault = [
+                        { nome: 'VEICULO', descricao: 'Veículos' },
+                        { nome: 'FERRAMENTA', descricao: 'Ferramentas' },
+                        { nome: 'MAQUINA', descricao: 'Máquinas' },
+                        { nome: 'EQUIPAMENTO', descricao: 'Equipamentos' },
+                        { nome: 'OUTRO', descricao: 'Outros' }
+                    ];
+                    atualizarSelectCategorias(categoriasDefault);
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.length > 0) {
+                    atualizarSelectCategorias(data);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar categorias:', error);
+                // Usar categorias padrão em caso de erro
+                const categoriasDefault = [
+                    { nome: 'VEICULO', descricao: 'Veículos' },
+                    { nome: 'FERRAMENTA', descricao: 'Ferramentas' },
+                    { nome: 'MAQUINA', descricao: 'Máquinas' },
+                    { nome: 'EQUIPAMENTO', descricao: 'Equipamentos' },
+                    { nome: 'OUTRO', descricao: 'Outros' }
+                ];
+                atualizarSelectCategorias(categoriasDefault);
+            });
+        }
+
+        // FUNÇÃO PARA CARREGAR EQUIPAMENTOS
+        function carregarEquipamentosNovo() {
+            console.log('📋 Carregando equipamentos...');
+
+            fetch('/api/equipamentos/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📋 Equipamentos recebidos:', data);
+                const tbody = document.getElementById('listaEquipamentosNovo');
+                tbody.innerHTML = '';
+
+                // Verificar se data é um objeto com erro
+                if (data && data.success === false) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-danger">
+                                <i class="bi bi-exclamation-triangle"></i><br>
+                                Erro: ${data.error || 'Erro desconhecido'}
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                // Verificar se data é um array
+                if (!Array.isArray(data)) {
+                    console.error('❌ Dados recebidos não são um array:', data);
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-danger">
+                                <i class="bi bi-exclamation-triangle"></i><br>
+                                Erro: Formato de dados inválido
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                <i class="bi bi-inbox"></i><br>
+                                Nenhum equipamento cadastrado
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                data.forEach(equipamento => {
+                    // Status badge baseado no status_operacional (NOVA LÓGICA SIMPLIFICADA)
+                    let statusBadge = '';
+                    switch(equipamento.status_operacional) {
+                        case 'OPERACIONAL':
+                            statusBadge = '<span class="badge bg-success">🟢 Operacional</span>';
+                            break;
+                        case 'MANUTENCAO':
+                            statusBadge = '<span class="badge bg-warning text-dark">🟡 Manutenção</span>';
+                            break;
+                        case 'FORA_SERVICO':
+                            statusBadge = '<span class="badge bg-danger">🔴 Fora de Serviço</span>';
+                            break;
+                        case 'INATIVO':
+                            statusBadge = '<span class="badge bg-secondary">⚫ Inativo</span>';
+                            break;
+                        default:
+                            statusBadge = '<span class="badge bg-secondary">❓ Desconhecido</span>';
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${equipamento.nome}</strong></td>
+                        <td>${equipamento.codigo || '-'}</td>
+                        <td><span class="badge bg-secondary">${equipamento.categoria}</span></td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-warning" onclick="editarEquipamentoNovo(${equipamento.id})" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="removerEquipamentoNovo(${equipamento.id}, '${equipamento.nome}')" title="Remover">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar equipamentos:', error);
+                const tbody = document.getElementById('listaEquipamentosNovo');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-danger">
+                            <i class="bi bi-exclamation-triangle"></i><br>
+                            Erro ao carregar equipamentos: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // FUNÇÃO PARA EDITAR EQUIPAMENTO
+        function editarEquipamentoNovo(id) {
+            console.log(`✏️ Editando equipamento ${id}...`);
+
+            fetch(`/api/equipamentos/${id}/`, {
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const eq = data.equipamento;
+
+                    // Preencher formulário (SEM em_servico - NOVA LÓGICA)
+                    document.getElementById('nomeEquipamentoNovo').value = eq.nome || '';
+                    document.getElementById('codigoEquipamentoNovo').value = eq.codigo || '';
+                    document.getElementById('categoriaEquipamentoNovo').value = eq.categoria || '';
+                    document.getElementById('statusEquipamentoNovo').value = eq.status_operacional || 'OPERACIONAL';
+                    document.getElementById('ativoEquipamentoNovo').value = (eq.ativo !== undefined ? eq.ativo : true).toString();
+                    document.getElementById('descricaoEquipamentoNovo').value = eq.descricao || '';
+                    document.getElementById('quantidadeLitrosEquipamentoNovo').value = eq.quantidade_litros || '';
+
+                    // Marcar como modo de edição
+                    const form = document.getElementById('formEquipamentoNovo');
+                    form.setAttribute('data-edit-id', id);
+
+                    // Alterar o botão
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Atualizar Equipamento';
+                    submitBtn.className = 'btn btn-warning btn-lg w-100';
+
+                    // Focar no primeiro campo
+                    document.getElementById('nomeEquipamentoNovo').focus();
+                } else {
+                    alert('❌ Erro ao carregar equipamento: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar equipamento:', error);
+                alert('❌ Erro ao carregar equipamento');
+            });
+        }
+
+        // FUNÇÃO PARA REMOVER EQUIPAMENTO
+        function removerEquipamentoNovo(id, nome) {
+            if (confirm(`Tem certeza que deseja remover o equipamento "${nome}"?`)) {
+                console.log(`🗑️ Removendo equipamento ${id}...`);
+
+                fetch(`/api/equipamentos/${id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookieLocal('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Equipamento removido com sucesso!');
+                        carregarEquipamentosNovo();
+                    } else {
+                        alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao remover:', error);
+                    alert('❌ Erro ao remover equipamento');
+                });
+            }
+        }
+
+        // FUNÇÕES PARA MODAL DE CATEGORIAS
+        function abrirModalCategorias() {
+            console.log('🏷️ Abrindo modal de categorias...');
+            const modalElement = document.getElementById('modalCategorias');
+            console.log('🔍 Elemento modal encontrado:', !!modalElement);
+
+            if (!modalElement) {
+                alert('❌ Modal de categorias não encontrado! Verifique se você tem permissão de administrador.');
+                return;
+            }
+
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            carregarCategorias();
+        }
+
+        function carregarCategorias() {
+            console.log('📋 Carregando categorias...');
+
+            fetch('/api/categorias-equipamentos/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📋 Categorias recebidas:', data);
+                const tbody = document.getElementById('listaCategorias');
+                tbody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                <i class="bi bi-inbox"></i><br>
+                                Nenhuma categoria cadastrada
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                data.forEach(categoria => {
+                    const corBadge = `<span class="badge bg-${categoria.cor || 'primary'}">${categoria.nome}</span>`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${categoria.nome}</strong></td>
+                        <td>${categoria.descricao || '-'}</td>
+                        <td>${corBadge}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-warning" onclick="editarCategoria(${categoria.id})" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="removerCategoria(${categoria.id}, '${categoria.nome}')" title="Remover">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Atualizar select de categorias no formulário de equipamentos
+                atualizarSelectCategorias(data);
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar categorias:', error);
+                const tbody = document.getElementById('listaCategorias');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-danger">
+                            <i class="bi bi-exclamation-triangle"></i><br>
+                            Erro ao carregar categorias: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function atualizarSelectCategorias(categorias) {
+            const select = document.getElementById('categoriaEquipamentoNovo');
+            const valorAtual = select.value;
+
+            // Limpar opções existentes (exceto a primeira)
+            select.innerHTML = '<option value="">Selecione uma categoria</option>';
+
+            // Adicionar categorias
+            categorias.forEach(categoria => {
+                const option = document.createElement('option');
+                option.value = categoria.nome;
+                option.textContent = categoria.nome;
+                select.appendChild(option);
+            });
+
+            // Restaurar valor selecionado se ainda existir
+            if (valorAtual) {
+                select.value = valorAtual;
+            }
+        }
+
+        function editarCategoria(id) {
+            console.log(`✏️ Editando categoria ${id}...`);
+
+            fetch(`/api/categorias-equipamentos/${id}/`, {
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const cat = data.categoria;
+
+                    // Preencher formulário
+                    document.getElementById('nomeCategoria').value = cat.nome;
+                    document.getElementById('descricaoCategoria').value = cat.descricao || '';
+                    document.getElementById('corCategoria').value = cat.cor || 'primary';
+
+                    // Marcar como modo de edição
+                    const form = document.getElementById('formCategoria');
+                    form.setAttribute('data-edit-id', id);
+
+                    // Alterar interface
+                    document.getElementById('tituloFormCategoria').textContent = 'Editar Categoria';
+                    document.getElementById('btnSubmitCategoria').innerHTML = '<i class="bi bi-check-circle"></i> Atualizar Categoria';
+                    document.getElementById('btnSubmitCategoria').className = 'btn btn-warning';
+                    document.getElementById('btnCancelarCategoria').style.display = 'block';
+
+                    // Focar no primeiro campo
+                    document.getElementById('nomeCategoria').focus();
+                } else {
+                    alert('❌ Erro ao carregar categoria: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar categoria:', error);
+                alert('❌ Erro ao carregar categoria');
+            });
+        }
+
+        function cancelarEdicaoCategoria() {
+            const form = document.getElementById('formCategoria');
+            form.reset();
+            form.removeAttribute('data-edit-id');
+
+            // Restaurar interface
+            document.getElementById('tituloFormCategoria').textContent = 'Adicionar Categoria';
+            document.getElementById('btnSubmitCategoria').innerHTML = '<i class="bi bi-plus-circle"></i> Adicionar Categoria';
+            document.getElementById('btnSubmitCategoria').className = 'btn btn-success';
+            document.getElementById('btnCancelarCategoria').style.display = 'none';
+        }
+
+        function removerCategoria(id, nome) {
+            if (confirm(`Tem certeza que deseja remover a categoria "${nome}"?\n\nATENÇÃO: Equipamentos que usam esta categoria podem ser afetados.`)) {
+                console.log(`🗑️ Removendo categoria ${id}...`);
+
+                fetch(`/api/categorias-equipamentos/${id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookieLocal('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Categoria removida com sucesso!');
+                        carregarCategorias();
+                    } else {
+                        alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao remover:', error);
+                    alert('❌ Erro ao remover categoria');
+                });
+            }
+        }
+
+        // FUNÇÕES PLACEHOLDER PARA OUTROS MODAIS
+        function abrirModalSetoresGlobal() {
+            console.log('🏢 Abrindo modal de setores...');
+            const modalElement = document.getElementById('modalSetoresGlobal');
+            console.log('🔍 Elemento modal setores encontrado:', !!modalElement);
+
+            if (!modalElement) {
+                alert('❌ Modal de setores não encontrado! Verifique se você tem permissão de administrador.');
+                return;
+            }
+
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            carregarSetoresGlobal();
+        }
+
+        // FUNÇÃO PARA CARREGAR SETORES
+        function carregarSetoresGlobal() {
+            console.log('📋 Carregando setores...');
+
+            fetch('/api/setores/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📋 Setores recebidos:', data);
+                const tbody = document.getElementById('listaSetoresGlobal');
+                if (!tbody) {
+                    console.error('❌ Elemento listaSetoresGlobal não encontrado');
+                    return;
+                }
+
+                tbody.innerHTML = '';
+
+                // Extrair array de setores da resposta da API
+                const setores = data.success ? data.setores : data;
+
+                if (!Array.isArray(setores)) {
+                    console.error('❌ Dados de setores não são um array:', setores);
+                    return;
+                }
+
+                if (!setores || setores.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">
+                                <i class="bi bi-inbox"></i><br>
+                                Nenhum setor cadastrado
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                setores.forEach(setor => {
+                    const statusBadge = setor.ativo ?
+                        '<span class="badge bg-success">✅ Ativo</span>' :
+                        '<span class="badge bg-danger">❌ Inativo</span>';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${setor.nome}</strong></td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-warning" onclick="editarSetorGlobal(${setor.id})" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="removerSetorGlobal(${setor.id}, '${setor.nome}')" title="Remover">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar setores:', error);
+                const tbody = document.getElementById('listaSetoresGlobal');
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="text-center text-danger">
+                                <i class="bi bi-exclamation-triangle"></i><br>
+                                Erro ao carregar setores: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+        }
+
+        // FUNÇÃO PARA ADICIONAR SETOR
+        document.addEventListener('DOMContentLoaded', function() {
+            const formNovoSetor = document.getElementById('formNovoSetorGlobal');
+            if (formNovoSetor) {
+                formNovoSetor.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const nome = document.getElementById('nomeSetorGlobal').value.trim();
+
+                    if (!nome) {
+                        alert('❌ Nome do setor é obrigatório!');
+                        return;
+                    }
+
+                    console.log('🆕 Adicionando novo setor:', nome);
+
+                    fetch('/api/setores/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: `nome=${encodeURIComponent(nome)}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ Setor adicionado com sucesso!');
+                            formNovoSetor.reset();
+                            carregarSetoresGlobal();
+                            carregarSetoresParaUsuarios(); // Atualizar select de usuários
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro ao adicionar setor:', error);
+                        alert('❌ Erro ao adicionar setor');
+                    });
+                });
+            }
+
+            // Form de editar setor
+            const formEditarSetor = document.getElementById('formEditarSetorGlobal');
+            if (formEditarSetor) {
+                formEditarSetor.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const id = document.getElementById('editSetorIdGlobal').value;
+                    const nome = document.getElementById('editNomeSetorGlobal').value.trim();
+
+                    if (!nome) {
+                        alert('❌ Nome do setor é obrigatório!');
+                        return;
+                    }
+
+                    console.log('✏️ Editando setor:', id, nome);
+
+                    fetch(`/api/setores/${id}/`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: `nome=${encodeURIComponent(nome)}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ Setor atualizado com sucesso!');
+                            cancelarEdicaoSetorGlobal();
+                            carregarSetoresGlobal();
+                            carregarSetoresParaUsuarios(); // Atualizar select de usuários
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro ao editar setor:', error);
+                        alert('❌ Erro ao editar setor');
+                    });
+                });
+            }
+        });
+
+        function editarSetorGlobal(id) {
+            console.log(`✏️ Editando setor ${id}...`);
+
+            // Buscar dados do setor
+            fetch(`/api/setores/${id}/`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const setor = data.setor || data; // Compatibilidade com diferentes formatos de resposta
+                // Preencher formulário de edição
+                document.getElementById('editSetorIdGlobal').value = setor.id;
+                document.getElementById('editNomeSetorGlobal').value = setor.nome;
+
+                // Mostrar card de edição e esconder card de novo
+                document.getElementById('cardEditarSetorGlobal').style.display = 'block';
+                document.getElementById('cardNovoSetorGlobal').style.display = 'none';
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar setor:', error);
+                alert('❌ Erro ao carregar dados do setor');
+            });
+        }
+
+        function cancelarEdicaoSetorGlobal() {
+            // Esconder card de edição e mostrar card de novo
+            document.getElementById('cardEditarSetorGlobal').style.display = 'none';
+            document.getElementById('cardNovoSetorGlobal').style.display = 'block';
+
+            // Limpar formulário de edição
+            document.getElementById('formEditarSetorGlobal').reset();
+        }
+
+        function removerSetorGlobal(id, nome) {
+            if (confirm(`Tem certeza que deseja remover o setor "${nome}"?\n\nATENÇÃO: Esta ação pode afetar usuários vinculados a este setor.`)) {
+                console.log(`🗑️ Removendo setor ${id}...`);
+
+                fetch(`/api/setores/${id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookieLocal('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Setor removido com sucesso!');
+                        carregarSetoresGlobal();
+                        carregarSetoresParaUsuarios(); // Atualizar select de usuários
+                    } else {
+                        alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao remover setor:', error);
+                    alert('❌ Erro ao remover setor');
+                });
+            }
+        }
+
+        function abrirModalClientesGlobal() {
+            console.log('👥 Abrindo modal de clientes...');
+            const modal = new bootstrap.Modal(document.getElementById('modalClientesGlobal'));
+            modal.show();
+            carregarClientesGlobal();
+        }
+
+        // FUNÇÕES PARA MODAL DE CLIENTES
+        function carregarClientesGlobal() {
+            console.log('📋 Carregando clientes...');
+
+            fetch('/api/clientes/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📋 Clientes recebidos:', data);
+                const tbody = document.getElementById('listaClientesGlobal');
+                if (!tbody) {
+                    console.error('❌ Elemento listaClientesGlobal não encontrado');
+                    return;
+                }
+
+                tbody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                <i class="bi bi-inbox"></i><br>
+                                Nenhum cliente cadastrado
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                data.forEach(cliente => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${cliente.nome}</strong></td>
+                        <td>${cliente.email || '-'}</td>
+                        <td>${cliente.telefone || '-'}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-warning" onclick="editarClienteGlobal(${cliente.id})" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="removerClienteGlobal(${cliente.id}, '${cliente.nome}')" title="Remover">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar clientes:', error);
+                const tbody = document.getElementById('listaClientesGlobal');
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-danger">
+                                <i class="bi bi-exclamation-triangle"></i><br>
+                                Erro ao carregar clientes: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+        }
+
+        function editarClienteGlobal(id) {
+            console.log(`✏️ Editando cliente ${id}...`);
+
+            fetch(`/api/clientes/${id}/`, {
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const cliente = data.cliente;
+
+                    // Preencher formulário de edição
+                    document.getElementById('editClienteIdGlobal').value = cliente.id;
+                    document.getElementById('editNomeClienteGlobal').value = cliente.nome;
+                    document.getElementById('editEmailClienteGlobal').value = cliente.email || '';
+                    document.getElementById('editTelefoneClienteGlobal').value = cliente.telefone || '';
+                    document.getElementById('editEnderecoClienteGlobal').value = cliente.endereco || '';
+                    document.getElementById('editAtivoClienteGlobal').checked = cliente.ativo;
+
+                    // Mostrar formulário de edição e ocultar o de adicionar
+                    document.getElementById('cardNovoClienteGlobal').style.display = 'none';
+                    document.getElementById('cardEditarClienteGlobal').style.display = 'block';
+
+                    // Focar no primeiro campo
+                    document.getElementById('editNomeClienteGlobal').focus();
+                } else {
+                    alert('❌ Erro ao carregar cliente: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar cliente:', error);
+                alert('❌ Erro ao carregar cliente');
+            });
+        }
+
+        function cancelarEdicaoClienteGlobal() {
+            // Ocultar formulário de edição e mostrar o de adicionar
+            document.getElementById('cardEditarClienteGlobal').style.display = 'none';
+            document.getElementById('cardNovoClienteGlobal').style.display = 'block';
+
+            // Limpar formulário de edição
+            document.getElementById('formEditarClienteGlobal').reset();
+        }
+
+        function removerClienteGlobal(id, nome) {
+            if (confirm(`Tem certeza que deseja remover o cliente "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+                console.log(`🗑️ Removendo cliente ${id}...`);
+
+                fetch(`/api/clientes/${id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookieLocal('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Cliente removido com sucesso!');
+                        carregarClientesGlobal();
+                    } else {
+                        alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao remover:', error);
+                    alert('❌ Erro ao remover cliente');
+                });
+            }
+        }
+
+        // FUNÇÕES DUPLICADAS REMOVIDAS - AGORA ESTÃO NO TOPO DO ARQUIVO
+
+        function editarUsuarioGlobal(id) {
+            console.log(`✏️ Editando usuário ${id}...`);
+
+            fetch(`/api/usuarios/${id}/`, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const usuario = data.usuario;
+                    console.log('📝 Dados do usuário:', usuario);
+
+                    // Preencher formulário de edição (usando IDs corretos do modal)
+                    document.getElementById('editUsuarioIdGlobal').value = id;
+                    document.getElementById('editUsernameUsuarioGlobal').value = usuario.username || '';
+                    document.getElementById('editFirstNameUsuarioGlobal').value = usuario.first_name || '';
+                    document.getElementById('editLastNameUsuarioGlobal').value = usuario.last_name || '';
+                    document.getElementById('editEmailUsuarioGlobal').value = usuario.email || '';
+                    document.getElementById('editTelefoneUsuarioGlobal').value = usuario.telefone || '';
+                    document.getElementById('editPerfilUsuarioGlobal').value = usuario.perfil || '';
+                    document.getElementById('editAtivoUsuarioGlobal').value = usuario.is_active ? 'true' : 'false';
+
+                    // Mostrar formulário de edição e ocultar formulário de criação
+                    document.getElementById('cardNovoUsuarioGlobal').style.display = 'none';
+                    document.getElementById('cardEditarUsuarioGlobal').style.display = 'block';
+
+                    // Carregar setores, perfis e empresas, depois definir valores selecionados
+                    Promise.all([
+                        carregarSetoresParaUsuarios(),
+                        carregarPerfisParaSelect('editPerfilUsuarioGlobal'),
+                        carregarEmpresasParaUsuario()
+                    ]).then(() => {
+                        // Aguardar um pouco para garantir que os dados foram carregados
+                        setTimeout(() => {
+                            document.getElementById('editSetorUsuarioGlobal').value = usuario.setor_id || '';
+                            document.getElementById('editPerfilUsuarioGlobal').value = usuario.perfil || '';
+                            document.getElementById('editEmpresaUsuarioGlobal').value = usuario.empresa_id || '';
+                            document.getElementById('editDisponivelUsuarioGlobal').checked = usuario.disponivel ?? true;
+                            console.log('✅ Setor selecionado:', usuario.setor_id);
+                            console.log('✅ Perfil selecionado:', usuario.perfil);
+                            console.log('✅ Empresa selecionada:', usuario.empresa_id);
+                            console.log('✅ Disponível:', usuario.disponivel);
+                        }, 200);
+                    });
+
+                    console.log('✅ Formulário de edição exibido e preenchido');
+
+                    // Desabilitar username na edição
+                    document.getElementById('editUsernameUsuarioGlobal').disabled = true;
+                } else {
+                    alert('❌ Erro ao carregar usuário: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar usuário:', error);
+                alert('❌ Erro ao carregar usuário');
+            });
+        }
+
+        function cancelarEdicaoUsuario() {
+            // Ocultar formulário de edição e mostrar formulário de criação
+            document.getElementById('cardEditarUsuarioGlobal').style.display = 'none';
+            document.getElementById('cardNovoUsuarioGlobal').style.display = 'block';
+
+            // Limpar formulário de edição
+            document.getElementById('formEditarUsuarioGlobal').reset();
+
+            // Reabilitar username
+            document.getElementById('editUsernameUsuarioGlobal').disabled = false;
+
+            console.log('✅ Edição cancelada, voltando ao formulário de criação');
+        }
+
+        // Alias para compatibilidade
+        function cancelarEdicaoUsuarioGlobal() {
+            cancelarEdicaoUsuario();
+        }
+
+        function removerUsuarioGlobal(id, username) {
+            if (confirm(`Tem certeza que deseja remover o usuário "${username}"?\n\nATENÇÃO: Esta ação não pode ser desfeita e pode afetar o sistema.`)) {
+                console.log(`🗑️ Removendo usuário ${id}...`);
+
+                fetch(`/api/usuarios/${id}/`, {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-CSRFToken': getCookieLocal('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Usuário removido com sucesso!');
+                        carregarUsuariosGlobal();
+                    } else {
+                        alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao remover:', error);
+                    alert('❌ Erro ao remover usuário');
+                });
+            }
+        }
+
+        // Função para resetar senha do usuário
+        function resetarSenhaUsuario(userId, username) {
+            if (confirm(`🔑 Tem certeza que deseja resetar a senha do usuário "${username}" para a senha padrão (123456)?`)) {
+                console.log(`🔑 Resetando senha do usuário ${userId}...`);
+
+                fetch(`/usuarios/${userId}/resetar-senha/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookieLocal('csrftoken'),
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`✅ ${data.message}`);
+                        carregarUsuariosGlobal(); // Recarregar lista
+                    } else {
+                        alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao resetar senha:', error);
+                    alert('❌ Erro ao resetar senha do usuário');
+                });
+            }
+        }
+
+        // Funções de perfis de acesso já definidas no bloco global
+    </script>
+    {% endif %}
+
+    <!-- ===== MODAL DE PERFIS DE ACESSO ===== -->
+    <div class="modal fade" id="modalPerfisAcesso" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-shield-check"></i>
+                        Gerenciar Perfis de Acesso
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Formulário de Novo/Editar Perfil -->
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-plus-circle"></i>
+                                        <span id="tituloFormPerfil">Novo Perfil de Acesso</span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <form id="formPerfilAcesso">
+                                        <div class="mb-3">
+                                            <label for="codigoPerfilAcesso" class="form-label">Código do Perfil *</label>
+                                            <input type="text" class="form-control" id="codigoPerfilAcesso" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="nomePerfilAcesso" class="form-label">Nome do Perfil *</label>
+                                            <input type="text" class="form-control" id="nomePerfilAcesso" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="descricaoPerfilAcesso" class="form-label">Descrição</label>
+                                            <textarea class="form-control" id="descricaoPerfilAcesso" rows="3"></textarea>
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <button type="submit" class="btn btn-success" id="btnSubmitPerfil">
+                                                <i class="bi bi-plus-circle"></i>
+                                                Adicionar Perfil
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" id="btnCancelarPerfil" onclick="cancelarEdicaoPerfil()" style="display: none;">
+                                                <i class="bi bi-x-circle"></i>
+                                                Cancelar Edição
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    {% if user.perfil.is_admin_ou_supervisor %}
+                                    <!-- Mensagem especial para ADMIN e SUPERVISOR -->
+                                    <div class="alert alert-info mt-3" role="alert">
+                                        <h6><i class="bi bi-crown"></i> <strong>Acesso Especial Ativo</strong></h6>
+                                        <small>
+                                            Como <strong>{{ user.perfil.nome_perfil }}</strong>, você tem permissões especiais para:
+                                            <ul class="mb-0 mt-1">
+                                                <li>✅ Criar perfis personalizados</li>
+                                                <li>✅ Editar descrições de perfis</li>
+                                                <li>✅ Gerenciar todas as funcionalidades</li>
+                                            </ul>
+                                        </small>
+                                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="testarCRUDPerfis()">
+                                            <i class="bi bi-bug"></i> Testar CRUD
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lista de Perfis -->
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-list"></i>
+                                        Lista de Perfis de Acesso
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Código</th>
+                                                    <th>Nome</th>
+                                                    <th>Usuários</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="listaPerfisAcesso">
+                                                <tr>
+                                                    <td colspan="4" class="text-center">
+                                                        <div class="spinner-border spinner-border-sm" role="status">
+                                                            <span class="visually-hidden">Carregando...</span>
+                                                        </div>
+                                                        Carregando perfis...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL DE EMPRESAS ===== -->
+    {% if user.is_authenticated and user.perfil.is_admin_ou_supervisor %}
+    <div class="modal fade" id="modalEmpresas" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-building"></i>
+                        Empresas
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Formulário de Cadastro/Edição -->
+                        <div class="col-md-4">
+                            <div class="card" id="cardNovaEmpresa">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-plus-circle"></i>
+                                        <span id="tituloFormEmpresa">Nova Empresa</span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <form id="formEmpresa">
+                                        <input type="hidden" id="empresaId" value="">
+
+                                        <div class="mb-3">
+                                            <label for="nomeEmpresa" class="form-label">Nome da Empresa *</label>
+                                            <input type="text" class="form-control" id="nomeEmpresa" required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="cnpjEmpresa" class="form-label">CNPJ</label>
+                                            <input type="text" class="form-control" id="cnpjEmpresa" placeholder="00.000.000/0000-00">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="tipoEmpresa" class="form-label">Tipo *</label>
+                                            <select class="form-select" id="tipoEmpresa" required>
+                                                <option value="PROPRIA">Empresa Própria</option>
+                                                <option value="TERCEIRIZADA" selected>Empresa Terceirizada</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="contratoEmpresa" class="form-label">Número do Contrato</label>
+                                            <input type="text" class="form-control" id="contratoEmpresa" placeholder="CONT-2024-001">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="contatoEmpresa" class="form-label">Nome do Contato</label>
+                                            <input type="text" class="form-control" id="contatoEmpresa">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="telefoneEmpresa" class="form-label">Telefone</label>
+                                            <input type="text" class="form-control" id="telefoneEmpresa" placeholder="(00) 0000-0000">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="emailEmpresa" class="form-label">E-mail</label>
+                                            <input type="email" class="form-control" id="emailEmpresa">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="observacoesEmpresa" class="form-label">Observações</label>
+                                            <textarea class="form-control" id="observacoesEmpresa" rows="3"></textarea>
+                                        </div>
+
+                                        <div class="d-grid gap-2">
+                                            <button type="submit" class="btn btn-success" id="btnSubmitEmpresa">
+                                                <i class="bi bi-plus-circle"></i>
+                                                Adicionar Empresa
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" id="btnCancelarEmpresa" onclick="cancelarEdicaoEmpresa()" style="display: none;">
+                                                <i class="bi bi-x-circle"></i>
+                                                Cancelar Edição
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lista de Empresas -->
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-list"></i>
+                                        Lista de Empresas
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Nome</th>
+                                                    <th>CNPJ</th>
+                                                    <th>Tipo</th>
+                                                    <th>Contrato</th>
+                                                    <th>Contato</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="listaEmpresas">
+                                                <tr>
+                                                    <td colspan="6" class="text-center">
+                                                        <div class="spinner-border spinner-border-sm" role="status">
+                                                            <span class="visually-hidden">Carregando...</span>
+                                                        </div>
+                                                        Carregando empresas...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+</body>
+</html>

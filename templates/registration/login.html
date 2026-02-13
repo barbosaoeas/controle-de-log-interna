@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Sistema de Controle de Log Interna{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm mt-5">
+            <div class="card-header bg-primary text-white text-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-clipboard-data"></i>
+                    Sistema de Controle de Log Interna
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">
+                            <i class="bi bi-person"></i> Usuário
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               id="{{ form.username.id_for_label }}"
+                               name="{{ form.username.name }}"
+                               value="{{ form.username.value|default:'' }}"
+                               style="text-transform: capitalize;"
+                               oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()"
+                               required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">
+                            <i class="bi bi-lock"></i> Senha
+                        </label>
+                        <input type="password" 
+                               class="form-control" 
+                               id="{{ form.password.id_for_label }}" 
+                               name="{{ form.password.name }}" 
+                               required>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-box-arrow-in-right"></i> Entrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center text-muted">
+                <small>
+                    <i class="bi bi-info-circle"></i>
+                    Entre em contato com o administrador para obter acesso
+                </small>
+            </div>
+        </div>
+        
+        <!-- Informações de usuários de teste -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Usuários de Demonstração
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-primary">Administrador:</h6>
+                        <p class="mb-2">
+                            <strong>Usuário:</strong> admin<br>
+                            <strong>Senha:</strong> admin123
+                        </p>
+                        
+                        <h6 class="text-success">Setor Demandante:</h6>
+                        <p class="mb-2">
+                            <strong>Usuário:</strong> producao1<br>
+                            <strong>Senha:</strong> 123456
+                        </p>
+                        
+                        <h6 class="text-warning">Setor de Transportes:</h6>
+                        <p class="mb-0">
+                            <strong>Usuário:</strong> transportes1<br>
+                            <strong>Senha:</strong> 123456
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

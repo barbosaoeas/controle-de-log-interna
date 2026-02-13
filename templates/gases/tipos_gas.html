@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tipos de Gases{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+    }
+    .btn-success:hover {
+        background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-cloud"></i> Tipos de Gases</h2>
+                    <p class="text-muted">Gerenciar tipos de gases disponíveis</p>
+                </div>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalTipoGas">
+                    <i class="bi bi-plus-circle"></i> Novo Tipo de Gás
+                </button>
+            </div>
+
+            <!-- Card Principal -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="mb-0"><i class="bi bi-list"></i> Lista de Tipos</h5>
+                        </div>
+                        <div class="col-md-6">
+                            <!-- Busca -->
+                            <form method="GET" class="d-flex">
+                                <input type="text" name="search" class="form-control" 
+                                       placeholder="Buscar tipo de gás..." 
+                                       value="{{ search }}">
+                                <button type="submit" class="btn btn-light ms-2">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nome do Gás</th>
+                                        <th>Status</th>
+                                        <th>Criado em</th>
+                                        <th width="120">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tipo in page_obj %}
+                                    <tr>
+                                        <td>{{ tipo.id }}</td>
+                                        <td>{{ tipo.nome_gas }}</td>
+                                        <td>
+                                            {% if tipo.ativo %}
+                                                <span class="badge bg-success">Ativo</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inativo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ tipo.criado_em|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" 
+                                                    onclick="editarTipo({{ tipo.id }}, '{{ tipo.nome_gas }}', {{ tipo.ativo|yesno:'true,false' }})"
+                                                    title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" 
+                                                    onclick="deletarTipo({{ tipo.id }}, '{{ tipo.nome_gas }}')"
+                                                    title="Excluir">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginação -->
+                        {% if page_obj.has_other_pages %}
+                        <nav aria-label="Paginação">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">Anterior</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">Próximo</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-cloud" style="font-size: 4rem; color: #dee2e6;"></i>
+                            <h4 class="text-muted mt-3">Nenhum tipo de gás encontrado</h4>
+                            <p class="text-muted">Clique em "Novo Tipo de Gás" para começar</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Criar/Editar Tipo de Gás -->
+<div class="modal fade" id="modalTipoGas" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTipoGasTitle">Novo Tipo de Gás</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formTipoGas">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="nome_gas" class="form-label">Nome do Gás *</label>
+                        <input type="text" class="form-control" id="nome_gas" name="nome_gas" required>
+                    </div>
+                    <div class="mb-3" id="divAtivo" style="display: none;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="ativo" name="ativo" checked>
+                            <label class="form-check-label" for="ativo">
+                                Ativo
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="salvarTipo()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Função para obter CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+let editandoTipo = false;
+let tipoIdEdicao = null;
+
+function editarTipo(id, nome, ativo) {
+    editandoTipo = true;
+    tipoIdEdicao = id;
+    
+    document.getElementById('modalTipoGasTitle').textContent = 'Editar Tipo de Gás';
+    document.getElementById('nome_gas').value = nome;
+    document.getElementById('ativo').checked = ativo;
+    document.getElementById('divAtivo').style.display = 'block';
+    
+    new bootstrap.Modal(document.getElementById('modalTipoGas')).show();
+}
+
+function salvarTipo() {
+    const nome_gas = document.getElementById('nome_gas').value.trim();
+    const ativo = document.getElementById('ativo').checked;
+    
+    if (!nome_gas) {
+        alert('Nome do gás é obrigatório');
+        return;
+    }
+    
+    const url = editandoTipo ? 
+        `/gases/tipos/${tipoIdEdicao}/editar/` : 
+        '/gases/tipos/criar/';
+    
+    const data = {
+        nome_gas: nome_gas,
+        ativo: ativo
+    };
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar tipo de gás');
+    });
+}
+
+function deletarTipo(id, nome) {
+    if (confirm(`Tem certeza que deseja excluir o tipo "${nome}"?`)) {
+        fetch(`/gases/tipos/${id}/deletar/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao excluir tipo de gás');
+        });
+    }
+}
+
+// Reset modal ao fechar
+document.getElementById('modalTipoGas').addEventListener('hidden.bs.modal', function () {
+    editandoTipo = false;
+    tipoIdEdicao = null;
+    document.getElementById('modalTipoGasTitle').textContent = 'Novo Tipo de Gás';
+    document.getElementById('formTipoGas').reset();
+    document.getElementById('divAtivo').style.display = 'none';
+});
+</script>
+{% endblock %}

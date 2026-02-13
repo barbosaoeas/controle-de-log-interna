@@ -1,0 +1,969 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Controle de Entrada de Gases{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+    }
+    .btn-success:hover {
+        background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+    }
+    .btn-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        border: none;
+        color: white;
+    }
+    .btn-info:hover {
+        background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+        color: white;
+    }
+    .badge-entrada {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-arrow-down-circle"></i> Controle de Entrada de Gases</h2>
+                    <p class="text-muted">Gerenciar entradas e movimentações de gases</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalMovimentacao">
+                        <i class="bi bi-plus-circle"></i> Nova Entrada
+                    </button>
+                    <a href="{% url 'gases:entrada_lote' %}" class="btn btn-primary">
+                        <i class="bi bi-list-ul"></i> Entrada em Lote
+                    </a>
+                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalImportarExcel">
+                        <i class="bi bi-file-earmark-excel"></i> Importar Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card Principal -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="mb-0"><i class="bi bi-list"></i> Movimentações ({{ total_movimentacoes }})</h5>
+                        </div>
+                        <div class="col-md-6">
+                            <!-- Busca e Filtros -->
+                            <form method="GET" class="d-flex gap-2">
+                                <input type="text" name="search" class="form-control"
+                                       placeholder="Buscar por gás, NF ou fornecedor..."
+                                       value="{{ search }}">
+                                <select name="categoria_filter" class="form-select" style="max-width: 200px;">
+                                    <option value="">Todas as categorias</option>
+                                    {% for codigo, nome in categoria_choices %}
+                                    <option value="{{ codigo }}" {% if request.GET.categoria_filter == codigo %}selected{% endif %}>{{ nome }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-light">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>NF</th>
+                                        <th>Tipo de Gás</th>
+                                        <th>Cliente</th>
+                                        <th>Quantidade</th>
+                                        <th>V. Unit.</th>
+                                        <th>V. Total</th>
+                                        <th>Fornecedor</th>
+                                        <th width="120">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mov in page_obj %}
+                                    <tr>
+                                        <td>{{ mov.data_entrega|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <span class="badge badge-entrada">{{ mov.nf }}</span>
+                                        </td>
+                                        <td>{{ mov.tipo_gas.nome_gas }}</td>
+                                        <td>{{ mov.cliente.nome|default:"-" }}</td>
+                                        <td>{{ mov.quantidade }} {{ mov.get_unidade_display }}</td>
+                                        <td>R$ {{ mov.valor_unitario|floatformat:2 }}</td>
+                                        <td><strong>R$ {{ mov.valor_total|floatformat:2 }}</strong></td>
+                                        <td>{{ mov.get_fornecedor_display }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                    onclick="console.log('🔧 TEMPLATE - Dados da movimentação:');
+                                                             console.log('  ID: {{ mov.id }}');
+                                                             console.log('  Data: {{ mov.data_entrega|date:'Y-m-d' }}');
+                                                             console.log('  NF: {{ mov.nf }}');
+                                                             console.log('  Tipo Gas ID: {{ mov.tipo_gas.id }}');
+                                                             console.log('  Quantidade: {{ mov.quantidade|floatformat:2 }} → JS:', parseFloat('{{ mov.quantidade|floatformat:2 }}'.replace(',', '.')));
+                                                             console.log('  Unidade: {{ mov.unidade }}');
+                                                             console.log('  Categoria: {{ mov.categoria_gas }}');
+                                                             console.log('  Fornecedor: {{ mov.fornecedor }}');
+                                                             console.log('  Cliente ID: {% if mov.cliente %}{{ mov.cliente.id }}{% else %}null{% endif %}');
+                                                             console.log('  Valor Unitário: {{ mov.valor_unitario|floatformat:2 }} → JS:', parseFloat('{{ mov.valor_unitario|floatformat:2 }}'.replace(',', '.')));
+                                                             editarMovimentacao(
+                                                                 {{ mov.id }},
+                                                                 '{{ mov.data_entrega|date:'Y-m-d' }}',
+                                                                 '{{ mov.nf }}',
+                                                                 {{ mov.tipo_gas.id }},
+                                                                 parseFloat('{{ mov.quantidade|floatformat:2 }}'.replace(',', '.')),
+                                                                 '{{ mov.unidade }}',
+                                                                 '{{ mov.categoria_gas }}',
+                                                                 '{{ mov.fornecedor }}',
+                                                                 {% if mov.cliente %}{{ mov.cliente.id }}{% else %}null{% endif %},
+                                                                 parseFloat('{{ mov.valor_unitario|floatformat:2 }}'.replace(',', '.'))
+                                                             )"
+                                                    title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" 
+                                                    onclick="deletarMovimentacao({{ mov.id }}, '{{ mov.nf }}')"
+                                                    title="Excluir">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginação -->
+                        {% if page_obj.has_other_pages %}
+                        <nav aria-label="Paginação">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if categoria_filter %}&categoria_filter={{ categoria_filter }}{% endif %}">Anterior</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if categoria_filter %}&categoria_filter={{ categoria_filter }}{% endif %}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if categoria_filter %}&categoria_filter={{ categoria_filter }}{% endif %}">Próximo</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-arrow-down-circle" style="font-size: 4rem; color: #dee2e6;"></i>
+                            <h4 class="text-muted mt-3">Nenhuma movimentação encontrada</h4>
+                            <p class="text-muted">Clique em "Nova Entrada" para começar</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <!-- Gráfico por Categoria -->
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Quantidade por Categoria - Últimos 12 Meses</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 350px;">
+                        <canvas id="chartQuantidadePorTipo"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico por Unidade de Medida -->
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-graph-up"></i> Quantidade por Unidade (M³ / KG) - Últimos 12 Meses</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 350px;">
+                        <canvas id="chartQuantidadePorUnidade"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<!-- Modal para Criar/Editar Movimentação -->
+<div class="modal fade" id="modalMovimentacao" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalMovimentacaoTitle">Nova Entrada de Gás</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formMovimentacao">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="data_entrega" class="form-label">Data de Entrega *</label>
+                            <input type="date" class="form-control" id="data_entrega" name="data_entrega" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="nf" class="form-label">Nota Fiscal *</label>
+                            <input type="text" class="form-control" id="nf" name="nf" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_gas_id" class="form-label">Tipo de Gás *</label>
+                            <select class="form-select" id="tipo_gas_id" name="tipo_gas_id" required onchange="preencherCategoria()">
+                                <option value="">Selecione o tipo de gás</option>
+                                {% for tipo in tipos_gas %}
+                                <option value="{{ tipo.id }}" data-nome="{{ tipo.nome_gas }}">{{ tipo.nome_gas }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="categoria_gas" class="form-label">Categoria do Gás *</label>
+                            <select class="form-select" id="categoria_gas" name="categoria_gas" required>
+                                <option value="">Selecione a categoria</option>
+                                {% for codigo, nome in categoria_choices %}
+                                <option value="{{ codigo }}">{{ nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cliente_id" class="form-label">Cliente</label>
+                            <select class="form-select" id="cliente_id" name="cliente_id">
+                                <option value="">Selecione o cliente (opcional)</option>
+                                {% for cliente in clientes %}
+                                <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="quantidade" class="form-label">Quantidade *</label>
+                            <input type="number" step="0.01" class="form-control" id="quantidade" name="quantidade" required onchange="calcularTotal()">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="valor_unitario" class="form-label">Valor Unitário (R$)</label>
+                            <input type="number" step="0.01" class="form-control" id="valor_unitario" name="valor_unitario" onchange="calcularTotal()">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="valor_total" class="form-label">Valor Total (R$)</label>
+                            <input type="number" step="0.01" class="form-control" id="valor_total" name="valor_total" readonly style="background-color: #f8f9fa;">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="unidade" class="form-label">Unidade *</label>
+                            <select class="form-select" id="unidade" name="unidade" required>
+                                <option value="KG">Quilograma (KG)</option>
+                                <option value="M3">Metro Cúbico (M³)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="fornecedor" class="form-label">Fornecedor *</label>
+                            <select class="form-select" id="fornecedor" name="fornecedor" required>
+                                <option value="WHITE_MARTINS">White Martins</option>
+                                <option value="ULTRA_GAS">Ultra Gas</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="salvarMovimentacao()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Importar Excel -->
+<div class="modal fade" id="modalImportarExcel" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-file-earmark-excel"></i> Importar Movimentações do Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formImportarExcel" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Instruções -->
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> Instruções para Importação:</h6>
+                        <ul class="mb-0">
+                            <li>O arquivo deve estar no formato <strong>.xlsx</strong> ou <strong>.xls</strong></li>
+                            <li>A primeira linha deve conter os cabeçalhos das colunas</li>
+                            <li><strong>Ordem das colunas:</strong> Data, NF, Tipo de Gás, Cliente, Quantidade, Unidade, Embalagem, Valor Unitário, Valor Total, Fornecedor</li>
+                            <li>Colunas obrigatórias: <strong>Data, NF, Tipo de Gás, Quantidade, Unidade, Embalagem, Valor Unitário, Fornecedor</strong></li>
+                            <li>Colunas opcionais: <strong>Cliente, Valor Total</strong></li>
+                            <li>Formato da data: <strong>DD/MM/AAAA</strong></li>
+                            <li><strong>Valor Total:</strong> Se não informado, será calculado automaticamente (Quantidade × Valor Unitário)</li>
+                            <li><strong>Valores de Categoria:</strong> Acetileno, Argônio, Dioxido Carbono, GLP, Nitrogênio, Oxigênio Medicinal, Oxigênio</li>
+                        </ul>
+                    </div>
+
+                    <!-- Upload do arquivo -->
+                    <div class="mb-3">
+                        <label for="arquivo_excel" class="form-label">Selecionar Arquivo Excel *</label>
+                        <input type="file" class="form-control" id="arquivo_excel" name="arquivo_excel"
+                               accept=".xlsx,.xls" required>
+                        <div class="form-text">Formatos aceitos: .xlsx, .xls (máximo 10MB)</div>
+                    </div>
+
+                    <!-- Opções de importação -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="sobrescrever_duplicatas" name="sobrescrever_duplicatas">
+                                <label class="form-check-label" for="sobrescrever_duplicatas">
+                                    Sobrescrever registros duplicados (mesma NF + mesmo produto)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="validar_apenas" name="validar_apenas">
+                                <label class="form-check-label" for="validar_apenas">
+                                    Apenas validar (não importar)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Área de resultado -->
+                    <div id="resultado_importacao" class="mt-3" style="display: none;">
+                        <div class="alert alert-secondary">
+                            <div id="conteudo_resultado"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="baixarTemplate()">
+                    <i class="bi bi-download"></i> Baixar Template
+                </button>
+                <button type="button" class="btn btn-info" onclick="importarExcel()">
+                    <i class="bi bi-upload"></i> Importar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Função para obter CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+let editandoMovimentacao = false;
+let movimentacaoIdEdicao = null;
+
+function editarMovimentacao(id, data, nf, tipoGasId, quantidade, unidade, categoria_gas, fornecedor, clienteId, valorUnitario) {
+    console.log('=== EDITANDO MOVIMENTAÇÃO ===');
+    console.log('📋 ID:', id);
+    console.log('📅 Data:', data);
+    console.log('📄 NF:', nf);
+    console.log('⛽ Tipo Gas ID:', tipoGasId);
+    console.log('📊 Quantidade:', quantidade);
+    console.log('📏 Unidade:', unidade);
+    console.log('📦 Categoria:', categoria_gas);
+    console.log('🏭 Fornecedor:', fornecedor);
+    console.log('👤 Cliente ID:', clienteId);
+    console.log('💰 Valor Unitário:', valorUnitario);
+
+    console.log('🔍 Tipos dos parâmetros:');
+    console.log('  - ID:', typeof id, '→', id);
+    console.log('  - Data:', typeof data, '→', data);
+    console.log('  - NF:', typeof nf, '→', nf);
+    console.log('  - Tipo Gas ID:', typeof tipoGasId, '→', tipoGasId);
+    console.log('  - Quantidade:', typeof quantidade, '→', quantidade);
+    console.log('  - Unidade:', typeof unidade, '→', unidade);
+    console.log('  - Categoria:', typeof categoria_gas, '→', categoria_gas);
+    console.log('  - Fornecedor:', typeof fornecedor, '→', fornecedor);
+    console.log('  - Cliente ID:', typeof clienteId, '→', clienteId);
+    console.log('  - Valor Unitário:', typeof valorUnitario, '→', valorUnitario);
+
+    editandoMovimentacao = true;
+    movimentacaoIdEdicao = id;
+
+    // Verificar se todos os elementos existem
+    const elementos = {
+        modalTitle: document.getElementById('modalMovimentacaoTitle'),
+        dataEntrega: document.getElementById('data_entrega'),
+        nf: document.getElementById('nf'),
+        tipoGas: document.getElementById('tipo_gas_id'),
+        categoria_gas: document.getElementById('categoria_gas'),
+        cliente: document.getElementById('cliente_id'),
+        quantidade: document.getElementById('quantidade'),
+        valorUnitario: document.getElementById('valor_unitario'),
+        unidade: document.getElementById('unidade'),
+
+        fornecedor: document.getElementById('fornecedor')
+    };
+
+    console.log('🔍 Verificando elementos DOM:');
+    console.log('  - Modal Title:', elementos.modalTitle ? '✅ Encontrado' : '❌ NÃO encontrado');
+    console.log('  - Data Entrega:', elementos.dataEntrega ? '✅ Encontrado' : '❌ NÃO encontrado');
+    console.log('  - NF:', elementos.nf ? '✅ Encontrado' : '❌ NÃO encontrado');
+    console.log('  - Tipo Gas:', elementos.tipoGas ? '✅ Encontrado' : '❌ NÃO encontrado');
+    console.log('  - Cliente:', elementos.cliente ? '✅ Encontrado' : '❌ NÃO encontrado');
+    console.log('  - Quantidade:', elementos.quantidade ? '✅ Encontrado' : '❌ NÃO encontrado');
+    console.log('  - Valor Unitário:', elementos.valorUnitario ? '✅ Encontrado' : '❌ NÃO encontrado');
+    console.log('  - Unidade:', elementos.unidade ? '✅ Encontrado' : '❌ NÃO encontrado');
+    console.log('  - Categoria:', elementos.categoria_gas ? '✅ Encontrado' : '❌ NÃO encontrado');
+    console.log('  - Fornecedor:', elementos.fornecedor ? '✅ Encontrado' : '❌ NÃO encontrado');
+
+    // Definir valores nos campos
+    if (elementos.modalTitle) elementos.modalTitle.textContent = 'Editar Entrada de Gás';
+    if (elementos.dataEntrega) elementos.dataEntrega.value = data || '';
+    if (elementos.nf) elementos.nf.value = nf || '';
+    if (elementos.tipoGas) elementos.tipoGas.value = tipoGasId || '';
+    if (elementos.cliente) {
+        console.log('🔍 Debug Cliente - clienteId recebido:', clienteId, 'tipo:', typeof clienteId);
+        console.log('🔍 Debug Cliente - clienteId !== null:', clienteId !== null);
+        console.log('🔍 Debug Cliente - clienteId !== "null":', clienteId !== 'null');
+
+        if (clienteId && clienteId !== null && clienteId !== 'null') {
+            elementos.cliente.value = clienteId;
+            console.log('✅ Cliente definido como:', clienteId);
+        } else {
+            elementos.cliente.value = '';
+            console.log('❌ Cliente definido como vazio (clienteId era null/undefined)');
+        }
+    }
+    if (elementos.quantidade) elementos.quantidade.value = quantidade || '';
+    if (elementos.valorUnitario) elementos.valorUnitario.value = valorUnitario || '';
+    if (elementos.unidade) elementos.unidade.value = unidade || '';
+    if (elementos.categoria_gas) elementos.categoria_gas.value = categoria_gas || '';
+    if (elementos.fornecedor) elementos.fornecedor.value = fornecedor || '';
+
+    console.log('💾 Valores definidos nos campos:');
+    console.log('  - Data Entrega:', elementos.dataEntrega?.value || 'VAZIO');
+    console.log('  - NF:', elementos.nf?.value || 'VAZIO');
+    console.log('  - Tipo Gas ID:', elementos.tipoGas?.value || 'VAZIO');
+    console.log('  - Cliente ID:', elementos.cliente?.value || 'VAZIO');
+    console.log('  - Quantidade:', elementos.quantidade?.value || 'VAZIO');
+    console.log('  - Valor Unitário:', elementos.valorUnitario?.value || 'VAZIO');
+    console.log('  - Unidade:', elementos.unidade?.value || 'VAZIO');
+    console.log('  - Categoria:', elementos.categoria_gas?.value || 'VAZIO');
+    console.log('  - Fornecedor:', elementos.fornecedor?.value || 'VAZIO');
+
+    // Calcular total
+    calcularTotal();
+
+    new bootstrap.Modal(document.getElementById('modalMovimentacao')).show();
+}
+
+// Função para preencher categoria automaticamente baseada no tipo de gás
+function preencherCategoria() {
+    const tipoGasSelect = document.getElementById('tipo_gas_id');
+    const categoriaSelect = document.getElementById('categoria_gas');
+
+    if (!tipoGasSelect || !categoriaSelect) return;
+
+    const selectedOption = tipoGasSelect.options[tipoGasSelect.selectedIndex];
+    if (!selectedOption || !selectedOption.value) {
+        categoriaSelect.value = '';
+        return;
+    }
+
+    const nomeGas = selectedOption.getAttribute('data-nome') || '';
+    console.log('🔍 Detectando categoria para:', nomeGas);
+
+    // Mapear tipo de gás para categoria
+    let categoria = '';
+
+    if (nomeGas.toUpperCase().includes('ACETILENO')) {
+        categoria = 'ACETILENO';
+    } else if (nomeGas.toUpperCase().includes('ARGONIO') || nomeGas.toUpperCase().includes('ARGÔNIO')) {
+        categoria = 'ARGONIO';
+    } else if (nomeGas.toUpperCase().includes('DIOXIDO') || nomeGas.toUpperCase().includes('DIÓXIDO') || nomeGas.toUpperCase().includes('CARBONO')) {
+        categoria = 'DIOXIDO_CARBONO';
+    } else if (nomeGas.toUpperCase().includes('GLP')) {
+        categoria = 'GLP';
+    } else if (nomeGas.toUpperCase().includes('NITROGENIO') || nomeGas.toUpperCase().includes('NITROGÊNIO')) {
+        categoria = 'NITROGENIO';
+    } else if (nomeGas.toUpperCase().includes('OXIGENIO') && nomeGas.toUpperCase().includes('MEDICINAL')) {
+        categoria = 'OXIGENIO_MEDICINAL';
+    } else if (nomeGas.toUpperCase().includes('OXIGENIO') || nomeGas.toUpperCase().includes('OXIGÊNIO')) {
+        categoria = 'OXIGENIO';
+    }
+
+    console.log('✅ Categoria detectada:', categoria);
+
+    // Definir valor no select de categoria
+    if (categoria) {
+        categoriaSelect.value = categoria;
+        console.log('📦 Categoria definida como:', categoria);
+    } else {
+        console.warn('⚠️ Categoria não identificada para:', nomeGas);
+        categoriaSelect.value = '';
+    }
+}
+
+function calcularTotal() {
+    const quantidade = parseFloat(document.getElementById('quantidade').value) || 0;
+    const valorUnitario = parseFloat(document.getElementById('valor_unitario').value) || 0;
+    const valorTotal = quantidade * valorUnitario;
+
+    document.getElementById('valor_total').value = valorTotal.toFixed(2);
+}
+
+function salvarMovimentacao() {
+    const data_entrega = document.getElementById('data_entrega').value;
+    const nf = document.getElementById('nf').value.trim();
+    const tipo_gas_id = document.getElementById('tipo_gas_id').value;
+    const categoria_gas = document.getElementById('categoria_gas').value;
+    const cliente_id = document.getElementById('cliente_id').value;
+    const quantidade = document.getElementById('quantidade').value;
+    const valor_unitario = document.getElementById('valor_unitario').value;
+    const unidade = document.getElementById('unidade').value;
+
+    const fornecedor = document.getElementById('fornecedor').value;
+
+    if (!data_entrega || !nf || !tipo_gas_id || !quantidade) {
+        alert('Todos os campos obrigatórios devem ser preenchidos');
+        return;
+    }
+
+    const url = editandoMovimentacao ?
+        `/gases/movimentacoes/${movimentacaoIdEdicao}/editar/` :
+        '/gases/movimentacoes/criar/';
+
+    const data = {
+        data_entrega: data_entrega,
+        nf: nf,
+        tipo_gas_id: tipo_gas_id,
+        categoria_gas: categoria_gas,
+        cliente_id: cliente_id || null,
+        quantidade: quantidade,
+        valor_unitario: valor_unitario || 0,
+        unidade: unidade,
+
+        fornecedor: fornecedor
+    };
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar movimentação');
+    });
+}
+
+function deletarMovimentacao(id, nf) {
+    if (confirm(`Tem certeza que deseja excluir a movimentação NF "${nf}"?`)) {
+        fetch(`/gases/movimentacoes/${id}/deletar/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao excluir movimentação');
+        });
+    }
+}
+
+// Reset modal ao fechar
+document.getElementById('modalMovimentacao').addEventListener('hidden.bs.modal', function () {
+    editandoMovimentacao = false;
+    movimentacaoIdEdicao = null;
+    document.getElementById('modalMovimentacaoTitle').textContent = 'Nova Entrada de Gás';
+    document.getElementById('formMovimentacao').reset();
+});
+
+// Definir data de hoje como padrão
+document.addEventListener('DOMContentLoaded', function() {
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('data_entrega').value = hoje;
+});
+
+// ==================== IMPORTAÇÃO DO EXCEL ====================
+
+function baixarTemplate() {
+    console.log('📥 Baixando template do Excel...');
+
+    // Criar dados do template
+    const headers = [
+        'Data', 'NF', 'Tipo de Gás', 'Cliente', 'Quantidade', 'Unidade',
+        'Categoria', 'Valor Unitário', 'Valor Total', 'Fornecedor'
+    ];
+
+    const exemploData = [
+        ['16/10/2025', 'NF001', 'Oxigênio/Cilindro', 'Cliente Exemplo', '50', 'M3', 'Oxigênio/Cilindro', '1.50', '75.00', 'WHITE_MARTINS'],
+        ['16/10/2025', 'NF002', 'Acetileno/Cilindro', '', '30', 'KG', 'Acetileno/Cilindro', '2.00', '60.00', 'ULTRA_GAS']
+    ];
+
+    // Criar CSV
+    let csvContent = headers.join(',') + '\n';
+    exemploData.forEach(row => {
+        csvContent += row.join(',') + '\n';
+    });
+
+    // Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'template_importacao_gases.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    console.log('✅ Template baixado com sucesso!');
+}
+
+function importarExcel() {
+    console.log('📤 Iniciando importação do Excel...');
+
+    const form = document.getElementById('formImportarExcel');
+    const formData = new FormData(form);
+    const arquivo = document.getElementById('arquivo_excel').files[0];
+
+    // Validações
+    if (!arquivo) {
+        alert('Por favor, selecione um arquivo Excel.');
+        return;
+    }
+
+    if (!arquivo.name.match(/\.(xlsx|xls)$/)) {
+        alert('Por favor, selecione um arquivo Excel válido (.xlsx ou .xls).');
+        return;
+    }
+
+    if (arquivo.size > 10 * 1024 * 1024) { // 10MB
+        alert('O arquivo é muito grande. Tamanho máximo: 10MB.');
+        return;
+    }
+
+    // Mostrar loading
+    const btnImportar = document.querySelector('[onclick="importarExcel()"]');
+    const textoOriginal = btnImportar.innerHTML;
+    btnImportar.innerHTML = '<i class="bi bi-hourglass-split"></i> Importando...';
+    btnImportar.disabled = true;
+
+    // Fazer upload
+    fetch('{% url "gases:importar_excel" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('📊 Resultado da importação:', data);
+
+        // Mostrar resultado
+        const resultadoDiv = document.getElementById('resultado_importacao');
+        const conteudoDiv = document.getElementById('conteudo_resultado');
+
+        if (data.success) {
+            conteudoDiv.innerHTML = `
+                <h6 class="text-success"><i class="bi bi-check-circle"></i> Importação realizada com sucesso!</h6>
+                <p><strong>Registros importados:</strong> ${data.importados}</p>
+                <p><strong>Registros com erro:</strong> ${data.erros}</p>
+                ${data.detalhes ? `<div><strong>Detalhes dos erros:</strong><br><pre style="background: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 12px;">${data.detalhes}</pre></div>` : ''}
+                <p class="mt-3"><small class="text-muted">Página será recarregada em <span id="contador">10</span> segundos...</small></p>
+            `;
+            resultadoDiv.className = 'mt-3 alert alert-success';
+
+            // Contador regressivo
+            let contador = 10;
+            const contadorSpan = document.getElementById('contador');
+            const interval = setInterval(() => {
+                contador--;
+                if (contadorSpan) contadorSpan.textContent = contador;
+                if (contador <= 0) {
+                    clearInterval(interval);
+                    location.reload();
+                }
+            }, 1000);
+        } else {
+            conteudoDiv.innerHTML = `
+                <h6 class="text-danger"><i class="bi bi-exclamation-triangle"></i> Erro na importação</h6>
+                <p>${data.message}</p>
+                ${data.erros ? `<pre>${data.erros}</pre>` : ''}
+            `;
+            resultadoDiv.className = 'mt-3 alert alert-danger';
+        }
+
+        resultadoDiv.style.display = 'block';
+    })
+    .catch(error => {
+        console.error('❌ Erro na importação:', error);
+        alert('Erro ao importar arquivo. Tente novamente.');
+    })
+    .finally(() => {
+        // Restaurar botão
+        btnImportar.innerHTML = textoOriginal;
+        btnImportar.disabled = false;
+    });
+}
+
+// Reset modal de importação ao fechar
+document.getElementById('modalImportarExcel').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('formImportarExcel').reset();
+    document.getElementById('resultado_importacao').style.display = 'none';
+});
+</script>
+
+<!-- Chart.js para o gráfico -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// GRÁFICOS FUNCIONAIS COM DADOS REAIS
+console.log('🔧 Iniciando gráficos com dados reais...');
+
+// Dados do backend
+const dadosCategoria = {{ dados_total_por_categoria|safe }};
+const dadosUnidade = {{ dados_quantidade_por_unidade|safe }};
+
+console.log('📊 Dados categoria:', dadosCategoria);
+console.log('📊 Dados unidade:', dadosUnidade);
+
+// GRÁFICO 1: Barras por Categoria
+const ctx1 = document.getElementById('chartQuantidadePorTipo');
+if (ctx1) {
+    console.log('✅ Criando gráfico de barras...');
+
+    // Preparar dados
+    let labels = [];
+    let dados = [];
+    let cores = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+
+    if (dadosCategoria && dadosCategoria.length > 0) {
+        dadosCategoria.forEach((item, index) => {
+            labels.push(item.categoria);
+            dados.push(item.quantidade_total);
+        });
+    } else {
+        labels = ['Sem dados'];
+        dados = [0];
+    }
+
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Quantidade Total',
+                data: dados,
+                backgroundColor: cores.slice(0, labels.length),
+                borderColor: cores.slice(0, labels.length),
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Quantidade por Categoria - Últimos 12 Meses',
+                    font: { size: 16, weight: 'bold' }
+                },
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Quantidade' }
+                },
+                x: {
+                    title: { display: true, text: 'Categoria' }
+                }
+            }
+        }
+    });
+
+    console.log('✅ Gráfico de barras criado!');
+} else {
+    console.error('❌ Canvas de barras não encontrado!');
+}
+
+// GRÁFICO 2: Linhas por Unidade
+const ctx2 = document.getElementById('chartQuantidadePorUnidade');
+if (ctx2) {
+    console.log('✅ Criando gráfico de linhas...');
+
+    // Processar dados por unidade
+    const dadosPorMes = {};
+    const meses = new Set();
+
+    if (dadosUnidade && dadosUnidade.length > 0) {
+        dadosUnidade.forEach(item => {
+            const mes = new Date(item.mes + 'T00:00:00').toLocaleDateString('pt-BR', {
+                month: 'short', year: 'numeric'
+            });
+            meses.add(mes);
+
+            if (!dadosPorMes[item.unidade]) {
+                dadosPorMes[item.unidade] = {};
+            }
+            dadosPorMes[item.unidade][mes] = item.quantidade;
+        });
+    }
+
+    const labelsUnidade = Array.from(meses).sort();
+    const datasets = [];
+
+    // Cores para unidades
+    const coresUnidade = {
+        'Quilograma (KG)': '#28a745',
+        'Metro Cúbico (M³)': '#007bff'
+    };
+
+    Object.keys(dadosPorMes).forEach(unidade => {
+        const dadosUnidadeMes = labelsUnidade.map(mes => dadosPorMes[unidade][mes] || 0);
+
+        datasets.push({
+            label: unidade,
+            data: dadosUnidadeMes,
+            borderColor: coresUnidade[unidade] || '#6c757d',
+            backgroundColor: (coresUnidade[unidade] || '#6c757d') + '20',
+            borderWidth: 3,
+            fill: false,
+            tension: 0.4
+        });
+    });
+
+    // Se não há dados, criar dados de exemplo
+    if (datasets.length === 0) {
+        datasets.push({
+            label: 'Sem dados',
+            data: [0],
+            borderColor: '#dee2e6',
+            backgroundColor: '#dee2e620'
+        });
+    }
+
+    new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: labelsUnidade.length > 0 ? labelsUnidade : ['Sem dados'],
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Quantidade por Unidade (M³ / KG) - Últimos 12 Meses',
+                    font: { size: 16, weight: 'bold' }
+                },
+                legend: { display: true, position: 'top' }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Quantidade' }
+                },
+                x: {
+                    title: { display: true, text: 'Mês' }
+                }
+            }
+        }
+    });
+
+    console.log('✅ Gráfico de linhas criado!');
+} else {
+    console.error('❌ Canvas de linhas não encontrado!');
+}
+
+
+
+
+
+
+</script>
+{% endblock %}

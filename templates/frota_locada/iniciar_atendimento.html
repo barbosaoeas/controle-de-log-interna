@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Cabeçalho -->
+            <div class="mb-4">
+                <a href="{% url 'frota_locada:meus_chamados' %}" class="btn btn-outline-secondary mb-3">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+                <h2><i class="bi bi-play-fill"></i> {{ titulo }}</h2>
+            </div>
+
+            <!-- Informações do Chamado -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informações do Chamado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Número:</strong> {{ chamado.numero_chamado }}</p>
+                            <p><strong>Máquina:</strong> {{ chamado.maquina.nome }} ({{ chamado.maquina.codigo }})</p>
+                            <p><strong>Tipo de Problema:</strong> 
+                                <span class="badge bg-secondary">{{ chamado.get_tipo_problema_display }}</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Prioridade:</strong> 
+                                <span class="badge {{ chamado.prioridade_badge_class }}">{{ chamado.get_prioridade_display }}</span>
+                            </p>
+                            <p><strong>Aberto em:</strong> {{ chamado.data_abertura|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Solicitante:</strong> {{ chamado.solicitante.get_full_name }}</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <p><strong>Descrição do Problema:</strong></p>
+                            <p class="text-muted">{{ chamado.descricao_problema }}</p>
+                        </div>
+                    </div>
+                    {% if chamado.foto_problema %}
+                    <div class="row">
+                        <div class="col-12">
+                            <p><strong>Foto do Problema:</strong></p>
+                            <img src="{{ chamado.foto_problema.url }}" alt="Foto do Problema" class="img-fluid rounded" style="max-height: 300px;">
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Formulário de Iniciar Atendimento -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-wrench"></i> Iniciar Atendimento</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="tipo_manutencao" class="form-label">
+                                <i class="bi bi-tools"></i> Tipo de Manutenção <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="tipo_manutencao" name="tipo_manutencao" required>
+                                <option value="">Selecione o tipo de manutenção</option>
+                                {% for value, label in tipos_manutencao %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> Selecione o tipo de manutenção que será realizada
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Atenção:</strong> Ao iniciar o atendimento, você será registrado como responsável por este chamado.
+                            Você poderá finalizar o atendimento posteriormente, preenchendo os detalhes do serviço realizado.
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-play-fill"></i> Iniciar Atendimento
+                            </button>
+                            <a href="{% url 'frota_locada:meus_chamados' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

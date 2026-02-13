@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerta Crítico - Diesel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background: #f8f9fa;
+            padding: 30px;
+            border: 1px solid #dee2e6;
+        }
+        .alert-box {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .footer {
+            background: #6c757d;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 0 0 8px 8px;
+            font-size: 12px;
+        }
+        .urgent {
+            font-size: 18px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚨 ALERTA CRÍTICO DE DIESEL</h1>
+        <p>Estaleiro Atlântico Sul</p>
+    </div>
+    
+    <div class="content">
+        <p>Olá <strong>{{ destinatario }}</strong>,</p>
+        
+        <div class="alert-box">
+            <p class="urgent">⚠️ ATENÇÃO URGENTE: O nível de diesel está CRÍTICO!</p>
+            <p>É necessário reabastecer o tanque <strong>IMEDIATAMENTE</strong> para evitar interrupção das operações.</p>
+        </div>
+        
+        <div class="stats">
+            <h3>📊 Status Atual do Tanque:</h3>
+            <div class="stat-item">
+                <span><strong>Nível Atual:</strong></span>
+                <span style="color: #dc3545; font-weight: bold;">{{ nivel_atual }}L</span>
+            </div>
+            <div class="stat-item">
+                <span><strong>Capacidade Total:</strong></span>
+                <span>{{ capacidade_total }}L</span>
+            </div>
+            <div class="stat-item">
+                <span><strong>Percentual:</strong></span>
+                <span style="color: #dc3545; font-weight: bold;">{{ percentual|floatformat:1 }}%</span>
+            </div>
+            <div class="stat-item">
+                <span><strong>Status:</strong></span>
+                <span style="color: #dc3545; font-weight: bold;">{{ status }}</span>
+            </div>
+            <div class="stat-item">
+                <span><strong>Nível Crítico:</strong></span>
+                <span>{{ nivel_critico }}L</span>
+            </div>
+        </div>
+        
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h4>🎯 Ações Recomendadas:</h4>
+            <ul>
+                <li><strong>Contatar fornecedor</strong> para entrega urgente</li>
+                <li><strong>Verificar veículos</strong> que podem ser temporariamente suspensos</li>
+                <li><strong>Priorizar operações críticas</strong> até o reabastecimento</li>
+                <li><strong>Monitorar consumo</strong> de perto</li>
+            </ul>
+        </div>
+        
+        <p><strong>Data/Hora do Alerta:</strong> {{ "now"|date:"d/m/Y H:i" }}</p>
+        
+        <p>Este é um alerta automático do sistema de controle de diesel.</p>
+    </div>
+    
+    <div class="footer">
+        <p>Sistema de Controle de Materiais - Estaleiro Atlântico Sul</p>
+        <p>Este email foi enviado automaticamente. Não responda a este email.</p>
+    </div>
+</body>
+</html>

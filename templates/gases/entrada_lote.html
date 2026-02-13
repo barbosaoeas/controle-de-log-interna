@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Entrada em Lote - Gases{% endblock %}
+
+{% block extra_css %}
+<style>
+    .produto-row {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        padding: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .produto-row:hover {
+        background: #e9ecef;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .btn-remove-produto {
+        background: #dc3545;
+        border: none;
+        color: white;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-add-produto {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-add-produto:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    
+    .card-header-custom {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .total-geral {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-top: 20px;
+    }
+
+    /* Garantir largura mínima para selects */
+    .produto-row select.form-select {
+        min-width: 100px;
+        font-size: 0.9em;
+    }
+
+    .produto-row select[name*="unidade"] {
+        min-width: 110px;
+        font-size: 0.85em;
+    }
+
+    .produto-row select[name*="categoria_gas"] {
+        min-width: 100px;
+        font-size: 0.85em;
+    }
+
+    /* Garantir largura adequada para campos de valor */
+    .produto-row input[name*="valor_unitario"] {
+        min-width: 90px;
+        font-size: 0.9em;
+    }
+
+    .produto-row input[name*="quantidade"] {
+        min-width: 70px;
+        font-size: 0.9em;
+    }
+
+    /* Valor total com destaque */
+    .produto-row input[id*="valor-total"] {
+        font-weight: bold;
+        font-size: 1em;
+    }
+
+    /* Labels menores para economizar espaço */
+    .produto-row .form-label {
+        font-size: 0.85em;
+        margin-bottom: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-plus-circle"></i> Entrada em Lote - Gases</h2>
+                    <p class="text-muted">Registre múltiplos produtos de uma única Nota Fiscal</p>
+                </div>
+                <div>
+                    <a href="{% url 'gases:movimentacoes' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="formEntradaLote" method="post">
+        {% csrf_token %}
+        
+        <!-- Dados da NF -->
+        <div class="card shadow mb-4">
+            <div class="card-header card-header-custom">
+                <h5 class="mb-0"><i class="bi bi-receipt"></i> Dados da Nota Fiscal</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="data_entrega" class="form-label">Data de Entrega *</label>
+                        <input type="date" class="form-control" id="data_entrega" name="data_entrega" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="nf" class="form-label">Número da NF *</label>
+                        <input type="text" class="form-control" id="nf" name="nf" placeholder="Ex: 12345" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="fornecedor" class="form-label">Fornecedor *</label>
+                        <select class="form-select" id="fornecedor" name="fornecedor" required>
+                            <option value="">Selecione o fornecedor</option>
+                            {% for codigo, nome in fornecedor_choices %}
+                            <option value="{{ codigo }}">{{ nome }}</option>
+                            {% endfor %}
+                            <!-- Debug: Total de fornecedores = {{ fornecedor_choices|length }} -->
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="cliente" class="form-label">Cliente *</label>
+                        <select class="form-select" id="cliente" name="cliente" required>
+                            <option value="">Selecione o cliente</option>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Produtos -->
+        <div class="card shadow mb-4">
+            <div class="card-header card-header-custom">
+                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Produtos da NF</h5>
+            </div>
+            <div class="card-body">
+                <div id="produtos-container">
+                    <!-- Produtos serão adicionados aqui via JavaScript -->
+                </div>
+                
+                <div class="text-center mt-3">
+                    <button type="button" class="btn btn-add-produto" onclick="adicionarProduto()">
+                        <i class="bi bi-plus-lg"></i> Adicionar Produto
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Geral -->
+        <div class="total-geral" id="total-geral" style="display: none;">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Total de Produtos: <span id="total-produtos">0</span></strong>
+                </div>
+                <div class="col-md-4">
+                    <strong>Quantidade Total: <span id="total-quantidade">0</span></strong>
+                </div>
+                <div class="col-md-4">
+                    <strong>Valor Total: R$ <span id="total-valor">0,00</span></strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <button type="button" class="btn btn-outline-secondary me-3" onclick="window.history.back()">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="bi bi-check-circle"></i> Salvar Entrada em Lote
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+let contadorProdutos = 0;
+
+// Dados dos tipos de gás (passados do Django)
+const tiposGasData = [
+    {% for tipo in tipos_gas %}
+    { id: {{ tipo.id }}, nome: "{{ tipo.nome_gas|escapejs }}" },
+    {% endfor %}
+];
+
+const unidadeChoices = [
+    {% for codigo, nome in unidade_choices %}
+    { codigo: "{{ codigo }}", nome: "{{ nome|escapejs }}" },
+    {% endfor %}
+];
+
+const categoriaChoices = [
+    {% for codigo, nome in categoria_choices %}
+    { codigo: "{{ codigo }}", nome: "{{ nome|escapejs }}" },
+    {% endfor %}
+];
+
+// Template de produto
+function obterTemplateProduto(index) {
+    let tiposOptions = '<option value="">Selecione o tipo</option>';
+    tiposGasData.forEach(tipo => {
+        tiposOptions += `<option value="${tipo.id}" data-nome="${tipo.nome}">${tipo.nome}</option>`;
+    });
+
+    let unidadeOptions = '';
+    unidadeChoices.forEach(unidade => {
+        unidadeOptions += `<option value="${unidade.codigo}">${unidade.nome}</option>`;
+    });
+
+    let categoriaOptions = '<option value="">Auto</option>';
+    categoriaChoices.forEach(categoria => {
+        categoriaOptions += `<option value="${categoria.codigo}">${categoria.nome}</option>`;
+    });
+
+    return `
+        <div class="produto-row" id="produto-${index}">
+            <div class="row align-items-center">
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">Tipo de Gás *</label>
+                    <select class="form-select" name="produtos[${index}][tipo_gas_id]" required onchange="preencherCategoriaProduto(${index})">
+                        ${tiposOptions}
+                    </select>
+                </div>
+                <div class="col-md-1 mb-2">
+                    <label class="form-label">Qtd *</label>
+                    <input type="number" class="form-control" name="produtos[${index}][quantidade]" step="0.01" min="0" required onchange="calcularTotais()">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label">Unidade *</label>
+                    <select class="form-select" name="produtos[${index}][unidade]" required>
+                        ${unidadeOptions}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label">Categoria *</label>
+                    <select class="form-select" name="produtos[${index}][categoria_gas]" required>
+                        ${categoriaOptions}
+                    </select>
+                </div>
+                <div class="col-md-1 mb-2">
+                    <label class="form-label">Valor Unit. *</label>
+                    <input type="number" class="form-control" name="produtos[${index}][valor_unitario]" step="0.01" min="0" required onchange="calcularTotais()">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label">Valor Total</label>
+                    <input type="text" class="form-control" id="valor-total-${index}" readonly style="background: #e9ecef;">
+                </div>
+                <div class="col-md-1 mb-2 d-flex justify-content-end align-items-end">
+                    <button type="button" class="btn btn-remove-produto" onclick="removerProduto(${index})" title="Remover produto">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Adicionar produto
+function adicionarProduto() {
+    contadorProdutos++;
+    const container = document.getElementById('produtos-container');
+    const template = obterTemplateProduto(contadorProdutos);
+    container.insertAdjacentHTML('beforeend', template);
+    calcularTotais();
+}
+
+// Remover produto
+function removerProduto(index) {
+    const produto = document.getElementById(`produto-${index}`);
+    if (produto) {
+        produto.remove();
+        calcularTotais();
+    }
+}
+
+// Preencher categoria automaticamente
+function preencherCategoriaProduto(index) {
+    const tipoSelect = document.querySelector(`select[name="produtos[${index}][tipo_gas_id]"]`);
+    const categoriaSelect = document.querySelector(`select[name="produtos[${index}][categoria_gas]"]`);
+    
+    if (!tipoSelect || !categoriaSelect) return;
+    
+    const selectedOption = tipoSelect.options[tipoSelect.selectedIndex];
+    if (!selectedOption || !selectedOption.value) {
+        categoriaSelect.value = '';
+        return;
+    }
+    
+    const nomeGas = selectedOption.getAttribute('data-nome') || '';
+    let categoria = '';
+    
+    // Mesma lógica de mapeamento da página principal
+    if (nomeGas.toUpperCase().includes('ACETILENO')) {
+        categoria = 'ACETILENO';
+    } else if (nomeGas.toUpperCase().includes('ARGONIO') || nomeGas.toUpperCase().includes('ARGÔNIO')) {
+        categoria = 'ARGONIO';
+    } else if (nomeGas.toUpperCase().includes('DIOXIDO') || nomeGas.toUpperCase().includes('DIÓXIDO') || nomeGas.toUpperCase().includes('CARBONO')) {
+        categoria = 'DIOXIDO_CARBONO';
+    } else if (nomeGas.toUpperCase().includes('GLP')) {
+        categoria = 'GLP';
+    } else if (nomeGas.toUpperCase().includes('NITROGENIO') || nomeGas.toUpperCase().includes('NITROGÊNIO')) {
+        categoria = 'NITROGENIO';
+    } else if (nomeGas.toUpperCase().includes('OXIGENIO') && nomeGas.toUpperCase().includes('MEDICINAL')) {
+        categoria = 'OXIGENIO_MEDICINAL';
+    } else if (nomeGas.toUpperCase().includes('OXIGENIO') || nomeGas.toUpperCase().includes('OXIGÊNIO')) {
+        categoria = 'OXIGENIO';
+    }
+    
+    if (categoria) {
+        categoriaSelect.value = categoria;
+    }
+}
+
+// Calcular totais
+function calcularTotais() {
+    const produtos = document.querySelectorAll('.produto-row');
+    let totalProdutos = produtos.length;
+    let totalQuantidade = 0;
+    let totalValor = 0;
+    
+    produtos.forEach((produto, index) => {
+        const quantidade = parseFloat(produto.querySelector('input[name*="[quantidade]"]')?.value || 0);
+        const valorUnitario = parseFloat(produto.querySelector('input[name*="[valor_unitario]"]')?.value || 0);
+        const valorTotal = quantidade * valorUnitario;
+        
+        // Atualizar valor total do produto
+        const valorTotalInput = produto.querySelector('input[id*="valor-total-"]');
+        if (valorTotalInput) {
+            valorTotalInput.value = valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        
+        totalQuantidade += quantidade;
+        totalValor += valorTotal;
+    });
+    
+    // Atualizar totais gerais
+    document.getElementById('total-produtos').textContent = totalProdutos;
+    document.getElementById('total-quantidade').textContent = totalQuantidade.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('total-valor').textContent = totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    
+    // Mostrar/ocultar total geral
+    const totalGeral = document.getElementById('total-geral');
+    if (totalProdutos > 0) {
+        totalGeral.style.display = 'block';
+    } else {
+        totalGeral.style.display = 'none';
+    }
+}
+
+// Inicializar com um produto
+document.addEventListener('DOMContentLoaded', function() {
+    adicionarProduto();
+});
+</script>
+{% endblock %}

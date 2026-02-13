@@ -1,0 +1,428 @@
+/* 🎨 NAVBAR MODERNO E RESPONSIVO - AZUL COM LINKS BRANCOS */
+
+.navbar-novo {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3);
+    border: none;
+    padding: 0;
+    min-height: 70px;
+    position: sticky;
+    top: 0;
+    z-index: 9990 !important;
+    backdrop-filter: blur(10px);
+}
+
+/* Garantir que o container use todo o espaço disponível */
+.navbar-novo .container-fluid {
+    flex-wrap: nowrap;
+    overflow: visible !important;
+    padding: 0 15px;
+}
+
+.navbar-novo .navbar-brand {
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #ffffff !important;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.navbar-novo .navbar-brand:hover {
+    color: #f1f5f9 !important;
+    transform: translateY(-1px);
+}
+
+.navbar-novo .navbar-brand .brand-icon {
+    font-size: 1.8rem;
+    color: #fbbf24;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.navbar-novo .navbar-brand .brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.navbar-novo .navbar-brand .brand-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    margin: 0;
+}
+
+.navbar-novo .navbar-brand .brand-subtitle {
+    font-size: 0.8rem;
+    color: #e2e8f0;
+    font-weight: 400;
+    margin: 0;
+    opacity: 0.95;
+}
+
+/* Navegação Principal */
+.navbar-novo .navbar-nav {
+    align-items: center;
+    gap: 5px;
+}
+
+.navbar-novo .nav-item {
+    position: relative;
+}
+
+.navbar-novo .nav-link {
+    color: #ffffff !important;
+    font-weight: 500;
+    padding: 10px 16px !important;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.navbar-novo .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #ffd700 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+.navbar-novo .nav-link.active {
+    background-color: rgba(255, 215, 0, 0.2);
+    color: #ffd700 !important;
+}
+
+/* Dropdowns */
+.navbar-novo .dropdown-menu {
+    background: #ffffff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    padding: 8px 0;
+    margin-top: 8px;
+    min-width: 220px;
+    z-index: 9999 !important;
+    position: absolute !important;
+}
+
+.navbar-novo .dropdown-item {
+    padding: 10px 20px;
+    color: #333;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.navbar-novo .dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #2a5298;
+    padding-left: 25px;
+}
+
+.navbar-novo .dropdown-item i {
+    width: 16px;
+    text-align: center;
+    color: #6c757d;
+}
+
+.navbar-novo .dropdown-item:hover i {
+    color: #2a5298;
+}
+
+/* Dropdown Divider */
+.navbar-novo .dropdown-divider {
+    margin: 8px 0;
+    border-color: #e9ecef;
+}
+
+/* User Dropdown - SEMPRE VISÍVEL */
+.navbar-novo .user-dropdown {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.navbar-novo .user-dropdown .nav-link {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 25px;
+    padding: 8px 15px !important;
+    white-space: nowrap;
+}
+
+.navbar-novo .user-dropdown .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.navbar-novo .user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-left: 8px;
+}
+
+.navbar-novo .user-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.navbar-novo .user-role {
+    font-size: 0.75rem;
+    color: #b8d4f0;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Badges */
+.navbar-novo .badge {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+    border-radius: 10px;
+}
+
+.navbar-novo .badge-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.navbar-novo .badge-success {
+    background-color: #28a745;
+    color: #fff;
+}
+
+/* Responsividade */
+@media (max-width: 991px) {
+    .navbar-novo .navbar-brand .brand-text {
+        display: none;
+    }
+    
+    .navbar-novo .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    .navbar-novo .navbar-collapse {
+        background-color: rgba(30, 60, 114, 0.95);
+        margin-top: 10px;
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .navbar-novo .nav-link {
+        margin: 2px 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-novo .navbar-brand .brand-title {
+        font-size: 1.1rem;
+    }
+    
+    .navbar-novo .navbar-brand .brand-subtitle {
+        font-size: 0.8rem;
+    }
+}
+
+/* Animações - Removido opacity:0 que causava problemas */
+.navbar-novo .dropdown-menu.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Indicadores de Status */
+.navbar-novo .status-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    background-color: #28a745;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+.navbar-novo .status-indicator.warning {
+    background-color: #ffc107;
+}
+
+.navbar-novo .status-indicator.danger {
+    background-color: #dc3545;
+}
+
+/* Efeitos Hover - Desabilitado para não conflitar com Bootstrap */
+/* O Bootstrap já gerencia a abertura dos dropdowns via JavaScript */
+
+/* Loading State */
+.navbar-novo .loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Estados Desabilitados */
+.navbar-novo .nav-link.disabled {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+.navbar-novo .nav-link.disabled:hover {
+    background-color: transparent !important;
+    color: #6c757d !important;
+    transform: none !important;
+}
+
+.navbar-novo .nav-link.disabled small {
+    font-size: 0.7rem;
+    font-style: italic;
+}
+
+/* Botão de Login */
+.navbar-novo .btn-outline-light {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.navbar-novo .btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #ffd700;
+    color: #ffd700 !important;
+    transform: translateY(-1px);
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .navbar-novo .dropdown-menu {
+        background: #2d3748;
+        color: #e2e8f0;
+    }
+
+    .navbar-novo .dropdown-item {
+        color: #e2e8f0;
+    }
+
+    .navbar-novo .dropdown-item:hover {
+        background-color: #4a5568;
+        color: #ffd700;
+    }
+}
+
+/* ===== RESPONSIVIDADE PARA CELULAR ===== */
+
+/* Mobile First - Smartphones */
+@media (max-width: 576px) {
+    .navbar-novo {
+        min-height: 60px;
+        padding: 0 10px;
+    }
+
+    .navbar-novo .navbar-brand {
+        padding: 8px 10px;
+        font-size: 1rem;
+    }
+
+    .navbar-novo .navbar-brand .brand-icon {
+        font-size: 1.5rem;
+    }
+
+    .navbar-novo .navbar-brand .brand-title {
+        font-size: 0.9rem;
+    }
+
+    .navbar-novo .navbar-brand .brand-subtitle {
+        font-size: 0.7rem;
+    }
+
+    .navbar-novo .navbar-toggler {
+        border: none;
+        padding: 4px 8px;
+        font-size: 1.1rem;
+    }
+
+    .navbar-novo .navbar-toggler:focus {
+        box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
+    }
+
+    .navbar-novo .navbar-collapse {
+        margin-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 10px;
+    }
+
+    .navbar-novo .nav-link {
+        padding: 12px 16px !important;
+        margin: 2px 0;
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    .navbar-novo .dropdown-menu {
+        border: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        margin-top: 5px;
+        border-radius: 12px;
+    }
+
+    .navbar-novo .dropdown-item {
+        padding: 12px 20px;
+        font-size: 0.9rem;
+    }
+
+    .navbar-novo .user-dropdown .dropdown-menu {
+        min-width: 200px;
+    }
+}
+
+/* Tablets */
+@media (min-width: 577px) and (max-width: 768px) {
+    .navbar-novo {
+        min-height: 65px;
+    }
+
+    .navbar-novo .navbar-brand {
+        font-size: 1.1rem;
+    }
+
+    .navbar-novo .nav-link {
+        padding: 10px 14px !important;
+        font-size: 0.9rem;
+    }
+}
+
+/* Desktop */
+@media (min-width: 769px) {
+    .navbar-novo .navbar-nav {
+        gap: 10px;
+    }
+
+    .navbar-novo .nav-link {
+        margin: 0 4px;
+    }
+}
+
+/* Extra Large Screens */
+@media (min-width: 1200px) {
+    .navbar-novo .navbar-brand {
+        font-size: 1.4rem;
+    }
+
+    .navbar-novo .navbar-brand .brand-title {
+        font-size: 1.2rem;
+    }
+
+    .navbar-novo .navbar-brand .brand-subtitle {
+        font-size: 0.85rem;
+    }
+}

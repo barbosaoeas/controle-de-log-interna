@@ -1,0 +1,481 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Setor de Transportes{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* === RESPONSIVO MOBILE - DASHBOARD === */
+    @media (max-width: 400px) {
+        .card-stats {
+            margin-bottom: 12px !important;
+        }
+
+        .card-stats .card-body {
+            padding: 12px !important;
+        }
+
+        .card-stats .h2 {
+            font-size: 1.5rem !important;
+        }
+
+        .card-stats .card-title {
+            font-size: 0.8rem !important;
+        }
+
+        .icon {
+            width: 40px !important;
+            height: 40px !important;
+        }
+
+        .icon i {
+            font-size: 1.2rem !important;
+        }
+
+        .table-responsive {
+            font-size: 0.85rem;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.5rem !important;
+        }
+
+        .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .h1, .h2 {
+            font-size: 1.3rem !important;
+        }
+
+        .btn-toolbar {
+            margin-bottom: 1rem !important;
+        }
+
+        .badge {
+            font-size: 0.7rem !important;
+        }
+    }
+
+    /* Estilos para thumbnails de foto */
+    .foto-thumbnail {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .foto-thumbnail:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        z-index: 10;
+        position: relative;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-truck"></i>
+        Dashboard - Setor de Transportes
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'listar_pedidos' %}" class="btn btn-primary">
+            <i class="bi bi-list-ul"></i>
+            Todos os Pedidos
+        </a>
+    </div>
+</div>
+
+<!-- Estatísticas Gerais -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Total de Pedidos</h5>
+                        <span class="h2 font-weight-bold mb-0">{{ stats.total_pedidos }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-primary text-white rounded-circle shadow">
+                            <i class="bi bi-list-ul fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats warning border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Pendentes</h5>
+                        <span class="h2 font-weight-bold mb-0">{{ stats.pendentes }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
+                            <i class="bi bi-clock fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats info border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Em Andamento</h5>
+                        <span class="h2 font-weight-bold mb-0">{{ stats.em_andamento }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-info text-white rounded-circle shadow">
+                            <i class="bi bi-arrow-repeat fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card card-stats success border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h5 class="card-title text-uppercase text-muted mb-0">Concluídos Hoje</h5>
+                        <span class="h2 font-weight-bold mb-0">{{ stats.concluidos_hoje }}</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-success text-white rounded-circle shadow">
+                            <i class="bi bi-check-circle fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerta de Pedidos Urgentes -->
+{% if pedidos_urgentes > 0 %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>
+                <strong>Atenção!</strong> Existem {{ pedidos_urgentes }} pedido{{ pedidos_urgentes|pluralize }} com prioridade URGENTE aguardando atendimento.
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Pedidos Pendentes -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock text-warning"></i>
+                    Pedidos Pendentes
+                </h5>
+                <span class="badge bg-warning">{{ stats.pendentes }}</span>
+            </div>
+            <div class="card-body">
+                {% if pedidos_pendentes %}
+                    <div class="list-group list-group-flush">
+                        {% for pedido in pedidos_pendentes %}
+                        <div class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">
+                                    #{{ pedido.id }} - {{ pedido.setor_solicitante.nome }}
+                                    {% if pedido.prioridade == 'URGENTE' %}
+                                        <span class="badge bg-danger ms-1">URGENTE</span>
+                                    {% elif pedido.prioridade == 'ALTA' %}
+                                        <span class="badge bg-warning ms-1">ALTA</span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ pedido.descricao|truncatechars:60 }}</small><br>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> {{ pedido.data_solicitacao|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-success btn-sm" 
+                                        onclick="atualizarStatus({{ pedido.id }}, 'EM_ANDAMENTO')"
+                                        title="Iniciar">
+                                    <i class="bi bi-play"></i>
+                                </button>
+                                <a href="{% url 'detalhes_pedido' pedido.id %}" 
+                                   class="btn btn-outline-primary btn-sm"
+                                   title="Ver detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if stats.pendentes > pedidos_pendentes|length %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'listar_pedidos' %}?status=PENDENTE" class="btn btn-sm btn-outline-primary">
+                                Ver todos os {{ stats.pendentes }} pendentes
+                            </a>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-check-circle display-4 text-success"></i>
+                        <p class="text-muted mt-2">Nenhum pedido pendente!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Pedidos Em Andamento -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-arrow-repeat text-info"></i>
+                    Em Andamento
+                </h5>
+                <span class="badge bg-info">{{ stats.em_andamento }}</span>
+            </div>
+            <div class="card-body">
+                {% if pedidos_andamento %}
+                    <div class="list-group list-group-flush">
+                        {% for pedido in pedidos_andamento %}
+                        <div class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">
+                                    #{{ pedido.id }} - {{ pedido.setor_solicitante.nome }}
+                                    {% if pedido.foto_comprovacao %}
+                                        <span class="badge bg-success ms-1">
+                                            <i class="bi bi-camera"></i> Com Foto
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ pedido.descricao|truncatechars:60 }}</small><br>
+                                <small class="text-muted">
+                                    <i class="bi bi-play-circle"></i> Iniciado: {{ pedido.data_inicio|date:"d/m/Y H:i" }}
+                                </small>
+                                {% if pedido.foto_comprovacao %}
+                                <div class="mt-2">
+                                    <img src="{{ pedido.foto_comprovacao.url }}"
+                                         alt="Comprovação"
+                                         class="rounded border foto-thumbnail"
+                                         style="width: 30px; height: 30px; object-fit: cover; cursor: pointer;"
+                                         onclick="visualizarFoto('{{ pedido.foto_comprovacao.url }}', '{{ pedido.id }}')"
+                                         title="Clique para ampliar">
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-success btn-sm" 
+                                        onclick="atualizarStatus({{ pedido.id }}, 'CONCLUIDO')"
+                                        title="Concluir">
+                                    <i class="bi bi-check"></i>
+                                </button>
+                                <a href="{% url 'detalhes_pedido' pedido.id %}" 
+                                   class="btn btn-outline-primary btn-sm"
+                                   title="Ver detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if stats.em_andamento > pedidos_andamento|length %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'listar_pedidos' %}?status=EM_ANDAMENTO" class="btn btn-sm btn-outline-primary">
+                                Ver todos os {{ stats.em_andamento }} em andamento
+                            </a>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-pause-circle display-4 text-muted"></i>
+                        <p class="text-muted mt-2">Nenhum pedido em andamento</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para atualizar status -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Atualizar Status do Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="statusForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" id="pedidoId" name="pedido_id">
+                    <input type="hidden" id="novoStatus" name="status">
+
+                    <!-- Alerta para foto obrigatória -->
+                    <div id="alertaFoto" class="alert alert-warning d-none" role="alert">
+                        <i class="bi bi-camera"></i>
+                        <strong>📸 Atenção!</strong> Para concluir o serviço, é necessário anexar uma foto comprovando a realização do trabalho.
+                    </div>
+
+                    <!-- Campo de foto (aparece apenas para conclusão) -->
+                    <div id="campoFoto" class="mb-3 d-none">
+                        <label for="fotoComprovacao" class="form-label">
+                            <i class="bi bi-camera"></i> Foto de Comprovação *
+                        </label>
+                        <input type="file" class="form-control" id="fotoComprovacao" name="foto_comprovacao"
+                               accept="image/*" capture="environment">
+                        <div class="form-text">
+                            Tire uma foto para comprovar a conclusão do serviço. Formatos aceitos: JPG, PNG, WEBP
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label">Observação <span id="obsObrigatoria" class="d-none text-danger">*</span></label>
+                        <textarea class="form-control" id="observacao" name="observacao" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarStatus()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal para visualizar foto de comprovação -->
+<div class="modal fade" id="fotoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Foto de Comprovação - Pedido #<span id="pedidoNumero"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="fotoComprovacaoImg" src="" alt="Foto de Comprovação" class="img-fluid rounded" style="max-height: 500px;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <a id="downloadFoto" href="" download class="btn btn-primary">
+                    <i class="bi bi-download"></i> Baixar Foto
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function atualizarStatus(pedidoId, novoStatus) {
+    $('#pedidoId').val(pedidoId);
+    $('#novoStatus').val(novoStatus);
+    $('#observacao').val('');
+    $('#fotoComprovacao').val('');
+
+    let statusText = '';
+    switch(novoStatus) {
+        case 'EM_ANDAMENTO':
+            statusText = 'Em Andamento';
+            break;
+        case 'CONCLUIDO':
+            statusText = 'Concluído';
+            break;
+        case 'CANCELADO':
+            statusText = 'Cancelado';
+            break;
+    }
+
+    // Mostrar/ocultar campo de foto baseado no status
+    if (novoStatus === 'CONCLUIDO') {
+        $('#alertaFoto').removeClass('d-none');
+        $('#campoFoto').removeClass('d-none');
+        $('#obsObrigatoria').removeClass('d-none');
+        $('#fotoComprovacao').prop('required', true);
+    } else {
+        $('#alertaFoto').addClass('d-none');
+        $('#campoFoto').addClass('d-none');
+        $('#obsObrigatoria').addClass('d-none');
+        $('#fotoComprovacao').prop('required', false);
+    }
+
+    $('.modal-title').text(`Atualizar Status para: ${statusText}`);
+    $('#statusModal').modal('show');
+}
+
+function confirmarStatus() {
+    const pedidoId = $('#pedidoId').val();
+    const status = $('#novoStatus').val();
+    const observacao = $('#observacao').val();
+    const fotoInput = document.getElementById('fotoComprovacao');
+
+    // Validar foto obrigatória para conclusão
+    if (status === 'CONCLUIDO' && (!fotoInput.files || fotoInput.files.length === 0)) {
+        alert('📸 Atenção: É obrigatório anexar uma foto para comprovar a conclusão do serviço!');
+        return;
+    }
+
+    // Criar FormData para enviar arquivo
+    const formData = new FormData();
+    formData.append('status', status);
+    formData.append('observacao', observacao);
+    formData.append('csrfmiddlewaretoken', $('[name=csrfmiddlewaretoken]').val());
+
+    if (fotoInput.files && fotoInput.files.length > 0) {
+        formData.append('foto_comprovacao', fotoInput.files[0]);
+    }
+
+    // Mostrar loading
+    const btnConfirmar = document.querySelector('#statusModal .btn-primary');
+    const textoOriginal = btnConfirmar.innerHTML;
+    btnConfirmar.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando...';
+    btnConfirmar.disabled = true;
+
+    $.ajax({
+        url: `/pedidos/${pedidoId}/atualizar-status/`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+            if (data.success) {
+                $('#statusModal').modal('hide');
+                if (status === 'CONCLUIDO') {
+                    alert('✅ Serviço concluído com sucesso! Foto de comprovação salva.');
+                }
+                location.reload();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        },
+        error: function() {
+            alert('Erro ao atualizar status do pedido');
+        },
+        complete: function() {
+            // Restaurar botão
+            btnConfirmar.innerHTML = textoOriginal;
+            btnConfirmar.disabled = false;
+        }
+    });
+}
+
+// Função para visualizar foto de comprovação
+function visualizarFoto(fotoUrl, pedidoId) {
+    $('#pedidoNumero').text(pedidoId);
+    $('#fotoComprovacaoImg').attr('src', fotoUrl);
+    $('#downloadFoto').attr('href', fotoUrl);
+    $('#fotoModal').modal('show');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2><i class="bi bi-tools"></i> {{ titulo }}</h2>
+                            <div class="mt-2">
+                                <p class="mb-1">
+                                    <i class="bi bi-person-badge text-primary"></i>
+                                    <strong>Mecânico:</strong> {{ request.user.get_full_name|default:request.user.username }}
+                                </p>
+                                <p class="mb-1">
+                                    <i class="bi bi-building text-success"></i>
+                                    <strong>Empresa:</strong>
+                                    {% if user.perfil.empresa %}
+                                        {{ user.perfil.empresa.nome }}
+                                    {% else %}
+                                        <span class="text-muted">Todos os Chamados (Admin/Supervisor)</span>
+                                    {% endif %}
+                                </p>
+                                <p class="mb-0">
+                                    <i class="bi bi-shield-check text-info"></i>
+                                    <strong>Perfil:</strong> {{ user.perfil.nome_perfil }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="mb-2">
+                                <span class="badge bg-secondary fs-6 me-1">
+                                    <i class="bi bi-list-ul"></i> Total: {{ total_chamados }}
+                                </span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="badge bg-warning text-dark fs-6 me-1">
+                                    <i class="bi bi-clock"></i> Aguardando: {{ chamados_aguardando }}
+                                </span>
+                            </div>
+                            <div>
+                                <span class="badge bg-primary fs-6">
+                                    <i class="bi bi-gear-fill"></i> Em Atendimento: {{ chamados_em_atendimento }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meus Atendimentos em Andamento -->
+    {% if meus_atendimentos %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-wrench"></i> Meus Atendimentos em Andamento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Chamado</th>
+                                    <th>Máquina</th>
+                                    <th>Tipo Manutenção</th>
+                                    <th class="text-center">Foto</th>
+                                    <th>Iniciado em</th>
+                                    <th>Tempo Decorrido</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for atendimento in meus_atendimentos %}
+                                <tr>
+                                    <td><strong>{{ atendimento.chamado.numero_chamado }}</strong></td>
+                                    <td>{{ atendimento.chamado.maquina.nome }}</td>
+                                    <td><span class="badge bg-info">{{ atendimento.get_tipo_manutencao_display }}</span></td>
+                                    <td class="text-center">
+                                        {% if atendimento.chamado.foto_problema %}
+                                        <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalFotoAtend{{ atendimento.id }}" title="Ver foto do problema">
+                                            <i class="bi bi-camera-fill"></i>
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ atendimento.data_inicio|date:"d/m/Y H:i" }}</td>
+                                    <td><strong>{{ atendimento.tempo_decorrido_formatado }}</strong></td>
+                                    <td>
+                                        <a href="{% url 'frota_locada:detalhes_atendimento' atendimento.id %}" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-eye"></i> Ver Detalhes
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Chamados Disponíveis -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-list-task"></i> Chamados Disponíveis</h5>
+                </div>
+                <div class="card-body">
+                    {% if chamados %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nº Chamado</th>
+                                    <th>Máquina</th>
+                                    <th>Problema</th>
+                                    <th class="text-center">Foto</th>
+                                    <th>Prioridade</th>
+                                    <th>Status</th>
+                                    <th>Aberto em</th>
+                                    <th>Tempo Aguardando</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for chamado in chamados %}
+                                <tr>
+                                    <td><strong>{{ chamado.numero_chamado }}</strong></td>
+                                    <td>
+                                        <strong>{{ chamado.maquina.nome }}</strong><br>
+                                        <small class="text-muted">{{ chamado.maquina.codigo }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ chamado.get_tipo_problema_display }}</span><br>
+                                        <small>{{ chamado.descricao_problema|truncatewords:10 }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if chamado.foto_problema %}
+                                        <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalFoto{{ chamado.id }}" title="Ver foto do problema">
+                                            <i class="bi bi-camera-fill"></i>
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted" title="Sem foto anexada">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ chamado.prioridade_badge_class }}">
+                                            {{ chamado.get_prioridade_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ chamado.status_badge_class }}">
+                                            {{ chamado.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ chamado.data_abertura|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <i class="bi bi-hourglass-split text-warning"></i>
+                                        <strong class="text-warning">{{ chamado.tempo_aguardando_formatado }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if chamado.status == 'AGUARDANDO' %}
+                                        <a href="{% url 'frota_locada:iniciar_atendimento' chamado.id %}" class="btn btn-sm btn-success">
+                                            <i class="bi bi-play-fill"></i> Iniciar
+                                        </a>
+                                        {% elif chamado.status == 'EM_ATENDIMENTO' %}
+                                            {% if chamado.meu_atendimento %}
+                                            <a href="{% url 'frota_locada:detalhes_atendimento' chamado.meu_atendimento.id %}" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-wrench"></i> Continuar
+                                            </a>
+                                            {% else %}
+                                            <a href="{% url 'frota_locada:iniciar_atendimento' chamado.id %}" class="btn btn-sm btn-success">
+                                                <i class="bi bi-play-fill"></i> Atender
+                                            </a>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="bi bi-info-circle fs-1"></i>
+                        <p class="mb-0 mt-2">Nenhum chamado disponível no momento.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modais para Visualizar Fotos - Meus Atendimentos -->
+{% for atendimento in meus_atendimentos %}
+    {% if atendimento.chamado.foto_problema %}
+    <div class="modal fade" id="modalFotoAtend{{ atendimento.id }}" tabindex="-1" aria-labelledby="modalFotoAtendLabel{{ atendimento.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="modalFotoAtendLabel{{ atendimento.id }}">
+                        <i class="bi bi-camera-fill"></i> Foto do Problema - {{ atendimento.chamado.numero_chamado }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6><i class="bi bi-gear"></i> Máquina:</h6>
+                        <p class="mb-1"><strong>{{ atendimento.chamado.maquina.nome }}</strong> ({{ atendimento.chamado.maquina.codigo }})</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Problema:</h6>
+                        <p class="mb-1"><span class="badge bg-secondary">{{ atendimento.chamado.get_tipo_problema_display }}</span></p>
+                        <p class="text-muted">{{ atendimento.chamado.descricao_problema }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><i class="bi bi-image"></i> Foto do Problema:</h6>
+                        <div class="text-center">
+                            <img src="{{ atendimento.chamado.foto_problema.url }}" alt="Foto do Problema" class="img-fluid rounded border" style="max-height: 500px;">
+                        </div>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Dica:</strong> Clique com o botão direito na imagem e selecione "Abrir imagem em nova guia" para visualizar em tamanho completo.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ atendimento.chamado.foto_problema.url }}" target="_blank" class="btn btn-info">
+                        <i class="bi bi-box-arrow-up-right"></i> Abrir em Nova Guia
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
+
+<!-- Modais para Visualizar Fotos - Chamados Disponíveis -->
+{% for chamado in chamados %}
+    {% if chamado.foto_problema %}
+    <div class="modal fade" id="modalFoto{{ chamado.id }}" tabindex="-1" aria-labelledby="modalFotoLabel{{ chamado.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="modalFotoLabel{{ chamado.id }}">
+                        <i class="bi bi-camera-fill"></i> Foto do Problema - {{ chamado.numero_chamado }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6><i class="bi bi-gear"></i> Máquina:</h6>
+                        <p class="mb-1"><strong>{{ chamado.maquina.nome }}</strong> ({{ chamado.maquina.codigo }})</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Problema:</h6>
+                        <p class="mb-1"><span class="badge bg-secondary">{{ chamado.get_tipo_problema_display }}</span></p>
+                        <p class="text-muted">{{ chamado.descricao_problema }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><i class="bi bi-image"></i> Foto do Problema:</h6>
+                        <div class="text-center">
+                            <img src="{{ chamado.foto_problema.url }}" alt="Foto do Problema" class="img-fluid rounded border" style="max-height: 500px;">
+                        </div>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Dica:</strong> Clique com o botão direito na imagem e selecione "Abrir imagem em nova guia" para visualizar em tamanho completo.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ chamado.foto_problema.url }}" target="_blank" class="btn btn-info">
+                        <i class="bi bi-box-arrow-up-right"></i> Abrir em Nova Guia
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
+
+{% endblock %}
+

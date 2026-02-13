@@ -1,0 +1,647 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Usuários{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-status {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .senha-status {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-people"></i>
+        Gerenciar Usuários
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'cadastrar_usuario' %}" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i>
+                Novo Usuário
+            </a>
+
+            <!-- DEBUG: Informações do usuário -->
+            <div class="alert alert-info ms-3" style="display: inline-block; padding: 5px 10px; margin: 0;">
+                <small>
+                    <strong>DEBUG:</strong>
+                    User: {{ user.username }} |
+                    Perfil: {{ user.perfil.codigo_perfil }} |
+                    Is Admin: {{ user.perfil.is_admin }} |
+                    Is Supervisor: {{ user.perfil.is_supervisor }}
+                </small>
+            </div>
+
+            {% if user.perfil.is_admin or user.perfil.is_supervisor %}
+            <button type="button" class="btn btn-success btn-lg ms-3" data-bs-toggle="modal" data-bs-target="#modalGerenciarPerfis" style="background-color: #28a745 !important;">
+                <i class="bi bi-shield-check"></i>
+                🟢 GERENCIAR PERFIS 🟢
+            </button>
+            {% else %}
+            <div class="alert alert-danger ms-3" style="display: inline-block; padding: 5px 10px; margin: 0;">
+                <small><strong>❌ SEM PERMISSÃO PARA GERENCIAR PERFIS</strong></small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Usuários -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-list"></i>
+            Usuários Cadastrados
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if usuarios %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Nome Completo</th>
+                            <th>Email</th>
+                            <th>Setor</th>
+                            <th>Perfil</th>
+                            <th>Status Senha</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr>
+                            <td>
+                                <strong>{{ usuario.username }}</strong>
+                                {% if not usuario.is_active %}
+                                    <span class="badge bg-danger ms-2">Inativo</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ usuario.get_full_name|default:"-" }}</td>
+                            <td>{{ usuario.email|default:"-" }}</td>
+                            <td>
+                                {% if usuario.perfil %}
+                                    {{ usuario.perfil.setor.nome }}
+                                {% else %}
+                                    <span class="text-muted">Sem perfil</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if usuario.perfil %}
+                                    {% if usuario.perfil.codigo_perfil == 'ADMIN' %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-shield-fill"></i>
+                                            Administrador
+                                        </span>
+                                    {% elif usuario.perfil.codigo_perfil == 'SUPERVISOR' %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-person-badge"></i>
+                                            Supervisor
+                                        </span>
+                                    {% elif usuario.perfil.codigo_perfil == 'TRANSPORTES' %}
+                                        <span class="badge bg-primary">
+                                            <i class="bi bi-truck"></i>
+                                            Transportes
+                                        </span>
+                                    {% elif usuario.perfil.codigo_perfil == 'DEMANDANTE' %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-person-check"></i>
+                                            Demandante
+                                        </span>
+                                    {% elif usuario.perfil.is_manutencao %}
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-tools"></i>
+                                            {{ usuario.perfil.nome_perfil }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-person"></i>
+                                            {{ usuario.perfil.nome_perfil }}
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Sem perfil</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if usuario.perfil %}
+                                    {% if usuario.perfil.precisa_alterar_senha %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                            Precisa Alterar
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i>
+                                            Alterada
+                                        </span>
+                                        {% if usuario.perfil.senha_alterada_em %}
+                                            <br><small class="text-muted">{{ usuario.perfil.senha_alterada_em|date:"d/m/Y H:i" }}</small>
+                                        {% endif %}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    {% if usuario.perfil %}
+                                        {% if user.perfil.is_admin or user.perfil.is_supervisor %}
+                                        <button class="btn btn-sm btn-info"
+                                                onclick="editarPerfil({{ usuario.id }}, '{{ usuario.username }}', '{{ usuario.perfil.codigo_perfil }}', {{ usuario.perfil.setor.id }})"
+                                                title="Editar perfil do usuário">
+                                            <i class="bi bi-person-gear"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-warning"
+                                                onclick="resetarSenha({{ usuario.id }}, '{{ usuario.username }}')"
+                                                title="Resetar senha para 123456">
+                                            <i class="bi bi-key"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-people display-1 text-muted"></i>
+                <p class="text-muted mt-3">Nenhum usuário cadastrado.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% csrf_token %}
+
+<!-- Modal para Gerenciar Perfis -->
+<div class="modal fade" id="modalGerenciarPerfis" tabindex="-1" aria-labelledby="modalGerenciarPerfisLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalGerenciarPerfisLabel">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Gerenciar Perfis de Acesso
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-plus-circle text-success me-1"></i> Criar Novo Perfil</h6>
+                        <form id="formNovoPerfil">
+                            <div class="mb-3">
+                                <label for="novoPerfilCodigo" class="form-label">Código do Perfil *</label>
+                                <input type="text" class="form-control" id="novoPerfilCodigo" placeholder="Ex: MANUTENCAO_NOVA" required>
+                                <div class="form-text">Use apenas letras maiúsculas, números e underscore</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="novoPerfilNome" class="form-label">Nome do Perfil *</label>
+                                <input type="text" class="form-control" id="novoPerfilNome" placeholder="Ex: Manutenção - Nova Especialidade" required>
+                            </div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Criar Perfil
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-list text-info me-1"></i> Perfis Existentes</h6>
+                        <div id="listaPerfis" class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Lista será carregada via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar Perfil do Usuário -->
+<div class="modal fade" id="modalEditarPerfil" tabindex="-1" aria-labelledby="modalEditarPerfilLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalEditarPerfilLabel">
+                    <i class="bi bi-person-gear me-2"></i>
+                    Editar Perfil do Usuário
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarPerfil">
+                    <input type="hidden" id="editarUsuarioId">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Usuário:</strong></label>
+                        <p id="editarUsuarioNome" class="form-control-plaintext"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editarPerfilTipo" class="form-label">Perfil de Acesso *</label>
+                        <select class="form-select" id="editarPerfilTipo" required>
+                            <!-- Opções serão carregadas via JavaScript -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editarSetor" class="form-label">Setor *</label>
+                        <select class="form-select" id="editarSetor" required>
+                            <!-- Opções serão carregadas via JavaScript -->
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarEdicaoPerfil()">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="resetSenhaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Resetar Senha
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja resetar a senha do usuário <strong id="username-reset"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Atenção:</strong> A senha será alterada para <code>123456</code> e o usuário será obrigado a alterá-la no próximo login.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="confirmar-reset">
+                    <i class="bi bi-key"></i>
+                    Resetar Senha
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let userIdToReset = null;
+
+function resetarSenha(userId, username) {
+    userIdToReset = userId;
+    document.getElementById('username-reset').textContent = username;
+    new bootstrap.Modal(document.getElementById('resetSenhaModal')).show();
+}
+
+document.getElementById('confirmar-reset').addEventListener('click', function() {
+    if (!userIdToReset) return;
+    
+    fetch(`/usuarios/${userIdToReset}/resetar-senha/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Senha resetada com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao resetar senha');
+    });
+    
+    bootstrap.Modal.getInstance(document.getElementById('resetSenhaModal')).hide();
+});
+
+// ===== GERENCIAMENTO DE PERFIS =====
+
+// Carregar perfis existentes quando abrir o modal
+document.getElementById('modalGerenciarPerfis').addEventListener('show.bs.modal', function() {
+    carregarPerfisExistentes();
+});
+
+// Carregar dados quando abrir modal de editar perfil
+document.getElementById('modalEditarPerfil').addEventListener('show.bs.modal', function() {
+    carregarSetores();
+    carregarPerfisDisponiveis();
+});
+
+function carregarPerfisExistentes() {
+    console.log('🎭 Carregando perfis existentes...');
+    fetch('/api/perfis-disponiveis/')
+        .then(response => response.json())
+        .then(data => {
+            console.log('📊 Dados de perfis recebidos:', data);
+            if (data.success && Array.isArray(data.perfis)) {
+                const container = document.getElementById('listaPerfisCompleta');
+                if (container) {
+                    container.innerHTML = '';
+
+                    data.perfis.forEach(perfil => {
+                        const perfilCard = document.createElement('div');
+                        perfilCard.className = 'col-md-4 mb-3';
+                        perfilCard.innerHTML = `
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-primary">${perfil.codigo}</h6>
+                                    <p class="card-text small text-muted">${perfil.nome}</p>
+                                    <span class="badge bg-secondary">${perfil.usuarios_count} usuários</span>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(perfilCard);
+                    });
+                    console.log('✅ Perfis carregados na visualização completa!');
+                }
+            } else {
+                console.error('❌ Dados de perfis inválidos:', data);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Erro ao carregar perfis:', error);
+        });
+}
+
+function carregarSetores() {
+    console.log('🏢 FUNÇÃO DESABILITADA TEMPORARIAMENTE');
+    // FUNÇÃO DESABILITADA PARA RESOLVER ERRO
+}
+
+function carregarPerfisDisponiveis() {
+    console.log('🎭 FUNÇÃO DESABILITADA TEMPORARIAMENTE');
+    // FUNÇÃO DESABILITADA PARA RESOLVER ERRO
+}
+
+function editarPerfil(userId, username, perfilAtual, setorAtual) {
+    document.getElementById('editarUsuarioId').value = userId;
+    document.getElementById('editarUsuarioNome').textContent = username;
+
+    // Aguardar carregamento dos selects e então definir valores
+    setTimeout(() => {
+        document.getElementById('editarPerfilTipo').value = perfilAtual;
+        document.getElementById('editarSetor').value = setorAtual;
+    }, 500);
+
+    new bootstrap.Modal(document.getElementById('modalEditarPerfil')).show();
+}
+
+function salvarEdicaoPerfil() {
+    const userId = document.getElementById('editarUsuarioId').value;
+    const perfil = document.getElementById('editarPerfilTipo').value;
+    const setor = document.getElementById('editarSetor').value;
+
+    if (!perfil || !setor) {
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
+
+    fetch(`/api/usuarios/${userId}/editar-perfil/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            perfil: perfil,
+            setor_id: setor
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Perfil atualizado com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar alterações');
+    });
+
+    bootstrap.Modal.getInstance(document.getElementById('modalEditarPerfil')).hide();
+}
+
+// Criar novo perfil
+document.getElementById('formNovoPerfil').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const codigo = document.getElementById('novoPerfilCodigo').value.trim().toUpperCase();
+    const nome = document.getElementById('novoPerfilNome').value.trim();
+
+    if (!codigo || !nome) {
+        alert('Por favor, preencha todos os campos.');
+        return;
+    }
+
+    // Validar formato do código
+    if (!/^[A-Z0-9_]+$/.test(codigo)) {
+        alert('O código deve conter apenas letras maiúsculas, números e underscore.');
+        return;
+    }
+
+    fetch('/api/perfis/criar/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            codigo: codigo,
+            nome: nome
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Perfil criado com sucesso!');
+            document.getElementById('formNovoPerfil').reset();
+            carregarPerfisExistentes();
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao criar perfil');
+    });
+});
+
+</script>
+
+<!-- ===== MODAL COMPLETO DE GERENCIAMENTO DE PERFIS ===== -->
+<div class="modal fade" id="modalGerenciarPerfis" tabindex="-1" aria-labelledby="modalGerenciarPerfisLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalGerenciarPerfisLabel">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Sistema de Gerenciamento de Perfis de Acesso
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Navegação por Abas -->
+                <ul class="nav nav-tabs mb-4" id="perfilTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="visualizar-tab" data-bs-toggle="tab" data-bs-target="#visualizar" type="button" role="tab">
+                            <i class="bi bi-eye"></i> Visualizar Perfis
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="criar-tab" data-bs-toggle="tab" data-bs-target="#criar" type="button" role="tab">
+                            <i class="bi bi-plus-circle"></i> Criar Perfil
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="editar-tab" data-bs-toggle="tab" data-bs-target="#editar" type="button" role="tab">
+                            <i class="bi bi-pencil"></i> Editar Perfil
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Conteúdo das Abas -->
+                <div class="tab-content" id="perfilTabContent">
+
+                    <!-- ABA 1: VISUALIZAR PERFIS -->
+                    <div class="tab-pane fade show active" id="visualizar" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6 class="text-muted mb-3">
+                                    <i class="bi bi-info-circle"></i>
+                                    Perfis existentes no sistema e quantidade de usuários
+                                </h6>
+                                <div id="listaPerfisCompleta" class="row">
+                                    <!-- Será preenchido via JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ABA 2: CRIAR PERFIL -->
+                    <div class="tab-pane fade" id="criar" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-8 mx-auto">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-plus-circle"></i>
+                                            Criar Novo Perfil de Acesso
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="formCriarPerfil">
+                                            <div class="mb-3">
+                                                <label for="novoPerfilCodigo" class="form-label">Código do Perfil</label>
+                                                <input type="text" class="form-control" id="novoPerfilCodigo" placeholder="Ex: NOVO_PERFIL" required>
+                                                <div class="form-text">Use apenas letras maiúsculas e underscore</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="novoPerfilNome" class="form-label">Nome do Perfil</label>
+                                                <input type="text" class="form-control" id="novoPerfilNome" placeholder="Ex: Novo Perfil de Acesso" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="novoPerfilDescricao" class="form-label">Descrição</label>
+                                                <textarea class="form-control" id="novoPerfilDescricao" rows="3" placeholder="Descreva as responsabilidades deste perfil..."></textarea>
+                                            </div>
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="bi bi-check-circle"></i>
+                                                    Criar Perfil
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ABA 3: EDITAR PERFIL -->
+                    <div class="tab-pane fade" id="editar" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-8 mx-auto">
+                                <div class="card">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-pencil"></i>
+                                            Editar Perfil Existente
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="selecionarPerfilEditar" class="form-label">Selecionar Perfil</label>
+                                            <select class="form-select" id="selecionarPerfilEditar">
+                                                <option value="">Selecione um perfil para editar...</option>
+                                            </select>
+                                        </div>
+
+                                        <form id="formEditarPerfil" style="display: none;">
+                                            <div class="mb-3">
+                                                <label for="editarPerfilNome" class="form-label">Nome do Perfil</label>
+                                                <input type="text" class="form-control" id="editarPerfilNome" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editarPerfilDescricao" class="form-label">Descrição</label>
+                                                <textarea class="form-control" id="editarPerfilDescricao" rows="3"></textarea>
+                                            </div>
+                                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                                <button type="button" class="btn btn-secondary" onclick="cancelarEdicaoPerfil()">
+                                                    <i class="bi bi-x-circle"></i>
+                                                    Cancelar
+                                                </button>
+                                                <button type="submit" class="btn btn-warning">
+                                                    <i class="bi bi-check-circle"></i>
+                                                    Salvar Alterações
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i>
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

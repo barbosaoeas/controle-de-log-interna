@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tipos de Veículo - Frota Locada{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 20px 20px;
+    }
+
+    .page-header h1 {
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .tipo-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+
+    .tipo-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 3px solid #007bff;
+        border-radius: 15px 15px 0 0 !important;
+        padding: 1.25rem;
+    }
+
+    .card-header h5 {
+        margin: 0;
+        color: #007bff;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .btn-action {
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 1rem 0;
+        }
+        
+        .btn-action {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1>
+                    <i class="bi bi-truck"></i>
+                    Tipos de Veículo
+                </h1>
+                <p class="mb-0">Gerencie os tipos de veículos disponíveis</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'frota_locada:cadastrar_tipo_veiculo' %}" class="btn btn-light btn-lg">
+                    <i class="bi bi-plus-circle"></i>
+                    Novo Tipo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    {% if tipos_veiculo %}
+        <div class="row">
+            {% for tipo in tipos_veiculo %}
+            <div class="col-lg-4 col-xl-3">
+                <div class="card tipo-card">
+                    <div class="card-header">
+                        <h5>
+                            <i class="bi bi-truck"></i>
+                            {{ tipo.nome }}
+                            {% if tipo.ativo %}
+                                <span class="badge bg-success status-badge ms-auto">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary status-badge ms-auto">Inativo</span>
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if tipo.descricao %}
+                            <p class="card-text">{{ tipo.descricao }}</p>
+                        {% else %}
+                            <p class="card-text text-muted">Sem descrição</p>
+                        {% endif %}
+                        
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i>
+                            Criado em {{ tipo.data_criacao|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-outline-primary btn-action" 
+                                    onclick="editarTipo('{{ tipo.id }}', '{{ tipo.nome }}', '{{ tipo.descricao }}', {{ tipo.ativo|yesno:'true,false' }})">
+                                <i class="bi bi-pencil"></i>
+                                Editar
+                            </button>
+                            <button class="btn btn-outline-danger btn-action" 
+                                    onclick="confirmarExclusao('{{ tipo.nome }}', '{{ tipo.id }}')">
+                                <i class="bi bi-trash"></i>
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+    {% else %}
+        <div class="empty-state">
+            <i class="bi bi-truck"></i>
+            <h3>Nenhum tipo de veículo cadastrado</h3>
+            <p>Comece cadastrando os tipos de veículos que serão locados.</p>
+            <a href="{% url 'frota_locada:cadastrar_tipo_veiculo' %}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle"></i>
+                Cadastrar Primeiro Tipo
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal para edição rápida -->
+<div class="modal fade" id="editarTipoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil"></i>
+                    Editar Tipo de Veículo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditarTipo" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="tipoId" name="tipo_id">
+                    <div class="mb-3">
+                        <label for="tipoNome" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="tipoNome" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tipoDescricao" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="tipoDescricao" name="descricao" rows="3"></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="tipoAtivo" name="ativo">
+                        <label class="form-check-label" for="tipoAtivo">
+                            Ativo
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editarTipo(id, nome, descricao, ativo) {
+    document.getElementById('tipoId').value = id;
+    document.getElementById('tipoNome').value = nome;
+    document.getElementById('tipoDescricao').value = descricao;
+    document.getElementById('tipoAtivo').checked = ativo;
+    
+    const modal = new bootstrap.Modal(document.getElementById('editarTipoModal'));
+    modal.show();
+}
+
+function confirmarExclusao(nome, id) {
+    if (confirm(`Tem certeza que deseja excluir o tipo "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+        // Implementar exclusão
+        window.location.href = `/frota-locada/tipos-veiculo/${id}/excluir/`;
+    }
+}
+
+// Submissão do formulário de edição
+document.getElementById('formEditarTipo').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const tipoId = formData.get('tipo_id');
+    
+    // Aqui você pode implementar AJAX para salvar
+    // Por enquanto, vamos fazer redirect
+    window.location.href = `/frota-locada/tipos-veiculo/${tipoId}/editar/`;
+});
+</script>
+{% endblock %}

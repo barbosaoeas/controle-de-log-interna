@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block title %}Início - Sistema de Gestão Integrado{% endblock %}
+
+{% block extra_css %}
+<style>
+    .home-container {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem;
+    }
+    
+    .logo-section {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .logo-icon {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .logo-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #1a365d;
+        margin-bottom: 0.5rem;
+    }
+    
+    .logo-subtitle {
+        font-size: 1.2rem;
+        color: #4a5568;
+    }
+    
+    .modules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        max-width: 1200px;
+        width: 100%;
+    }
+    
+    .module-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+        border: 2px solid transparent;
+    }
+    
+    .module-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .module-card.transporte { border-color: #3182ce; }
+    .module-card.transporte:hover { background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%); }
+    
+    .module-card.combustivel { border-color: #dd6b20; }
+    .module-card.combustivel:hover { background: linear-gradient(135deg, #fffaf0 0%, #feebc8 100%); }
+    
+    .module-card.frotas { border-color: #38a169; }
+    .module-card.frotas:hover { background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%); }
+    
+    .module-card.gases { border-color: #805ad5; }
+    .module-card.gases:hover { background: linear-gradient(135deg, #faf5ff 0%, #e9d8fd 100%); }
+    
+    .module-card.energia { border-color: #d69e2e; }
+    .module-card.energia:hover { background: linear-gradient(135deg, #fffff0 0%, #fefcbf 100%); }
+    
+    .module-card.portateis { border-color: #319795; }
+    .module-card.portateis:hover { background: linear-gradient(135deg, #e6fffa 0%, #b2f5ea 100%); }
+    
+    .module-card.admin { border-color: #e53e3e; }
+    .module-card.admin:hover { background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); }
+    
+    .module-card.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    
+    .module-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .module-title {
+        font-size: 1.4rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #2d3748;
+    }
+    
+    .module-description {
+        font-size: 0.9rem;
+        color: #718096;
+        margin-bottom: 1rem;
+    }
+    
+    .module-stats {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .stat-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .stat-badge.warning { background: #fef3c7; color: #92400e; }
+    .stat-badge.success { background: #d1fae5; color: #065f46; }
+    .stat-badge.info { background: #dbeafe; color: #1e40af; }
+    .stat-badge.danger { background: #fee2e2; color: #991b1b; }
+    
+    .coming-soon {
+        background: #f7fafc;
+        color: #a0aec0;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+    
+    @media (max-width: 768px) {
+        .logo-title { font-size: 1.8rem; }
+        .logo-subtitle { font-size: 1rem; }
+        .logo-icon { font-size: 4rem; }
+        .modules-grid { grid-template-columns: 1fr; }
+        .module-card { padding: 1.5rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="home-container">
+    <!-- Logo e Título -->
+    <div class="logo-section">
+        <div class="logo-icon">🏗️</div>
+        <h1 class="logo-title">ESTALEIRO ATLÂNTICO SUL</h1>
+        <p class="logo-subtitle">Sistema de Gestão Integrado de Manutenção</p>
+    </div>
+    
+    <!-- Grid de Módulos -->
+    <div class="modules-grid">
+
+        <!-- 🚚 TRANSPORTE - Todos os usuários autenticados -->
+        {% if user.is_authenticated %}
+        <a href="{% url 'listar_pedidos' %}" class="module-card transporte">
+            <div class="module-icon">🚚</div>
+            <h3 class="module-title">Solicitação de Transporte</h3>
+            <p class="module-description">Solicite e acompanhe transportes internos</p>
+            <div class="module-stats">
+                {% if stats_transporte.pendentes > 0 %}
+                <span class="stat-badge warning">{{ stats_transporte.pendentes }} pendentes</span>
+                {% endif %}
+                {% if stats_transporte.em_andamento > 0 %}
+                <span class="stat-badge info">{{ stats_transporte.em_andamento }} em andamento</span>
+                {% endif %}
+                {% if stats_transporte.pendentes == 0 and stats_transporte.em_andamento == 0 %}
+                <span class="stat-badge success">Tudo em dia</span>
+                {% endif %}
+            </div>
+        </a>
+        {% endif %}
+
+        <!-- ⛽ COMBUSTÍVEL - Apenas ADMIN e SUPERVISOR -->
+        {% if user.is_authenticated and user.perfil.codigo_perfil in 'ADMIN,SUPERVISOR' %}
+        <a href="{% url 'dashboard_diesel' %}" class="module-card combustivel">
+            <div class="module-icon">⛽</div>
+            <h3 class="module-title">Controle de Combustível</h3>
+            <p class="module-description">Gerencie abastecimentos e estoque de diesel</p>
+            <div class="module-stats">
+                <span class="stat-badge {% if stats_combustivel.nivel < 30 %}danger{% elif stats_combustivel.nivel < 60 %}warning{% else %}success{% endif %}">
+                    Nível: {{ stats_combustivel.nivel|floatformat:1 }}%
+                </span>
+                {% if stats_combustivel.abastecimentos_hoje > 0 %}
+                <span class="stat-badge info">{{ stats_combustivel.abastecimentos_hoje }} hoje</span>
+                {% endif %}
+            </div>
+        </a>
+        {% endif %}
+
+        <!-- 🚛 FROTAS LOCADAS - ADMIN, SUPERVISOR e perfis de manutenção -->
+        {% if user.is_authenticated and user.perfil.codigo_perfil in 'ADMIN,SUPERVISOR,MANUTENCAO_CONT_PTA,CONTROLE_MAN_PTA,CONTROLE_PROD_PTA' or user.perfil.is_terceiro %}
+        <a href="{% url 'frota_locada:dashboard' %}" class="module-card frotas">
+            <div class="module-icon">🚛</div>
+            <h3 class="module-title">Controle de Frotas Locadas</h3>
+            <p class="module-description">Gerencie veículos, manutenções e chamados</p>
+            <div class="module-stats">
+                {% if stats_frotas.chamados_abertos > 0 %}
+                <span class="stat-badge warning">{{ stats_frotas.chamados_abertos }} chamados</span>
+                {% endif %}
+                {% if stats_frotas.veiculos_manutencao > 0 %}
+                <span class="stat-badge danger">{{ stats_frotas.veiculos_manutencao }} em manutenção</span>
+                {% endif %}
+                {% if stats_frotas.chamados_abertos == 0 and stats_frotas.veiculos_manutencao == 0 %}
+                <span class="stat-badge success">Frota OK</span>
+                {% endif %}
+            </div>
+        </a>
+        {% endif %}
+
+        <!-- ☁️ GASES - Apenas ADMIN -->
+        {% if user.is_authenticated and user.perfil.codigo_perfil == 'ADMIN' %}
+        <a href="{% url 'gases:dashboard' %}" class="module-card gases">
+            <div class="module-icon">☁️</div>
+            <h3 class="module-title">Controle de Gases</h3>
+            <p class="module-description">Gerencie cilindros e movimentações de gases</p>
+            <div class="module-stats">
+                {% if stats_gases.total_cilindros > 0 %}
+                <span class="stat-badge info">{{ stats_gases.total_cilindros }} cilindros</span>
+                {% endif %}
+                {% if stats_gases.baixo_estoque > 0 %}
+                <span class="stat-badge warning">{{ stats_gases.baixo_estoque }} baixo estoque</span>
+                {% endif %}
+            </div>
+        </a>
+        {% endif %}
+
+        <!-- ⚡ ENERGIA ELÉTRICA - Apenas ADMIN (Em desenvolvimento) -->
+        {% if user.is_authenticated and user.perfil.codigo_perfil == 'ADMIN' %}
+        <div class="module-card energia disabled">
+            <div class="module-icon">⚡</div>
+            <h3 class="module-title">Energia Elétrica</h3>
+            <p class="module-description">Controle de consumo e contas de energia</p>
+            <div class="module-stats">
+                <span class="coming-soon">Em desenvolvimento</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 💻 PORTÁTEIS - Apenas ADMIN (Em desenvolvimento) -->
+        {% if user.is_authenticated and user.perfil.codigo_perfil == 'ADMIN' %}
+        <div class="module-card portateis disabled">
+            <div class="module-icon">💻</div>
+            <h3 class="module-title">Equipamentos Portáteis</h3>
+            <p class="module-description">Controle de notebooks, tablets e celulares</p>
+            <div class="module-stats">
+                <span class="coming-soon">Em desenvolvimento</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ⚙️ ADMINISTRAÇÃO - Apenas ADMIN e SUPERVISOR -->
+        {% if user.is_authenticated and user.perfil.codigo_perfil in 'ADMIN,SUPERVISOR' %}
+        <a href="{% url 'listar_usuarios' %}" class="module-card admin">
+            <div class="module-icon">⚙️</div>
+            <h3 class="module-title">Administração</h3>
+            <p class="module-description">Gerencie usuários, perfis e configurações</p>
+            <div class="module-stats">
+                <span class="stat-badge info">{{ stats_admin.total_usuarios }} usuários</span>
+                {% if stats_admin.usuarios_ativos > 0 %}
+                <span class="stat-badge success">{{ stats_admin.usuarios_ativos }} ativos</span>
+                {% endif %}
+            </div>
+        </a>
+        {% endif %}
+
+    </div>
+
+    <!-- Mensagem de boas-vindas -->
+    <div class="text-center mt-4">
+        <p class="text-muted">
+            <i class="bi bi-person-circle"></i>
+            Bem-vindo(a), <strong>{{ user.get_full_name|default:user.username }}</strong>!
+            <span class="badge bg-primary ms-2">{{ user.perfil.nome_perfil }}</span>
+        </p>
+    </div>
+</div>
+{% endblock %}
+

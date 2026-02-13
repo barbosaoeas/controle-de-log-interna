@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Gases{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-gases {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    .card-gases .card-body {
+        padding: 2rem;
+    }
+    .stats-icon {
+        font-size: 3rem;
+        opacity: 0.8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="bi bi-cloud"></i> Dashboard - Módulo de Gases</h2>
+            <p class="text-muted">Visão geral do controle de gases industriais</p>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card card-gases shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-cloud stats-icon"></i>
+                    <h3 class="mt-2">{{ total_tipos }}</h3>
+                    <p class="mb-0">Tipos de Gases</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card card-gases shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-arrow-repeat stats-icon"></i>
+                    <h3 class="mt-2">{{ total_movimentacoes }}</h3>
+                    <p class="mb-0">Movimentações</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card card-gases shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-boxes stats-icon"></i>
+                    <h3 class="mt-2">0</h3>
+                    <p class="mb-0">Em Estoque</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card card-gases shadow">
+                <div class="card-body text-center">
+                    <i class="bi bi-truck stats-icon"></i>
+                    <h3 class="mt-2">0</h3>
+                    <p class="mb-0">Entregas Hoje</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-lightning"></i> Ações Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'gases:tipos' %}" class="btn btn-success w-100">
+                                <i class="bi bi-plus-circle"></i>
+                                Cadastrar Gases
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-success w-100" onclick="alert('Em desenvolvimento')">
+                                <i class="bi bi-arrow-repeat"></i>
+                                Nova Movimentação
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-success w-100" onclick="alert('Em desenvolvimento')">
+                                <i class="bi bi-boxes"></i>
+                                Controle de Estoque
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-success w-100" onclick="alert('Em desenvolvimento')">
+                                <i class="bi bi-file-earmark-text"></i>
+                                Relatórios
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimas Movimentações -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Últimas Movimentações</h5>
+                </div>
+                <div class="card-body">
+                    {% if ultimas_movimentacoes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Tipo de Gás</th>
+                                        <th>Quantidade</th>
+                                        <th>Fornecedor</th>
+                                        <th>Criado por</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mov in ultimas_movimentacoes %}
+                                    <tr>
+                                        <td>{{ mov.data_entrega|date:"d/m/Y" }}</td>
+                                        <td>{{ mov.tipo_gas.nome_gas }}</td>
+                                        <td>{{ mov.quantidade }} {{ mov.get_unidade_display }}</td>
+                                        <td>{{ mov.get_fornecedor_display }}</td>
+                                        <td>{{ mov.criado_por.first_name|default:mov.criado_por.username }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-cloud" style="font-size: 3rem; color: #dee2e6;"></i>
+                            <h5 class="text-muted mt-3">Nenhuma movimentação registrada</h5>
+                            <p class="text-muted">As movimentações de gases aparecerão aqui</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Atualizar dados a cada 5 minutos
+setInterval(function() {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}

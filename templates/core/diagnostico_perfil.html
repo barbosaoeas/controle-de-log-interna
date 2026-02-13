@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Diagnóstico de Perfil{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center mb-4">🧪 DIAGNÓSTICO COMPLETO - PERFIS DE USUÁRIO</h1>
+            
+            <!-- INFORMAÇÕES DETALHADAS DO USUÁRIO -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📊 Informações Detalhadas do Usuário</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>🔐 Usuário Autenticado:</strong> {{ user.is_authenticated }}</p>
+                            <p><strong>👤 Username:</strong> {{ user.username }}</p>
+                            <p><strong>📧 Email:</strong> {{ user.email|default:"Não informado" }}</p>
+                            <p><strong>🏢 First Name:</strong> {{ user.first_name|default:"Não informado" }}</p>
+                            <p><strong>👨‍💼 Last Name:</strong> {{ user.last_name|default:"Não informado" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if user.perfil %}
+                                <p><strong>🎭 Tem Perfil:</strong> ✅ SIM</p>
+                                <p><strong>📋 Código do Perfil:</strong> {{ user.perfil.codigo_perfil }}</p>
+                                <p><strong>📝 Nome do Perfil:</strong> {{ user.perfil.nome_perfil }}</p>
+                                <p><strong>🔑 É Admin:</strong> {{ user.perfil.is_admin }}</p>
+                                <p><strong>👨‍💼 É Supervisor:</strong> {{ user.perfil.is_supervisor }}</p>
+                                <p><strong>🏢 Setor:</strong> {{ user.perfil.setor.nome|default:"Não informado" }}</p>
+                            {% else %}
+                                <p><strong>🎭 Tem Perfil:</strong> ❌ NÃO</p>
+                                <p class="text-danger"><strong>⚠️ PROBLEMA:</strong> Usuário sem perfil!</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TESTE DE CONDIÇÕES -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">🧪 Teste de Condições</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <h6>Resultado das Condições:</h6>
+                            
+                            <!-- Teste 1: user.perfil existe? -->
+                            <p>
+                                <strong>1. user.perfil existe?</strong>
+                                {% if user.perfil %}
+                                    <span class="badge bg-success">✅ SIM</span>
+                                {% else %}
+                                    <span class="badge bg-danger">❌ NÃO</span>
+                                {% endif %}
+                            </p>
+                            
+                            <!-- Teste 2: user.perfil.is_admin -->
+                            <p>
+                                <strong>2. user.perfil.is_admin?</strong>
+                                {% if user.perfil.is_admin %}
+                                    <span class="badge bg-success">✅ TRUE</span>
+                                {% else %}
+                                    <span class="badge bg-danger">❌ FALSE</span>
+                                {% endif %}
+                            </p>
+                            
+                            <!-- Teste 3: user.perfil.is_supervisor -->
+                            <p>
+                                <strong>3. user.perfil.is_supervisor?</strong>
+                                {% if user.perfil.is_supervisor %}
+                                    <span class="badge bg-success">✅ TRUE</span>
+                                {% else %}
+                                    <span class="badge bg-danger">❌ FALSE</span>
+                                {% endif %}
+                            </p>
+                            
+                            <!-- Teste 4: Condição completa -->
+                            <p>
+                                <strong>4. (is_admin OR is_supervisor)?</strong>
+                                {% if user.perfil.is_admin or user.perfil.is_supervisor %}
+                                    <span class="badge bg-success">✅ TRUE - DEVE MOSTRAR BOTÃO</span>
+                                {% else %}
+                                    <span class="badge bg-danger">❌ FALSE - NÃO DEVE MOSTRAR BOTÃO</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TESTE DE BOTÕES -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🎯 Teste de Botões</h5>
+                </div>
+                <div class="card-body text-center">
+                    
+                    <!-- Botão sempre visível -->
+                    <button type="button" class="btn btn-warning btn-lg me-3 mb-3" style="font-size: 18px;">
+                        🟠 BOTÃO SEMPRE VISÍVEL 🟠
+                    </button>
+                    
+                    <!-- Botão com condição -->
+                    {% if user.perfil.is_admin or user.perfil.is_supervisor %}
+                    <button type="button" class="btn btn-success btn-lg mb-3" style="font-size: 18px;">
+                        🟢 GERENCIAR PERFIS (ADMIN/SUPERVISOR) 🟢
+                    </button>
+                    {% else %}
+                    <div class="alert alert-danger d-inline-block">
+                        <strong>❌ SEM PERMISSÃO PARA GERENCIAR PERFIS</strong>
+                    </div>
+                    {% endif %}
+                    
+                    <br>
+                    <a href="{% url 'listar_usuarios' %}" class="btn btn-primary">
+                        ← Voltar para Lista de Usuários
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

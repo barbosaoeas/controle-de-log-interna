@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalhes do Veículo - {{ veiculo.placa }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-card {
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 5px;
+    }
+    .info-value {
+        color: #212529;
+        font-size: 1.1em;
+    }
+    .status-badge {
+        font-size: 0.9em;
+        padding: 8px 12px;
+        border-radius: 20px;
+    }
+    .historico-item {
+        border-left: 3px solid #007bff;
+        padding-left: 15px;
+        margin-bottom: 15px;
+    }
+    .section-title {
+        color: #495057;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-truck text-primary"></i> Detalhes do Veículo</h2>
+            <p class="text-muted mb-0">{{ veiculo.placa }} - {{ veiculo.marca.nome }} {{ veiculo.modelo }}</p>
+        </div>
+        <div>
+            <a href="{% url 'frota_locada:editar_veiculo' veiculo.id %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <a href="{% url 'frota_locada:listar_veiculos' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações Básicas -->
+        <div class="col-md-6">
+            <div class="card info-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informações Básicas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="info-label">Placa</div>
+                            <div class="info-value">{{ veiculo.placa }}</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="info-label">Marca</div>
+                            <div class="info-value">{{ veiculo.marca.nome }}</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="info-label">Modelo</div>
+                            <div class="info-value">{{ veiculo.modelo }}</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="info-label">Ano</div>
+                            <div class="info-value">{{ veiculo.ano_fabricacao }}</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="info-label">Cor</div>
+                            <div class="info-value">{{ veiculo.cor }}</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="info-label">Tipo</div>
+                            <div class="info-value">{{ veiculo.tipo_veiculo.nome }}</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="info-label">Status</div>
+                            <div class="info-value">
+                                <span class="badge status-badge {{ veiculo.status_badge_class }}">
+                                    {{ veiculo.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="info-label">Locado Para</div>
+                            <div class="info-value">{{ veiculo.get_locado_para_display }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fornecedor e Contrato -->
+        <div class="col-md-6">
+            <div class="card info-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-building"></i> Fornecedor e Contrato</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="info-label">Fornecedor</div>
+                        <div class="info-value">{{ veiculo.fornecedor.nome }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="info-label">Número do Contrato</div>
+                        <div class="info-value">{{ veiculo.numero_contrato|default:"Não informado" }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="info-label">Data Início</div>
+                            <div class="info-value">{{ veiculo.data_inicio_locacao|date:"d/m/Y" }}</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="info-label">Previsão Fim</div>
+                            <div class="info-value">
+                                {% if veiculo.data_fim_locacao %}
+                                    {{ veiculo.data_fim_locacao|date:"d/m/Y" }}
+                                {% else %}
+                                    Não definida
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="info-label">Valor Mensal</div>
+                        <div class="info-value">R$ {{ veiculo.valor_mensal|floatformat:2 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Horímetro -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card info-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock"></i> Controle de Horímetro</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="info-label">Horímetro Inicial</div>
+                            <div class="info-value">{{ veiculo.horimetro_inicial }}h</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-label">Horímetro Atual</div>
+                            <div class="info-value">{{ veiculo.horimetro_atual }}h</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-label">Horas Trabalhadas</div>
+                            <div class="info-value">{{ veiculo.horas_trabalhadas }}h</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-end">
+                                <a href="{% url 'frota_locada:registrar_km' %}?veiculo={{ veiculo.id }}" class="btn btn-success">
+                                    <i class="bi bi-plus-circle"></i> Registrar Horímetro
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Histórico de Horímetro -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card info-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Histórico de Horímetro</h5>
+                    <a href="{% url 'frota_locada:listar_historico_horimetro' %}?veiculo={{ veiculo.id }}" class="btn btn-sm btn-outline-primary">
+                        Ver Todos
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if historico_horimetro %}
+                        {% for registro in historico_horimetro %}
+                        <div class="historico-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>{{ registro.horimetro_atual }}h</strong>
+                                    <small class="text-muted d-block">{{ registro.data_registro|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">{{ registro.observacoes|default:"Sem observações" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-clock-history fs-1"></i>
+                            <p class="mt-2">Nenhum registro de horímetro encontrado</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Manutenções -->
+        <div class="col-md-6">
+            <div class="card info-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-wrench"></i> Manutenções</h5>
+                    <a href="{% url 'frota_locada:agendar_manutencao' %}?veiculo={{ veiculo.id }}" class="btn btn-sm btn-success">
+                        <i class="bi bi-plus-circle"></i> Agendar
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if manutencoes %}
+                        {% for manutencao in manutencoes %}
+                        <div class="historico-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>{{ manutencao.tipo_manutencao.nome }}</strong>
+                                    <small class="text-muted d-block">{{ manutencao.data_agendada|date:"d/m/Y" }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-{{ manutencao.status_color }}">
+                                        {{ manutencao.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-wrench fs-1"></i>
+                            <p class="mt-2">Nenhuma manutenção registrada</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Observações -->
+    {% if veiculo.observacoes %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card info-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-chat-text"></i> Observações</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ veiculo.observacoes }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,764 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .form-header h2 {
+        margin: 0;
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .form-body {
+        padding: 2rem;
+    }
+
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #28a745;
+    }
+
+    .form-section h5 {
+        color: #28a745;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40,167,69,0.3);
+    }
+
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .masked-input {
+        position: relative;
+    }
+
+    .masked-input::before {
+        content: "📱";
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .cnpj-input::before {
+        content: "🏢";
+    }
+
+    .form-control.is-invalid {
+        border-color: #dc3545;
+        background-image: none;
+    }
+
+    .invalid-feedback {
+        display: block;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+        color: #dc3545;
+    }
+
+    @media (max-width: 768px) {
+        .form-body {
+            padding: 1rem;
+        }
+        
+        .form-section {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card form-card">
+                <div class="form-header">
+                    <h2>
+                        <i class="bi bi-building"></i>
+                        {{ titulo }}
+                    </h2>
+                </div>
+                
+                <div class="form-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Informações Básicas -->
+                        <div class="form-section">
+                            <h5>
+                                <i class="bi bi-info-circle"></i>
+                                Informações Básicas
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="{{ form.nome.id_for_label }}" class="form-label required-field">
+                                        <i class="bi bi-building"></i>
+                                        Nome da Empresa
+                                    </label>
+                                    {{ form.nome }}
+                                    {% if form.nome.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.nome.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.cnpj.id_for_label }}" class="form-label required-field">
+                                        <i class="bi bi-card-text"></i>
+                                        CNPJ
+                                    </label>
+                                    <div class="masked-input cnpj-input">
+                                        {{ form.cnpj }}
+                                    </div>
+                                    {% if form.cnpj.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.cnpj.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="{{ form.empresa.id_for_label }}" class="form-label">
+                                        <i class="bi bi-building-gear"></i>
+                                        Empresa Responsável pela Manutenção
+                                    </label>
+                                    <div class="input-group">
+                                        {{ form.empresa }}
+                                        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalNovaEmpresa" title="Cadastrar Nova Empresa">
+                                            <i class="bi bi-plus-circle"></i>
+                                        </button>
+                                    </div>
+                                    {% if form.empresa.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.empresa.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Selecione a empresa que presta serviço de manutenção para os equipamentos deste fornecedor
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.telefone.id_for_label }}" class="form-label">
+                                        <i class="bi bi-telephone"></i>
+                                        Telefone
+                                    </label>
+                                    <div class="masked-input">
+                                        {{ form.telefone }}
+                                    </div>
+                                    {% if form.telefone.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.telefone.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                        <i class="bi bi-envelope"></i>
+                                        E-mail
+                                    </label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.email.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="{{ form.endereco.id_for_label }}" class="form-label">
+                                    <i class="bi bi-geo-alt"></i>
+                                    Endereço
+                                </label>
+                                {{ form.endereco }}
+                                {% if form.endereco.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.endereco.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="{{ form.contato_responsavel.id_for_label }}" class="form-label">
+                                        <i class="bi bi-person"></i>
+                                        Contato Responsável
+                                    </label>
+                                    {{ form.contato_responsavel }}
+                                    {% if form.contato_responsavel.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.contato_responsavel.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Status</label>
+                                    <div class="form-check form-switch">
+                                        {{ form.ativo }}
+                                        <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                                            Ativo
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between flex-wrap gap-2">
+                            <a href="{% url 'frota_locada:listar_fornecedores' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i>
+                                {{ botao_texto }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Gerenciamento de Empresas -->
+<div class="modal fade" id="modalNovaEmpresa" tabindex="-1" aria-labelledby="modalNovaEmpresaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalNovaEmpresaLabel">
+                    <i class="bi bi-building-gear"></i>
+                    Gerenciar Empresas
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Abas -->
+                <ul class="nav nav-tabs mb-3" id="empresaTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="lista-tab" data-bs-toggle="tab" data-bs-target="#lista-empresas" type="button" role="tab">
+                            <i class="bi bi-list-ul"></i>
+                            Lista de Empresas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="nova-tab" data-bs-toggle="tab" data-bs-target="#nova-empresa" type="button" role="tab">
+                            <i class="bi bi-plus-circle"></i>
+                            Nova Empresa
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Conteúdo das Abas -->
+                <div class="tab-content" id="empresaTabContent">
+                    <!-- ABA: Lista de Empresas -->
+                    <div class="tab-pane fade show active" id="lista-empresas" role="tabpanel">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="buscarEmpresa" placeholder="🔍 Buscar empresa...">
+                        </div>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Tipo</th>
+                                        <th>CNPJ</th>
+                                        <th>Telefone</th>
+                                        <th>Status</th>
+                                        <th width="150">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaEmpresas">
+                                    <tr>
+                                        <td colspan="6" class="text-center">
+                                            <div class="spinner-border text-success" role="status">
+                                                <span class="visually-hidden">Carregando...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ABA: Nova Empresa -->
+                    <div class="tab-pane fade" id="nova-empresa" role="tabpanel">
+                        <form id="formNovaEmpresa">
+                            {% csrf_token %}
+                            <input type="hidden" id="empresa_id" name="empresa_id">
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="empresa_nome" class="form-label">
+                                        <i class="bi bi-building"></i>
+                                        Nome da Empresa *
+                                    </label>
+                                    <input type="text" class="form-control" id="empresa_nome" name="nome" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="empresa_tipo" class="form-label">
+                                        <i class="bi bi-tag"></i>
+                                        Tipo *
+                                    </label>
+                                    <select class="form-select" id="empresa_tipo" name="tipo" required>
+                                        <option value="">Selecione...</option>
+                                        <option value="PROPRIA">Empresa Própria</option>
+                                        <option value="TERCEIRIZADA" selected>Empresa Terceirizada</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="empresa_cnpj" class="form-label">
+                                        <i class="bi bi-card-text"></i>
+                                        CNPJ
+                                    </label>
+                                    <input type="text" class="form-control" id="empresa_cnpj" name="cnpj" placeholder="00.000.000/0000-00">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="empresa_contrato" class="form-label">
+                                        <i class="bi bi-file-text"></i>
+                                        Número do Contrato
+                                    </label>
+                                    <input type="text" class="form-control" id="empresa_contrato" name="contrato">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="empresa_telefone" class="form-label">
+                                        <i class="bi bi-telephone"></i>
+                                        Telefone
+                                    </label>
+                                    <input type="text" class="form-control" id="empresa_telefone" name="telefone">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="empresa_email" class="form-label">
+                                        <i class="bi bi-envelope"></i>
+                                        E-mail
+                                    </label>
+                                    <input type="email" class="form-control" id="empresa_email" name="email">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="empresa_observacoes" class="form-label">
+                                    <i class="bi bi-chat-left-text"></i>
+                                    Observações
+                                </label>
+                                <textarea class="form-control" id="empresa_observacoes" name="observacoes" rows="3"></textarea>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" onclick="limparFormEmpresa()">
+                                    <i class="bi bi-x-circle"></i>
+                                    Limpar
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="salvarEmpresa()">
+                                    <i class="bi bi-check-circle"></i>
+                                    <span id="btnSalvarTexto">Salvar Empresa</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara para CNPJ
+    const cnpjInput = document.getElementById('{{ form.cnpj.id_for_label }}');
+    if (cnpjInput) {
+        cnpjInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+
+            // Aplica a máscara XX.XXX.XXX/XXXX-XX
+            if (value.length <= 14) {
+                value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+            }
+
+            e.target.value = value;
+        });
+
+        // Remove máscara ao colar
+        cnpjInput.addEventListener('paste', function(e) {
+            setTimeout(() => {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length <= 14) {
+                    value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+                    value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                    value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                    value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                    e.target.value = value;
+                }
+            }, 10);
+        });
+    }
+
+    // Máscara para Telefone
+    const telefoneInput = document.getElementById('{{ form.telefone.id_for_label }}');
+    if (telefoneInput) {
+        telefoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+
+            // Aplica a máscara (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+            if (value.length <= 11) {
+                if (value.length <= 10) {
+                    // Telefone fixo: (XX) XXXX-XXXX
+                    value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+                    value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                } else {
+                    // Celular: (XX) XXXXX-XXXX
+                    value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+                    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+                }
+            }
+
+            e.target.value = value;
+        });
+
+        // Remove máscara ao colar
+        telefoneInput.addEventListener('paste', function(e) {
+            setTimeout(() => {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length <= 11) {
+                    if (value.length <= 10) {
+                        value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+                        value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                    } else {
+                        value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+                        value = value.replace(/(\d{5})(\d)/, '$1-$2');
+                    }
+                    e.target.value = value;
+                }
+            }, 10);
+        });
+    }
+
+    // Auto-focus no primeiro campo
+    const firstInput = document.querySelector('input[type="text"]');
+    if (firstInput) {
+        firstInput.focus();
+    }
+
+    // CNPJ - apenas máscara, sem validação visual
+    // (validação removida para ambiente de desenvolvimento)
+
+    // Validação visual em tempo real para Telefone
+    if (telefoneInput) {
+        telefoneInput.addEventListener('blur', function(e) {
+            const telefone = e.target.value.replace(/\D/g, '');
+            if (telefone.length > 0 && telefone.length < 10) {
+                e.target.classList.add('is-invalid');
+                let errorDiv = e.target.parentNode.querySelector('.invalid-feedback');
+                if (!errorDiv) {
+                    errorDiv = document.createElement('div');
+                    errorDiv.className = 'invalid-feedback';
+                    errorDiv.textContent = 'Telefone deve ter pelo menos 10 dígitos';
+                    e.target.parentNode.appendChild(errorDiv);
+                }
+            } else {
+                e.target.classList.remove('is-invalid');
+                const errorDiv = e.target.parentNode.querySelector('.invalid-feedback');
+                if (errorDiv) {
+                    errorDiv.remove();
+                }
+            }
+        });
+    }
+});
+
+// Carregar lista de empresas quando o modal abrir
+document.getElementById('modalNovaEmpresa').addEventListener('shown.bs.modal', function () {
+    carregarListaEmpresas();
+});
+
+// Busca em tempo real
+document.getElementById('buscarEmpresa').addEventListener('input', function(e) {
+    const termo = e.target.value.toLowerCase();
+    const linhas = document.querySelectorAll('#listaEmpresas tr');
+
+    linhas.forEach(linha => {
+        const texto = linha.textContent.toLowerCase();
+        linha.style.display = texto.includes(termo) ? '' : 'none';
+    });
+});
+
+// Carregar lista de empresas
+function carregarListaEmpresas() {
+    fetch('/api/empresas/')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('listaEmpresas');
+
+            // A API retorna {success: true, empresas: [...]}
+            const empresas = data.empresas || [];
+
+            if (empresas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Nenhuma empresa cadastrada</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = empresas.map(empresa => `
+                <tr>
+                    <td><strong>${empresa.nome}</strong></td>
+                    <td><span class="badge bg-${empresa.tipo === 'PROPRIA' ? 'primary' : 'info'}">${empresa.tipo_display}</span></td>
+                    <td>${empresa.cnpj || '-'}</td>
+                    <td>${empresa.telefone || '-'}</td>
+                    <td><span class="badge bg-success">Ativo</span></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="editarEmpresa(${empresa.id})" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-success" onclick="selecionarEmpresa(${empresa.id}, '${empresa.nome}')" title="Selecionar">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="excluirEmpresa(${empresa.id}, '${empresa.nome}')" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('Erro ao carregar empresas:', error);
+            document.getElementById('listaEmpresas').innerHTML =
+                '<tr><td colspan="6" class="text-center text-danger">Erro ao carregar empresas</td></tr>';
+        });
+}
+
+// Selecionar empresa e fechar modal
+function selecionarEmpresa(id, nome) {
+    const selectEmpresa = document.getElementById('{{ form.empresa.id_for_label }}');
+    selectEmpresa.value = id;
+
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modalNovaEmpresa'));
+    modal.hide();
+
+    // Feedback visual
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000
+    });
+    Toast.fire({
+        icon: 'success',
+        title: `Empresa "${nome}" selecionada!`
+    });
+}
+
+// Editar empresa
+function editarEmpresa(id) {
+    fetch(`/api/empresas/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert('Erro: ' + (data.error || 'Erro ao carregar empresa'));
+                return;
+            }
+
+            const empresa = data.empresa;
+
+            // Preencher formulário
+            document.getElementById('empresa_id').value = empresa.id;
+            document.getElementById('empresa_nome').value = empresa.nome;
+            document.getElementById('empresa_tipo').value = empresa.tipo;
+            document.getElementById('empresa_cnpj').value = empresa.cnpj || '';
+            document.getElementById('empresa_contrato').value = empresa.contrato || '';
+            document.getElementById('empresa_telefone').value = empresa.telefone || '';
+            document.getElementById('empresa_email').value = empresa.email || '';
+            document.getElementById('empresa_observacoes').value = empresa.observacoes || '';
+
+            // Mudar texto do botão
+            document.getElementById('btnSalvarTexto').textContent = 'Atualizar Empresa';
+
+            // Ir para aba de formulário
+            const novaTab = new bootstrap.Tab(document.getElementById('nova-tab'));
+            novaTab.show();
+        })
+        .catch(error => {
+            console.error('Erro ao carregar empresa:', error);
+            alert('Erro ao carregar dados da empresa');
+        });
+}
+
+// Limpar formulário
+function limparFormEmpresa() {
+    document.getElementById('formNovaEmpresa').reset();
+    document.getElementById('empresa_id').value = '';
+    document.getElementById('btnSalvarTexto').textContent = 'Salvar Empresa';
+}
+
+// Salvar empresa (criar ou atualizar)
+function salvarEmpresa() {
+    const form = document.getElementById('formNovaEmpresa');
+    const formData = new FormData(form);
+    const empresaId = document.getElementById('empresa_id').value;
+
+    // Validação
+    const nome = document.getElementById('empresa_nome').value.trim();
+    const tipo = document.getElementById('empresa_tipo').value;
+
+    if (!nome) {
+        alert('Por favor, preencha o nome da empresa.');
+        document.getElementById('empresa_nome').focus();
+        return;
+    }
+
+    if (!tipo) {
+        alert('Por favor, selecione o tipo da empresa.');
+        document.getElementById('empresa_tipo').focus();
+        return;
+    }
+
+    // URL e método
+    const url = empresaId ? `/api/empresas/${empresaId}/editar/` : '/api/empresas/criar/';
+    const metodo = empresaId ? 'PUT' : 'POST';
+
+    // Desabilitar botão
+    const btnSalvar = event.target;
+    btnSalvar.disabled = true;
+    btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando...';
+
+    // Enviar
+    fetch(url, {
+        method: metodo,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Atualizar select
+            const selectEmpresa = document.getElementById('{{ form.empresa.id_for_label }}');
+
+            if (empresaId) {
+                // Atualizar opção existente
+                const option = selectEmpresa.querySelector(`option[value="${empresaId}"]`);
+                if (option) option.text = data.empresa.nome;
+            } else {
+                // Adicionar nova opção
+                const option = new Option(data.empresa.nome, data.empresa.id, true, true);
+                selectEmpresa.add(option);
+            }
+
+            // Limpar e voltar para lista
+            limparFormEmpresa();
+            carregarListaEmpresas();
+
+            const listaTab = new bootstrap.Tab(document.getElementById('lista-tab'));
+            listaTab.show();
+
+            alert(empresaId ? 'Empresa atualizada com sucesso!' : 'Empresa cadastrada com sucesso!');
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar empresa. Tente novamente.');
+    })
+    .finally(() => {
+        btnSalvar.disabled = false;
+        btnSalvar.innerHTML = '<i class="bi bi-check-circle"></i> <span id="btnSalvarTexto">' +
+            (empresaId ? 'Atualizar Empresa' : 'Salvar Empresa') + '</span>';
+    });
+}
+
+// Excluir empresa
+function excluirEmpresa(id, nome) {
+    if (!confirm(`Tem certeza que deseja excluir a empresa "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+        return;
+    }
+
+    fetch(`/api/empresas/${id}/excluir/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remover do select
+            const selectEmpresa = document.getElementById('{{ form.empresa.id_for_label }}');
+            const option = selectEmpresa.querySelector(`option[value="${id}"]`);
+            if (option) option.remove();
+
+            // Recarregar lista
+            carregarListaEmpresas();
+
+            alert('Empresa excluída com sucesso!');
+        } else {
+            alert('Erro ao excluir: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao excluir empresa. Tente novamente.');
+    });
+}
+</script>
+{% endblock %}

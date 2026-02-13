@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Abastecer Veículo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .tanque-info {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .veiculo-info {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+        display: none;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .btn-abastecer {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        padding: 12px 30px;
+        font-weight: bold;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+    
+    .btn-abastecer:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    
+    .alert-tanque {
+        border-left: 4px solid #ffc107;
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="form-container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="bi bi-fuel-pump"></i> Abastecer Veículo</h2>
+                        <p class="text-muted mb-0">Registrar abastecimento de combustível</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'dashboard_diesel' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informações do Tanque -->
+        {% if tanque %}
+        <div class="tanque-info text-center">
+            <h4><i class="bi bi-fuel-pump-fill"></i> Tanque Principal</h4>
+            <div class="row mt-3">
+                <div class="col-4">
+                    <h3 class="mb-0">{{ tanque.nivel_atual|floatformat:0 }}L</h3>
+                    <small>Disponível</small>
+                </div>
+                <div class="col-4">
+                    <h3 class="mb-0">{{ tanque.percentual_atual|floatformat:1 }}%</h3>
+                    <small>Capacidade</small>
+                </div>
+                <div class="col-4">
+                    <h3 class="mb-0 {{ tanque.status_css_class }}">
+                        {% if tanque.status_nivel == 'VERDE' %}
+                            <i class="bi bi-check-circle"></i>
+                        {% elif tanque.status_nivel == 'AMARELO' %}
+                            <i class="bi bi-exclamation-triangle"></i>
+                        {% else %}
+                            <i class="bi bi-x-circle"></i>
+                        {% endif %}
+                    </h3>
+                    <small>Status</small>
+                </div>
+            </div>
+            
+            {% if tanque.status_nivel != 'VERDE' %}
+            <div class="alert alert-tanque mt-3 mb-0">
+                <i class="bi bi-exclamation-triangle"></i>
+                {% if tanque.status_nivel == 'AMARELO' %}
+                    <strong>Atenção:</strong> Nível baixo. Programar reabastecimento.
+                {% else %}
+                    <strong>Crítico:</strong> Nível muito baixo. Reabastecer urgente!
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Formulário de Abastecimento -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Dados do Abastecimento</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="formAbastecimento">
+                    {% csrf_token %}
+                    
+                    <!-- Seleção do Veículo -->
+                    <div class="mb-3">
+                        <label for="veiculo" class="form-label">
+                            <i class="bi bi-truck"></i> Veículo *
+                        </label>
+                        <select class="form-select" id="veiculo" name="veiculo" required>
+                            <option value="">Selecione um veículo...</option>
+                            {% for veiculo in veiculos %}
+                            <option value="{{ veiculo.id }}"
+                                    data-nome="{{ veiculo.nome }}"
+                                    data-placa="{{ veiculo.placa|default:'' }}"
+                                    data-tipo="{{ veiculo.categoria|default:'EQUIPAMENTO' }}"
+                                    data-capacidade="{{ veiculo.capacidade_tanque|default:0|floatformat:0 }}"
+                                    data-modelo="{{ veiculo.modelo|default:'Não informado' }}">
+                                {{ veiculo.nome }} ({{ veiculo.placa }}) - {{ veiculo.categoria }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Seleção do Cliente -->
+                    <div class="mb-3">
+                        <label for="cliente" class="form-label">
+                            <i class="bi bi-person-badge"></i> Cliente
+                        </label>
+                        <select class="form-select" id="cliente" name="cliente">
+                            <option value="">Selecione um cliente (opcional)...</option>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">
+                                {{ cliente.nome }}
+                                {% if cliente.documento %}
+                                    - {{ cliente.documento }}
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i>
+                            Opcional - para controle de custos por cliente
+                        </div>
+                    </div>
+
+                    <!-- Informações do Veículo Selecionado -->
+                    <div id="veiculoInfo" class="veiculo-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Modelo:</strong> <span id="veiculoModelo">-</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Capacidade do Tanque:</strong> <span id="veiculoCapacidade">-</span>L
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quantidade de Litros -->
+                    <div class="mb-3">
+                        <label for="quantidade_litros" class="form-label">
+                            <i class="bi bi-droplet"></i> Quantidade de Litros *
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="quantidade_litros" 
+                                   name="quantidade_litros" step="0.01" min="0.01" 
+                                   placeholder="Ex: 150.00" required>
+                            <span class="input-group-text">L</span>
+                        </div>
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i> 
+                            Disponível no tanque: <strong>{{ tanque.nivel_atual|floatformat:0 }}L</strong>
+                        </div>
+                    </div>
+
+                    <!-- Odômetro -->
+                    <div class="mb-3">
+                        <label for="odometro_atual" class="form-label">
+                            <i class="bi bi-speedometer2"></i> Odômetro Atual (km)
+                        </label>
+                        <input type="number" class="form-control" id="odometro_atual" 
+                               name="odometro_atual" min="0" 
+                               placeholder="Ex: 125000">
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i> 
+                            Opcional - usado para calcular consumo
+                        </div>
+                    </div>
+
+                    <!-- Observações -->
+                    <div class="mb-4">
+                        <label for="observacoes" class="form-label">
+                            <i class="bi bi-chat-text"></i> Observações
+                        </label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" 
+                                  rows="3" placeholder="Observações sobre o abastecimento (opcional)"></textarea>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'dashboard_diesel' %}" class="btn btn-outline-secondary me-md-2">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-abastecer">
+                            <i class="bi bi-fuel-pump"></i> Registrar Abastecimento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const veiculoSelect = document.getElementById('veiculo');
+    const veiculoInfo = document.getElementById('veiculoInfo');
+    const veiculoModelo = document.getElementById('veiculoModelo');
+    const veiculoCapacidade = document.getElementById('veiculoCapacidade');
+    const quantidadeInput = document.getElementById('quantidade_litros');
+    const form = document.getElementById('formAbastecimento');
+
+    // Mostrar informações do veículo selecionado
+    veiculoSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (this.value) {
+            veiculoModelo.textContent = selectedOption.dataset.modelo || 'Não informado';
+            veiculoCapacidade.textContent = selectedOption.dataset.capacidade || '0';
+            veiculoInfo.style.display = 'block';
+            
+            // Definir valor máximo para quantidade baseado na capacidade do veículo
+            const capacidadeVeiculo = parseFloat(selectedOption.dataset.capacidade) || 0;
+            const nivelTanque = parseFloat({{ tanque.nivel_atual|default:0|floatformat:2 }}) || 0;
+            const maxQuantidade = Math.min(capacidadeVeiculo, nivelTanque);
+            
+            quantidadeInput.max = maxQuantidade;
+            quantidadeInput.placeholder = `Máximo: ${maxQuantidade.toFixed(0)}L`;
+        } else {
+            veiculoInfo.style.display = 'none';
+            quantidadeInput.max = '';
+            quantidadeInput.placeholder = 'Ex: 150.00';
+        }
+    });
+
+    // Validação do formulário
+    form.addEventListener('submit', function(e) {
+        const quantidade = parseFloat(quantidadeInput.value) || 0;
+        const nivelTanque = parseFloat({{ tanque.nivel_atual|default:0|floatformat:2 }}) || 0;
+        
+        if (quantidade > nivelTanque) {
+            e.preventDefault();
+            alert(`❌ Quantidade solicitada (${quantidade}L) é maior que o disponível no tanque (${nivelTanque}L).`);
+            return false;
+        }
+        
+        if (quantidade <= 0) {
+            e.preventDefault();
+            alert('❌ A quantidade deve ser maior que zero.');
+            return false;
+        }
+        
+        // Confirmação
+        const veiculo = veiculoSelect.options[veiculoSelect.selectedIndex].text;
+        if (!confirm(`Confirma o abastecimento?\n\nVeículo: ${veiculo}\nQuantidade: ${quantidade}L`)) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Validação em tempo real da quantidade
+    quantidadeInput.addEventListener('input', function() {
+        const quantidade = parseFloat(this.value) || 0;
+        const nivelTanque = parseFloat({{ tanque.nivel_atual|default:0|floatformat:2 }}) || 0;
+        
+        if (quantidade > nivelTanque) {
+            this.setCustomValidity(`Máximo disponível: ${nivelTanque}L`);
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+});
+</script>
+{% endblock %}

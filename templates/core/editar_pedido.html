@@ -1,0 +1,617 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Pedido - Sistema de Controle de Log Interna{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 0.375rem;
+    }
+    .required-field {
+        color: #dc3545;
+    }
+    .alert-warning {
+        border-left: 4px solid #ffc107;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-pencil"></i>
+        Editar Pedido #{{ pedido.id }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'listar_pedidos' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Voltar
+        </a>
+    </div>
+</div>
+
+<!-- Alerta de Informação -->
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    <strong>Atenção:</strong> Apenas pedidos com status "Pendente" podem ser editados. 
+    Após a edição, o pedido permanecerá pendente até ser processado pelo setor de transportes.
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-pencil"></i>
+            Formulário de Edição
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="post" id="editarPedidoForm" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Informações Básicas -->
+            <div class="form-section">
+                <h6 class="mb-3">
+                    <i class="bi bi-info-circle"></i>
+                    Informações Básicas
+                </h6>
+
+                <div class="row">
+                    <!-- Tipo de Pedido -->
+                    <div class="col-md-3 mb-3">
+                        <label for="tipo_pedido" class="form-label">
+                            <i class="bi bi-tag"></i>
+                            Tipo de Pedido <span class="required-field">*</span>
+                        </label>
+                        <select class="form-select" id="tipo_pedido" name="tipo_pedido" required>
+                            <option value="">Selecione o tipo</option>
+                            {% for value, label in tipo_choices %}
+                                <option value="{{ value }}" {% if pedido.tipo_pedido == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Prioridade -->
+                    <div class="col-md-3 mb-3">
+                        <label for="prioridade" class="form-label">
+                            <i class="bi bi-exclamation-circle"></i>
+                            Prioridade <span class="required-field">*</span>
+                        </label>
+                        <select class="form-select" id="prioridade" name="prioridade" required>
+                            <option value="">Selecione a prioridade</option>
+                            {% for value, label in prioridade_choices %}
+                                <option value="{{ value }}" {% if pedido.prioridade == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- 📅 Data de Agendamento -->
+                    <div class="col-md-3 mb-3">
+                        <label for="data_agendamento" class="form-label">
+                            <i class="bi bi-calendar-event"></i>
+                            Data do Serviço
+                        </label>
+                        <input type="date" class="form-control" id="data_agendamento" name="data_agendamento"
+                               value="{{ pedido.data_agendamento|date:'Y-m-d'|default:data_hoje }}" min="{{ data_hoje }}"
+                               onchange="toggleHoraAgendamento()">
+                        <small class="text-muted">Padrão: hoje</small>
+                    </div>
+
+                    <!-- ⏰ Hora Desejada (só aparece se for agendamento futuro) -->
+                    <div class="col-md-3 mb-3" id="horaAgendamentoContainer" style="{% if not pedido.data_agendamento or pedido.data_agendamento|date:'Y-m-d' == data_hoje %}display: none;{% endif %}">
+                        <label for="hora_agendamento" class="form-label">
+                            <i class="bi bi-clock"></i>
+                            Hora Desejada
+                        </label>
+                        <input type="time" class="form-control" id="hora_agendamento" name="hora_agendamento"
+                               value="{{ pedido.hora_agendamento|time:'H:i'|default:'07:30' }}">
+                        <small class="text-muted">Padrão: 7:30</small>
+                    </div>
+                </div>
+
+                <!-- Descrição -->
+                <div class="mb-3">
+                    <label for="descricao" class="form-label">
+                        <i class="bi bi-card-text"></i>
+                        Descrição do Pedido <span class="required-field">*</span>
+                    </label>
+                    <textarea class="form-control" id="descricao" name="descricao" rows="3" required
+                              placeholder="Descreva detalhadamente o que precisa ser transportado/coletado, incluindo quantidade">{{ pedido.descricao }}</textarea>
+                    <div class="form-text">
+                        <i class="bi bi-lightbulb"></i>
+                        Inclua informações como quantidade, peso, dimensões e qualquer cuidado especial necessário.
+                    </div>
+                </div>
+
+                <!-- 📸 Foto do Material -->
+                <div class="mb-3">
+                    <label for="foto_material" class="form-label">
+                        <i class="bi bi-camera"></i>
+                        Foto do Material
+                    </label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <input type="file" class="form-control" id="foto_material" name="foto_material"
+                                   accept="image/*" onchange="previewFotoMaterial(this)">
+                            <small class="text-muted">
+                                Deixe em branco para manter a foto atual.
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            {% if pedido.foto_material %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted">Foto atual:</span>
+                                    <img src="{{ pedido.foto_material.url }}"
+                                         alt="Foto atual"
+                                         class="img-thumbnail"
+                                         style="max-height: 80px;">
+                                </div>
+                            {% endif %}
+                            <div id="previewFotoContainer" style="display: none;">
+                                <span class="text-success">Nova foto:</span>
+                                <img id="previewFoto" class="img-thumbnail" style="max-height: 80px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Equipamento -->
+            <div class="form-section">
+                <h6 class="mb-3">
+                    <i class="bi bi-gear"></i>
+                    Equipamento/Material
+                </h6>
+                
+                <div class="row justify-content-center">
+                    <div class="col-md-6 mb-3">
+                        <label for="equipamento" class="form-label">
+                            <i class="bi bi-gear"></i>
+                            Equipamento/Material
+                        </label>
+                        <div class="input-group">
+                            <select class="form-select" id="equipamento" name="equipamento">
+                                <option value="">Selecione (opcional)</option>
+                                {% for equipamento in equipamentos %}
+                                    {% if equipamento.is_operacional or pedido.equipamento.id == equipamento.id %}
+                                        <option value="{{ equipamento.id }}" {% if pedido.equipamento.id == equipamento.id %}selected{% endif %}>
+                                            {{ equipamento.nome }}
+                                            {% if equipamento.codigo %}({{ equipamento.codigo }}){% endif %}
+                                            {% if not equipamento.is_operacional and pedido.equipamento.id == equipamento.id %}
+                                                - {{ equipamento.status_display }}
+                                            {% endif %}
+                                        </option>
+                                    {% else %}
+                                        <option value="" disabled class="text-muted">
+                                            {{ equipamento.nome }}
+                                            {% if equipamento.codigo %}({{ equipamento.codigo }}){% endif %}
+                                            - {{ equipamento.status_display }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-outline-primary" type="button" onclick="abrirModalAreas()" title="Gerenciar Áreas">
+                                <i class="bi bi-plus-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Localização -->
+            <div class="form-section">
+                <h6 class="mb-3">
+                    <i class="bi bi-geo-alt"></i>
+                    Localização
+                </h6>
+                
+                <div class="row">
+                    <!-- Área de Origem -->
+                    <div class="col-md-6 mb-3">
+                        <label for="area_origem" class="form-label">
+                            <i class="bi bi-geo-alt"></i>
+                            Área de Origem
+                        </label>
+                        <div class="input-group">
+                            <select class="form-select" id="area_origem" name="area_origem">
+                                <option value="">Selecione (opcional)</option>
+                                {% for area in areas %}
+                                    <option value="{{ area.id }}" {% if pedido.area_origem.id == area.id %}selected{% endif %}>
+                                        {{ area.nome }}
+                                        {% if area.localizacao %} - {{ area.localizacao }}{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-outline-primary" type="button" onclick="abrirModalAreas()" title="Gerenciar Áreas">
+                                <i class="bi bi-plus-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Área de Destino -->
+                    <div class="col-md-6 mb-3">
+                        <label for="area_destino" class="form-label">
+                            <i class="bi bi-geo-alt-fill"></i>
+                            Área de Destino
+                        </label>
+                        <select class="form-select" id="area_destino" name="area_destino">
+                            <option value="">Selecione (opcional)</option>
+                            {% for area in areas %}
+                                <option value="{{ area.id }}" {% if pedido.area_destino.id == area.id %}selected{% endif %}>
+                                    {{ area.nome }}
+                                    {% if area.localizacao %} - {{ area.localizacao }}{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Requisitante e Cliente -->
+            <div class="form-section">
+                <h6 class="mb-3">
+                    <i class="bi bi-person-check"></i>
+                    Requisitante e Cliente
+                </h6>
+
+                <!-- Requisitante -->
+                <div class="mb-3">
+                    <label class="form-label">
+                        <i class="bi bi-person-check"></i>
+                        Requisitante Original
+                    </label>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text">
+                            <i class="bi bi-person-fill"></i>
+                        </span>
+                        <input type="text" class="form-control bg-light"
+                               value="{{ pedido.nome_requisitante|default:'Não informado' }}" readonly>
+                        <span class="input-group-text text-info">
+                            <i class="bi bi-info-circle"></i>
+                        </span>
+                    </div>
+                    <div class="form-text text-info">
+                        <i class="bi bi-info-circle"></i>
+                        Este é o requisitante original do pedido (não pode ser alterado).
+                    </div>
+                </div>
+
+                <!-- Cliente Adicional -->
+                <div class="mb-3">
+                    <label for="cliente" class="form-label">
+                        <i class="bi bi-person-badge"></i>
+                        Cliente/Destinatário Adicional
+                    </label>
+                    <select class="form-select" id="cliente" name="cliente">
+                        <option value="">Nenhum cliente adicional</option>
+                        {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}" {% if pedido.cliente and pedido.cliente.id == cliente.id %}selected{% endif %}>
+                                {{ cliente.nome }}
+                                {% if cliente.empresa %} - {{ cliente.empresa }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">
+                        <i class="bi bi-lightbulb"></i>
+                        Cliente específico além do requisitante original.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Observações -->
+            <div class="form-section">
+                <h6 class="mb-3">
+                    <i class="bi bi-chat-text"></i>
+                    Observações Adicionais
+                </h6>
+                
+                <div class="mb-3">
+                    <label for="observacoes" class="form-label">
+                        <i class="bi bi-chat-text"></i>
+                        Observações
+                    </label>
+                    <textarea class="form-control" id="observacoes" name="observacoes" rows="3" 
+                              placeholder="Informações adicionais, instruções especiais, etc.">{{ pedido.observacoes }}</textarea>
+                </div>
+            </div>
+            
+            <!-- Botões -->
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'listar_pedidos' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i>
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para Gerenciar Áreas (mesmo do criar_pedido.html) -->
+<div class="modal fade" id="areasModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-geo-alt"></i>
+                    Gerenciar Áreas
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário para Nova Área -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-plus-circle"></i>
+                            Adicionar Nova Área
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="novaAreaForm">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="nova_area_nome" class="form-label">Nome da Área <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="nova_area_nome" name="nome" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="nova_area_localizacao" class="form-label">Localização</label>
+                                    <input type="text" class="form-control" id="nova_area_localizacao" name="localizacao" placeholder="Ex: Área Norte, Setor A">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="nova_area_descricao" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="nova_area_descricao" name="descricao" rows="2" placeholder="Descrição opcional da área"></textarea>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="adicionarArea()">
+                                <i class="bi bi-plus-circle"></i>
+                                Adicionar Área
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Lista de Áreas Existentes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-list"></i>
+                            Áreas Cadastradas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="listaAreas">
+                            <!-- Será preenchido via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Data de hoje para comparação
+const dataHoje = '{{ data_hoje }}';
+
+// ⏰ Mostrar hora apenas se for agendamento FUTURO (não hoje)
+function toggleHoraAgendamento() {
+    const dataInput = document.getElementById('data_agendamento');
+    const horaContainer = document.getElementById('horaAgendamentoContainer');
+    const horaInput = document.getElementById('hora_agendamento');
+
+    // Só mostra hora se a data for FUTURA (diferente de hoje)
+    if (dataInput.value && dataInput.value > dataHoje) {
+        horaContainer.style.display = 'block';
+    } else {
+        horaContainer.style.display = 'none';
+        horaInput.value = '07:30'; // Reset para padrão
+    }
+}
+
+// 📸 Preview da foto do material
+function previewFotoMaterial(input) {
+    const container = document.getElementById('previewFotoContainer');
+    const preview = document.getElementById('previewFoto');
+
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+
+        // Validar tamanho (máx 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('A foto deve ter no máximo 5MB.');
+            input.value = '';
+            container.style.display = 'none';
+            return;
+        }
+
+        // Validar tipo
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor, selecione apenas arquivos de imagem.');
+            input.value = '';
+            container.style.display = 'none';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            container.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+$(document).ready(function() {
+    // Validação do formulário
+    $('#editarPedidoForm').on('submit', function(e) {
+        let isValid = true;
+
+        // Validar campos obrigatórios
+        const requiredFields = ['tipo_pedido', 'descricao', 'prioridade'];
+
+        requiredFields.forEach(function(fieldName) {
+            const field = $(`#${fieldName}`);
+            if (!field.val() || field.val().trim() === '') {
+                field.addClass('is-invalid');
+                isValid = false;
+            } else {
+                field.removeClass('is-invalid');
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+            return false;
+        }
+
+        // Desabilitar botão de submit para evitar duplo clique
+        $(this).find('button[type="submit"]').prop('disabled', true).html(
+            '<i class="bi bi-hourglass-split"></i> Salvando...'
+        );
+    });
+
+    // Remover classe de erro quando o usuário começar a digitar
+    $('.form-control, .form-select').on('input change', function() {
+        $(this).removeClass('is-invalid');
+    });
+
+    // Carregar áreas quando o modal for aberto
+    $('#areasModal').on('show.bs.modal', function() {
+        carregarAreas();
+    });
+});
+
+// Função para abrir o modal de áreas
+function abrirModalAreas() {
+    $('#areasModal').modal('show');
+}
+
+// Função para carregar a lista de áreas
+function carregarAreas() {
+    $.get('/api/areas/')
+        .done(function(data) {
+            let html = '';
+            if (data.length === 0) {
+                html = '<p class="text-muted">Nenhuma área cadastrada.</p>';
+            } else {
+                html = '<div class="table-responsive"><table class="table table-sm">';
+                html += '<thead><tr><th>Nome</th><th>Localização</th><th>Ações</th></tr></thead><tbody>';
+
+                data.forEach(function(area) {
+                    html += `<tr>
+                        <td><strong>${area.nome}</strong></td>
+                        <td>${area.localizacao || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removerArea(${area.id})" title="Remover">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table></div>';
+            }
+            $('#listaAreas').html(html);
+        })
+        .fail(function() {
+            $('#listaAreas').html('<p class="text-danger">Erro ao carregar áreas.</p>');
+        });
+}
+
+// Função para adicionar nova área
+function adicionarArea() {
+    const nome = $('#nova_area_nome').val().trim();
+    const localizacao = $('#nova_area_localizacao').val().trim();
+    const descricao = $('#nova_area_descricao').val().trim();
+
+    if (!nome) {
+        alert('Por favor, informe o nome da área.');
+        $('#nova_area_nome').focus();
+        return;
+    }
+
+    $.post('/api/areas/', {
+        'nome': nome,
+        'localizacao': localizacao,
+        'descricao': descricao,
+        'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+    })
+    .done(function(data) {
+        if (data.success) {
+            // Limpar formulário
+            $('#novaAreaForm')[0].reset();
+
+            // Recarregar lista de áreas
+            carregarAreas();
+
+            // Atualizar selects de área
+            atualizarSelectsArea();
+
+            alert('Área adicionada com sucesso!');
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .fail(function() {
+        alert('Erro ao adicionar área.');
+    });
+}
+
+// Função para remover área
+function removerArea(areaId) {
+    if (confirm('Tem certeza que deseja remover esta área?')) {
+        $.ajax({
+            url: `/api/areas/${areaId}/`,
+            type: 'DELETE',
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            }
+        })
+        .done(function(data) {
+            if (data.success) {
+                carregarAreas();
+                atualizarSelectsArea();
+                alert('Área removida com sucesso!');
+            } else {
+                alert('Erro: ' + (data.error || 'Erro desconhecido'));
+            }
+        })
+        .fail(function() {
+            alert('Erro ao remover área.');
+        });
+    }
+}
+
+// Função para atualizar os selects de área
+function atualizarSelectsArea() {
+    $.get('/api/areas/')
+        .done(function(data) {
+            const selectOrigemHtml = '<option value="">Selecione (opcional)</option>' +
+                data.map(area => `<option value="${area.id}">${area.nome}${area.localizacao ? ' - ' + area.localizacao : ''}</option>`).join('');
+
+            $('#area_origem').html(selectOrigemHtml);
+            $('#area_destino').html(selectOrigemHtml);
+        });
+}
+</script>
+{% endblock %}

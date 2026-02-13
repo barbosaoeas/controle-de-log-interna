@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Relatórios de Pedidos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-graph-up"></i> Relatórios de Pedidos</h2>
+            <p class="text-muted">Visualize e filtre suas solicitações</p>
+        </div>
+        <div>
+            <button class="btn btn-outline-primary" onclick="window.print()">
+                <i class="bi bi-printer"></i> Imprimir
+            </button>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_pedidos }}</h4>
+                            <p class="mb-0">Total de Pedidos</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-list-ul fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ pedidos_pendentes }}</h4>
+                            <p class="mb-0">Pendentes</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-clock fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ pedidos_aprovados }}</h4>
+                            <p class="mb-0">Aprovados</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check-circle fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ pedidos_rejeitados }}</h4>
+                            <p class="mb-0">Rejeitados</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-x-circle fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <!-- Cliente -->
+                <div class="col-md-3">
+                    <label class="form-label">Cliente</label>
+                    <select name="cliente" class="form-select">
+                        <option value="">Todos os clientes</option>
+                        {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}" {% if filtros.cliente_id == cliente.id|stringformat:"s" %}selected{% endif %}>
+                                {{ cliente.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Mês -->
+                <div class="col-md-2">
+                    <label class="form-label">Mês</label>
+                    <select name="mes" class="form-select">
+                        <option value="">Todos os meses</option>
+                        {% for mes_num, mes_nome in meses %}
+                            <option value="{{ mes_num }}" {% if filtros.mes == mes_num|stringformat:"s" %}selected{% endif %}>
+                                {{ mes_nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Ano -->
+                <div class="col-md-2">
+                    <label class="form-label">Ano</label>
+                    <select name="ano" class="form-select">
+                        <option value="">Todos os anos</option>
+                        {% for ano in anos_disponiveis %}
+                            <option value="{{ ano.year }}" {% if filtros.ano == ano.year|stringformat:"s" %}selected{% endif %}>
+                                {{ ano.year }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">Todos os status</option>
+                        {% for status_key, status_label in status_choices %}
+                            <option value="{{ status_key }}" {% if filtros.status == status_key %}selected{% endif %}>
+                                {{ status_label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Demandante (apenas para admin/supervisor) -->
+                {% if user.perfil.is_admin_ou_supervisor %}
+                <div class="col-md-3">
+                    <label class="form-label">Demandante</label>
+                    <select name="demandante" class="form-select">
+                        <option value="">Todos os demandantes</option>
+                        {% for demandante in demandantes %}
+                            <option value="{{ demandante.user.id }}" {% if filtros.demandante_id == demandante.user.id|stringformat:"s" %}selected{% endif %}>
+                                {{ demandante.user.get_full_name|default:demandante.user.username }} ({{ demandante.setor.nome }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <!-- Botões -->
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'relatorios_pedidos' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> Limpar Filtros
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabela de Resultados -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Resultados ({{ total_pedidos }} pedidos)</h5>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="exportarCSV()">
+                    <i class="bi bi-file-earmark-excel"></i> Exportar CSV
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if pedidos %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Data</th>
+                                <th>Cliente</th>
+                                <th>Descrição</th>
+                                <th>Status</th>
+                                <th>Prioridade</th>
+                                {% if user.perfil.is_admin_ou_supervisor %}
+                                <th>Demandante</th>
+                                {% endif %}
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pedido in pedidos %}
+                            <tr>
+                                <td><strong>#{{ pedido.id }}</strong></td>
+                                <td>{{ pedido.data_solicitacao|date:"d/m/Y H:i" }}</td>
+                                <td>{{ pedido.cliente.nome }}</td>
+                                <td>
+                                    {{ pedido.descricao|truncatechars:50 }}
+                                    {% if pedido.descricao|length > 50 %}
+                                        <span class="text-muted">...</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pedido.status == 'PENDENTE' %}
+                                        <span class="badge bg-warning text-dark">{{ pedido.get_status_display }}</span>
+                                    {% elif pedido.status == 'APROVADO' %}
+                                        <span class="badge bg-success">{{ pedido.get_status_display }}</span>
+                                    {% elif pedido.status == 'REJEITADO' %}
+                                        <span class="badge bg-danger">{{ pedido.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ pedido.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pedido.prioridade == 'ALTA' %}
+                                        <span class="badge bg-danger">{{ pedido.get_prioridade_display }}</span>
+                                    {% elif pedido.prioridade == 'MEDIA' %}
+                                        <span class="badge bg-warning text-dark">{{ pedido.get_prioridade_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-success">{{ pedido.get_prioridade_display }}</span>
+                                    {% endif %}
+                                </td>
+                                {% if user.perfil.is_admin_ou_supervisor %}
+                                <td>
+                                    {{ pedido.criado_por.get_full_name|default:pedido.criado_por.username }}
+                                    <br><small class="text-muted">{{ pedido.criado_por.perfil.setor.nome }}</small>
+                                </td>
+                                {% endif %}
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'detalhes_pedido' pedido.id %}" class="btn btn-outline-primary" title="Ver Detalhes">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if user.perfil.is_admin_ou_supervisor %}
+                                        <a href="{% url 'editar_pedido' pedido.id %}" class="btn btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginação -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Navegação de páginas">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Anterior</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Próximo</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">Nenhum pedido encontrado</h4>
+                    <p class="text-muted">Tente ajustar os filtros ou criar um novo pedido.</p>
+                    <a href="{% url 'criar_pedido' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Criar Novo Pedido
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function exportarCSV() {
+    // Construir URL com filtros atuais
+    const params = new URLSearchParams(window.location.search);
+    params.set('export', 'csv');
+    
+    // Criar link temporário para download
+    const link = document.createElement('a');
+    link.href = '{% url "relatorios_pedidos" %}?' + params.toString();
+    link.download = 'relatorio_pedidos.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}

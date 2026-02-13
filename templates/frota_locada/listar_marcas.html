@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Marcas de Veículos - Frota Locada{% endblock %}
+
+{% block extra_css %}
+<style>
+    .marca-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .marca-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border-bottom: none;
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    @media (max-width: 768px) {
+        .marca-card {
+            margin-bottom: 1rem;
+        }
+        
+        .btn-group {
+            width: 100%;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-tags"></i> Marcas de Veículos</h2>
+            <p class="text-muted mb-0">Gerencie as marcas de veículos do sistema</p>
+        </div>
+        <a href="{% url 'frota_locada:cadastrar_marca' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i>
+            Nova Marca
+        </a>
+    </div>
+
+    <!-- Lista de Marcas -->
+    {% if marcas %}
+        <div class="row">
+            {% for marca in marcas %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card marca-card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-tag"></i>
+                            {{ marca.nome }}
+                        </h6>
+                        {% if marca.ativo %}
+                            <span class="badge bg-light text-success status-badge">Ativo</span>
+                        {% else %}
+                            <span class="badge bg-light text-secondary status-badge">Inativo</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">Cadastrado em:</small>
+                                <div class="fw-bold">{{ marca.data_cadastro|date:"d/m/Y" }}</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Status:</small>
+                                <div class="fw-bold">
+                                    {% if marca.ativo %}
+                                        <span class="text-success">Ativo</span>
+                                    {% else %}
+                                        <span class="text-secondary">Inativo</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <div class="btn-group w-100" role="group">
+                                <a href="{% url 'frota_locada:editar_marca' marca.id %}"
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-pencil"></i>
+                                    Editar
+                                </a>
+                                <a href="{% url 'frota_locada:excluir_marca' marca.id %}"
+                                   class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i>
+                                    Excluir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="bi bi-tags"></i>
+            <h4>Nenhuma marca cadastrada</h4>
+            <p>Comece cadastrando a primeira marca de veículo.</p>
+            <a href="{% url 'frota_locada:cadastrar_marca' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i>
+                Cadastrar Primeira Marca
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Relatório de Compras de Diesel{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 400px;
+        margin-bottom: 30px;
+    }
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .stats-card h3 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    .stats-card p {
+        margin: 5px 0 0 0;
+        opacity: 0.9;
+    }
+    .card-custom {
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">📊 Relatório de Compras de Diesel</h1>
+                    <p class="text-muted">Análise de gastos e volumes por mês</p>
+                </div>
+                <div>
+                    <a href="{% url 'dashboard_diesel' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtro de Ano -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card card-custom">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-filter me-1"></i>Filtrar por Ano
+                    </h6>
+                    <form method="get" class="d-flex">
+                        <select name="ano" class="form-select form-select-sm me-2">
+                            {% for ano in anos_disponiveis %}
+                                <option value="{{ ano }}" {% if ano == ano_filtro %}selected{% endif %}>
+                                    {{ ano }}
+                                </option>
+                            {% empty %}
+                                <option value="{{ ano_filtro }}">{{ ano_filtro }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>R$ {{ total_geral_valor|floatformat:2 }}</h3>
+                <p><i class="fas fa-money-bill-wave me-1"></i>Total Gasto em {{ ano_filtro }}</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <h3>{{ total_geral_litros|floatformat:0 }}L</h3>
+                <p><i class="fas fa-gas-pump me-1"></i>Total de Litros</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <h3>{{ total_compras_ano }}</h3>
+                <p><i class="fas fa-truck me-1"></i>Total de Compras</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <h3>R$ {{ preco_medio_litro|floatformat:3 }}</h3>
+                <p><i class="fas fa-calculator me-1"></i>Preço Médio/Litro</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card card-custom">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-1"></i>Gastos por Mês (R$)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chartValores"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card card-custom">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-1"></i>Volume por Mês (Litros)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chartLitros"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo Mensal -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card card-custom">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-alt me-1"></i>Média Mensal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-primary">R$ {{ media_mensal|floatformat:2 }}</h4>
+                            <small class="text-muted">Gasto Médio/Mês</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">{% widthratio total_geral_litros 12 1 %}L</h4>
+                            <small class="text-muted">Volume Médio/Mês</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card card-custom">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-1"></i>Informações
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li><i class="fas fa-check text-success me-2"></i>Dados baseados nas chegadas de diesel registradas</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Valores incluem impostos e frete</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Preços podem variar conforme fornecedor</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimas Compras -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-1"></i>Últimas Compras
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if ultimas_compras %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Quantidade</th>
+                                        <th>Valor/Litro</th>
+                                        <th>Valor Total</th>
+                                        <th>Fornecedor</th>
+                                        <th>Operador</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for compra in ultimas_compras %}
+                                    <tr>
+                                        <td>{{ compra.data_chegada|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ compra.quantidade_litros }}L</span>
+                                        </td>
+                                        <td>R$ {{ compra.valor_por_litro|floatformat:3 }}</td>
+                                        <td>
+                                            <strong class="text-success">R$ {{ compra.valor_total|floatformat:2 }}</strong>
+                                        </td>
+                                        <td>{{ compra.fornecedor|default:"-" }}</td>
+                                        <td>{{ compra.operador.get_full_name|default:compra.operador.username }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Nenhuma compra registrada em {{ ano_filtro }}</h5>
+                            <p class="text-muted">Use o modal "Registrar Chegada" no dashboard para adicionar compras.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dados do backend
+const mesesLabels = {{ meses_labels|safe }};
+const valoresData = {{ valores_data|safe }};
+const litrosData = {{ litros_data|safe }};
+
+// Configuração comum dos gráficos
+const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            display: false
+        }
+    },
+    scales: {
+        y: {
+            beginAtZero: true,
+            grid: {
+                color: 'rgba(0,0,0,0.1)'
+            }
+        },
+        x: {
+            grid: {
+                display: false
+            }
+        }
+    }
+};
+
+// Gráfico de Valores
+const ctxValores = document.getElementById('chartValores').getContext('2d');
+new Chart(ctxValores, {
+    type: 'bar',
+    data: {
+        labels: mesesLabels,
+        datasets: [{
+            data: valoresData,
+            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            borderRadius: 8,
+            borderSkipped: false,
+        }]
+    },
+    options: {
+        ...commonOptions,
+        plugins: {
+            ...commonOptions.plugins,
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'R$ ' + context.parsed.y.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    }
+                }
+            }
+        },
+        scales: {
+            ...commonOptions.scales,
+            y: {
+                ...commonOptions.scales.y,
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + value.toLocaleString('pt-BR');
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Gráfico de Litros
+const ctxLitros = document.getElementById('chartLitros').getContext('2d');
+new Chart(ctxLitros, {
+    type: 'line',
+    data: {
+        labels: mesesLabels,
+        datasets: [{
+            data: litrosData,
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+        }]
+    },
+    options: {
+        ...commonOptions,
+        plugins: {
+            ...commonOptions.plugins,
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.parsed.y.toLocaleString('pt-BR') + 'L';
+                    }
+                }
+            }
+        },
+        scales: {
+            ...commonOptions.scales,
+            y: {
+                ...commonOptions.scales.y,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString('pt-BR') + 'L';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,625 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestão de Veículos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .veiculo-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 10px;
+    }
+    
+    .veiculo-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .status-badge {
+        font-size: 0.85em;
+        padding: 0.4em 0.8em;
+        border-radius: 20px;
+    }
+    
+    .agenda-switch {
+        transform: scale(1.2);
+    }
+    
+    .veiculo-info {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .btn-novo-veiculo {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        font-weight: bold;
+        border-radius: 8px;
+    }
+
+    .veiculo-item[data-ativo="false"] {
+        opacity: 0.7;
+    }
+
+    .veiculo-item[data-ativo="false"] .card {
+        border-left: 4px solid #dc3545;
+    }
+
+    .veiculo-item[data-ativo="false"] .card-header {
+        background-color: #f8d7da;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-truck"></i> Gestão de Veículos</h2>
+                    <p class="text-muted mb-0">Controle da frota e configuração de agenda</p>
+                </div>
+                <div>
+                    <a href="{% url 'dashboard_diesel' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                    <button class="btn btn-novo-veiculo" data-bs-toggle="modal" data-bs-target="#modalNovoVeiculo">
+                        <i class="bi bi-plus-circle"></i> Novo Veículo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h6 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="mostrarInativos" checked>
+                                <label class="form-check-label" for="mostrarInativos">
+                                    <i class="bi bi-eye"></i> Mostrar veículos inativos
+                                </label>
+                                <small class="text-muted d-block">
+                                    Veículos inativos são aqueles com problemas mecânicos ou fora de operação
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3 class="mb-0" id="totalVeiculos">{{ veiculos|length }}</h3>
+                    <small>Total de Veículos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3 class="mb-0" id="veiculosAtivos">0</h3>
+                    <small>Veículos Ativos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3 class="mb-0" id="veiculosComAgenda">0</h3>
+                    <small>Com Agenda</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h3 class="mb-0" id="veiculosManutencao">0</h3>
+                    <small>Em Manutenção</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Veículos -->
+    <div class="row" id="listaVeiculos">
+        {% for veiculo in veiculos %}
+        <div class="col-md-6 col-lg-4 mb-4 veiculo-item" data-ativo="{{ veiculo.ativo|yesno:'true,false' }}" data-status="{{ veiculo.status }}">
+            <div class="card veiculo-card h-100 {% if not veiculo.ativo %}border-danger{% endif %}"
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-truck"></i> {{ veiculo.nome }}
+                    </h6>
+                    <span class="status-badge {{ veiculo.status_css_class }}">
+                        {{ veiculo.status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="veiculo-info mb-3">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Placa:</strong><br>
+                                <span class="badge bg-secondary">{{ veiculo.placa }}</span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Tipo:</strong><br>
+                                {{ veiculo.get_tipo_display }}
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <strong>Modelo:</strong><br>
+                                {{ veiculo.modelo|default:"Não informado" }}
+                            </div>
+                            <div class="col-6">
+                                <strong>Ano:</strong><br>
+                                {{ veiculo.ano|default:"N/A" }}
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <strong>Tanque:</strong><br>
+                                {{ veiculo.capacidade_tanque }}L
+                            </div>
+                            <div class="col-6">
+                                <strong>Consumo:</strong><br>
+                                {{ veiculo.consumo_medio|default:"N/A" }} km/L
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status e Controles -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="border rounded p-3" style="background: #f8f9fa;">
+                                <!-- Status Operacional -->
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold text-warning">
+                                            <i class="bi bi-exclamation-triangle"></i> STATUS OPERACIONAL
+                                        </span>
+                                        <select class="form-select form-select-sm w-auto"
+                                                onchange="alterarStatus({{ veiculo.id }}, this.value)">
+                                            <option value="ATIVO" {% if veiculo.status == 'ATIVO' %}selected{% endif %}>
+                                                Operacional
+                                            </option>
+                                            <option value="MANUTENCAO" {% if veiculo.status == 'MANUTENCAO' %}selected{% endif %}>
+                                                Manutenção
+                                            </option>
+                                            <option value="INATIVO" {% if veiculo.status == 'INATIVO' %}selected{% endif %}>
+                                                Inativo
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <small class="text-muted">Define se o equipamento está disponível para uso</small>
+                                </div>
+
+                                <!-- Ativo no Sistema -->
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold text-info">
+                                            <i class="bi bi-toggle-on"></i> ATIVO NO SISTEMA
+                                        </span>
+                                        <select class="form-select form-select-sm w-auto"
+                                                onchange="alterarAtivo({{ veiculo.id }}, this.value)">
+                                            <option value="true" {% if veiculo.ativo %}selected{% endif %}>
+                                                Sim
+                                            </option>
+                                            <option value="false" {% if not veiculo.ativo %}selected{% endif %}>
+                                                Não
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <small class="text-muted">Define se o equipamento aparece no sistema</small>
+                                </div>
+
+                                <!-- Com Agenda -->
+                                <div class="mb-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold text-success">
+                                            <i class="bi bi-calendar-check"></i> COM AGENDA
+                                        </span>
+                                        <select class="form-select form-select-sm w-auto"
+                                                onchange="alterarAgenda({{ veiculo.id }}, this.value)">
+                                            <option value="true" {% if veiculo.tem_agenda %}selected{% endif %}>
+                                                Sim
+                                            </option>
+                                            <option value="false" {% if not veiculo.tem_agenda %}selected{% endif %}>
+                                                Não
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <small class="text-muted">Define se o equipamento aparece no agendamento</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estatísticas de Abastecimento -->
+                    <div class="border-top pt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-fuel-pump"></i>
+                            Últimos abastecimentos:
+                            <strong>{{ veiculo.objeto.abastecimentos.count }}</strong>
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100" role="group">
+                        <button class="btn btn-outline-primary btn-sm" 
+                                onclick="editarVeiculo({{ veiculo.id }})">
+                            <i class="bi bi-pencil"></i> Editar
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" 
+                                onclick="verHistorico({{ veiculo.id }})">
+                            <i class="bi bi-clock-history"></i> Histórico
+                        </button>
+                        {% if veiculo.ativo %}
+                        <button class="btn btn-outline-warning btn-sm" 
+                                onclick="inativarVeiculo({{ veiculo.id }})">
+                            <i class="bi bi-pause-circle"></i> Inativar
+                        </button>
+                        {% else %}
+                        <button class="btn btn-outline-success btn-sm" 
+                                onclick="ativarVeiculo({{ veiculo.id }})">
+                            <i class="bi bi-play-circle"></i> Ativar
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-truck fs-1 text-muted"></i>
+                <h4 class="text-muted mt-3">Nenhum veículo cadastrado</h4>
+                <p class="text-muted">Cadastre o primeiro veículo da frota.</p>
+                <button class="btn btn-novo-veiculo" data-bs-toggle="modal" data-bs-target="#modalNovoVeiculo">
+                    <i class="bi bi-plus-circle"></i> Cadastrar Primeiro Veículo
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal Novo Veículo -->
+<div class="modal fade" id="modalNovoVeiculo" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle"></i> Novo Veículo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovoVeiculo">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="nome" class="form-label">Nome/Identificação *</label>
+                                <input type="text" class="form-control" id="nome" name="nome" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="placa" class="form-label">Placa *</label>
+                                <input type="text" class="form-control" id="placa" name="placa" 
+                                       placeholder="ABC1234" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tipo" class="form-label">Tipo *</label>
+                                <select class="form-select" id="tipo" name="tipo" required>
+                                    <option value="CAMINHAO">Caminhão</option>
+                                    <option value="CARRETA">Carreta</option>
+                                    <option value="TRATOR">Trator</option>
+                                    <option value="EMPILHADEIRA">Empilhadeira</option>
+                                    <option value="MUNCK">Munck</option>
+                                    <option value="GUINDASTE">Guindaste</option>
+                                    <option value="OUTROS">Outros</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="modelo" class="form-label">Modelo</label>
+                                <input type="text" class="form-control" id="modelo" name="modelo">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="ano" class="form-label">Ano</label>
+                                <input type="number" class="form-control" id="ano" name="ano" 
+                                       min="1990" max="2030">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="capacidade_tanque" class="form-label">Capacidade Tanque (L) *</label>
+                                <input type="number" class="form-control" id="capacidade_tanque" 
+                                       name="capacidade_tanque" step="0.01" min="1" value="200" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="consumo_medio" class="form-label">Consumo Médio (km/L)</label>
+                                <input type="number" class="form-control" id="consumo_medio" 
+                                       name="consumo_medio" step="0.01" min="0.1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Configurações de Status -->
+                    <div class="border rounded p-3 mb-3" style="background: #f8f9fa;">
+                        <h6 class="mb-3">Configurações de Status</h6>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-warning">
+                                        <i class="bi bi-exclamation-triangle"></i> STATUS OPERACIONAL
+                                    </label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="ATIVO" selected>Operacional</option>
+                                        <option value="MANUTENCAO">Manutenção</option>
+                                        <option value="INATIVO">Inativo</option>
+                                    </select>
+                                    <small class="text-muted">Define se o equipamento está disponível para uso</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-info">
+                                        <i class="bi bi-toggle-on"></i> ATIVO NO SISTEMA
+                                    </label>
+                                    <select class="form-select" id="ativo" name="ativo">
+                                        <option value="true" selected>Sim</option>
+                                        <option value="false">Não</option>
+                                    </select>
+                                    <small class="text-muted">Define se o equipamento aparece no sistema</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-success">
+                                        <i class="bi bi-calendar-check"></i> COM AGENDA
+                                    </label>
+                                    <select class="form-select" id="tem_agenda" name="tem_agenda">
+                                        <option value="true" selected>Sim</option>
+                                        <option value="false">Não</option>
+                                    </select>
+                                    <small class="text-muted">Define se o equipamento aparece no agendamento</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-novo-veiculo" onclick="salvarVeiculo()">
+                    <i class="bi bi-check-circle"></i> Salvar Veículo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function alterarAgenda(veiculoId, valor) {
+    const temAgenda = valor === 'true';
+
+    fetch(`/api/diesel/veiculo/${veiculoId}/agenda/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            tem_agenda: temAgenda
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Configuração de agenda atualizada!', 'success');
+        } else {
+            showToast('Erro ao atualizar configuração', 'error');
+            // Reverter select
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showToast('Erro de conexão', 'error');
+        location.reload();
+    });
+}
+
+function alterarStatus(veiculoId, novoStatus) {
+    // Implementar alteração de status
+    fetch(`/api/diesel/veiculo/${veiculoId}/status/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            status: novoStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Status atualizado!', 'success');
+            // Atualizar badge do card
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Erro ao atualizar status', 'error');
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showToast('Erro de conexão', 'error');
+        location.reload();
+    });
+}
+
+function alterarAtivo(veiculoId, valor) {
+    const ativo = valor === 'true';
+
+    fetch(`/api/diesel/veiculo/${veiculoId}/ativo/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            ativo: ativo
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Status ativo atualizado!', 'success');
+        } else {
+            showToast('Erro ao atualizar status ativo', 'error');
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showToast('Erro de conexão', 'error');
+        location.reload();
+    });
+}
+
+function editarVeiculo(veiculoId) {
+    // Implementar edição de veículo
+    alert(`Editar veículo ${veiculoId} - Funcionalidade em desenvolvimento`);
+}
+
+function verHistorico(veiculoId) {
+    // Redirecionar para histórico filtrado por veículo
+    window.location.href = `{% url 'historico_abastecimentos' %}?veiculo=${veiculoId}`;
+}
+
+function inativarVeiculo(veiculoId) {
+    if (confirm('Tem certeza que deseja inativar este veículo?')) {
+        // Implementar inativação
+        alert(`Inativar veículo ${veiculoId} - Funcionalidade em desenvolvimento`);
+    }
+}
+
+function ativarVeiculo(veiculoId) {
+    // Implementar ativação
+    alert(`Ativar veículo ${veiculoId} - Funcionalidade em desenvolvimento`);
+}
+
+// Filtro de veículos inativos
+document.addEventListener('DOMContentLoaded', function() {
+    const filtroInativos = document.getElementById('mostrarInativos');
+    const veiculosItems = document.querySelectorAll('.veiculo-item');
+
+    // Função para atualizar estatísticas
+    function atualizarEstatisticas() {
+        const veiculosVisiveis = document.querySelectorAll('.veiculo-item:not([style*="display: none"])');
+        let ativos = 0, comAgenda = 0, manutencao = 0;
+
+        veiculosVisiveis.forEach(item => {
+            const ativo = item.dataset.ativo === 'true';
+            const status = item.dataset.status;
+
+            if (ativo) ativos++;
+            if (item.querySelector('.agenda-switch input').checked) comAgenda++;
+            if (status === 'MANUTENCAO') manutencao++;
+        });
+
+        document.getElementById('totalVeiculos').textContent = veiculosVisiveis.length;
+        document.getElementById('veiculosAtivos').textContent = ativos;
+        document.getElementById('veiculosComAgenda').textContent = comAgenda;
+        document.getElementById('veiculosManutencao').textContent = manutencao;
+    }
+
+    // Função para aplicar filtro
+    function aplicarFiltro() {
+        const mostrarInativos = filtroInativos.checked;
+
+        veiculosItems.forEach(item => {
+            const ativo = item.dataset.ativo === 'true';
+
+            if (!ativo && !mostrarInativos) {
+                item.style.display = 'none';
+            } else {
+                item.style.display = 'block';
+            }
+        });
+
+        atualizarEstatisticas();
+    }
+
+    // Event listener para o filtro
+    filtroInativos.addEventListener('change', aplicarFiltro);
+
+    // Aplicar filtro inicial
+    aplicarFiltro();
+});
+
+function salvarVeiculo() {
+    // Implementar salvamento de novo veículo
+    alert('Salvar novo veículo - Funcionalidade em desenvolvimento');
+}
+
+function showToast(message, type) {
+    // Implementar sistema de toast/notificação
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', alertHtml);
+    
+    // Auto-remover após 3 segundos
+    setTimeout(() => {
+        const alert = document.querySelector('.alert');
+        if (alert) alert.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

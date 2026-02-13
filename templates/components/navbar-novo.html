@@ -1,0 +1,476 @@
+<!-- 🎨 NAVBAR MODERNO E RESPONSIVO -->
+<nav class="navbar navbar-expand-lg navbar-novo" id="navbar-novo">
+    <div class="container-fluid">
+        <!-- Brand/Logo - Vai para Home -->
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <span class="brand-icon">🏗️</span>
+            <div class="brand-text">
+                <div class="brand-title">ESTALEIRO ATLÂNTICO SUL</div>
+                <div class="brand-subtitle">Sistema de Gestão Integrado</div>
+            </div>
+        </a>
+
+        <!-- Mobile Toggle -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navigation Menu -->
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav me-auto">
+
+                <!-- 🏠 Link direto para Home -->
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'home' %}">
+                        <i class="bi bi-house-door-fill"></i>
+                        Início
+                    </a>
+                </li>
+                {% endif %}
+
+                <!-- 🚚 DROPDOWN SOLICITAÇÃO DE TRANSPORTE - App Separado e Organizado -->
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-truck"></i>
+                        Transporte
+                        {% if pedidos_pendentes > 0 %}
+                            <span class="badge bg-warning text-dark ms-1">{{ pedidos_pendentes }}</span>
+                        {% endif %}
+                    </a>
+                    <ul class="dropdown-menu">
+                        <!-- CRIAR PEDIDO -->
+                        {% if user.perfil.codigo_perfil in 'DEMANDANTE,ADMIN,SUPERVISOR' %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'criar_pedido' %}">
+                                <i class="bi bi-plus-circle-fill text-success"></i>
+                                <strong>Nova Solicitação</strong>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        {% endif %}
+
+                        <!-- MEUS PEDIDOS / TODOS OS PEDIDOS -->
+                        <li><h6 class="dropdown-header"><i class="bi bi-list-check"></i> Pedidos</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'listar_pedidos' %}">
+                                <i class="bi bi-list-ul"></i>
+                                {% if user.perfil.codigo_perfil == 'DEMANDANTE' %}
+                                    Minhas Solicitações
+                                {% elif user.perfil.codigo_perfil == 'TRANSPORTES' %}
+                                    Pedidos para Executar
+                                    {% if pedidos_pendentes > 0 %}
+                                        <span class="badge bg-danger ms-1">{{ pedidos_pendentes }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    Todas as Solicitações
+                                {% endif %}
+                            </a>
+                        </li>
+
+                        <!-- SUPERVISÃO - Apenas ADMIN e SUPERVISOR -->
+                        {% if user.perfil.codigo_perfil in 'ADMIN,SUPERVISOR' %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="bi bi-clipboard-check"></i> Supervisão</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'dashboard_supervisor' %}">
+                                <i class="bi bi-speedometer2"></i>
+                                Dashboard Supervisão
+                                {% if pedidos_pendentes > 0 %}
+                                    <span class="badge bg-warning text-dark ms-1">{{ pedidos_pendentes }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <!-- TRANSPORTES - Apenas perfil TRANSPORTES -->
+                        {% if user.perfil.codigo_perfil == 'TRANSPORTES' %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="bi bi-truck-front-fill"></i> Operação</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'dashboard_transportes' %}">
+                                <i class="bi bi-speedometer2"></i>
+                                Dashboard Transportes
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <!-- CADASTROS - Apenas ADMIN e SUPERVISOR -->
+                        {% if user.perfil.codigo_perfil in 'ADMIN,SUPERVISOR' %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="bi bi-gear"></i> Configurações</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalEquipamentosNovo">
+                                <i class="bi bi-truck-flatbed"></i>
+                                Gerenciar Equipamentos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="abrirModalClientesGlobal()">
+                                <i class="bi bi-person-badge"></i>
+                                Gerenciar Clientes
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="abrirModalSetoresGlobal()">
+                                <i class="bi bi-building"></i>
+                                Gerenciar Setores
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="abrirModalAreasGlobal()">
+                                <i class="bi bi-geo-alt"></i>
+                                Gerenciar Áreas
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </li>
+                {% endif %}
+
+                <!-- DROPDOWN COMBUSTÍVEL - Apenas ADMIN e SUPERVISOR -->
+                {% if user.is_authenticated and user.perfil.codigo_perfil in 'ADMIN,SUPERVISOR' %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-fuel-pump"></i>
+                        Combustível
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'dashboard_diesel' %}">
+                                <i class="bi bi-speedometer2"></i>
+                                Dashboard Combustível
+                                <small class="text-muted ms-2">{{ nivel_combustivel|floatformat:1 }}%</small>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="bi bi-fuel-pump-fill"></i> Operações</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'abastecer_veiculo' %}">
+                                <i class="bi bi-plus-square"></i>
+                                Abastecer Equipamentos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'historico_abastecimentos' %}">
+                                <i class="bi bi-clock-history"></i>
+                                Histórico de Abastecimentos
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="bi bi-graph-up"></i> Relatórios</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'relatorio_compras_diesel' %}">
+                                <i class="bi bi-file-earmark-text"></i>
+                                Relatório de Compras
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {% endif %}
+
+                <!-- ADMINISTRAÇÃO foi movido para o menu do usuário -->
+
+                <!-- DROPDOWN PORTÁTEIS - App Separado -->
+                {% if user.is_authenticated and user.perfil.codigo_perfil == 'ADMIN' %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-laptop"></i>
+                        Portáteis
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="alert('Dashboard Portáteis em desenvolvimento')">
+                                <i class="bi bi-speedometer2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="alert('Cadastro de Equipamentos em desenvolvimento')">
+                                <i class="bi bi-plus-circle"></i>
+                                Cadastrar Equipamentos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="alert('Histórico de Uso em desenvolvimento')">
+                                <i class="bi bi-clock-history"></i>
+                                Histórico de Uso
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="alert('Relatórios em desenvolvimento')">
+                                <i class="bi bi-file-earmark-text"></i>
+                                Relatórios
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {% endif %}
+
+                <!-- DROPDOWN GASES - App Separado -->
+                {% if user.is_authenticated and user.perfil.codigo_perfil == 'ADMIN' %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-cloud"></i>
+                        Gases
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gases:dashboard' %}">
+                                <i class="bi bi-speedometer2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gases:tipos' %}">
+                                <i class="bi bi-plus-circle"></i>
+                                Cadastrar Gases
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'gases:movimentacoes' %}">
+                                <i class="bi bi-arrow-down-circle"></i>
+                                Controle de Entrada de Gases
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="alert('Relatórios em desenvolvimento')">
+                                <i class="bi bi-file-earmark-text"></i>
+                                Relatórios
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {% endif %}
+
+                <!-- DROPDOWN ENERGIA ELÉTRICA - App Separado -->
+                {% if user.is_authenticated and user.perfil.codigo_perfil == 'ADMIN' %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-lightning"></i>
+                        Energia Elétrica
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="alert('Dashboard Energia em desenvolvimento')">
+                                <i class="bi bi-speedometer2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="alert('Cadastro de Contas em desenvolvimento')">
+                                <i class="bi bi-plus-circle"></i>
+                                Cadastrar Contas
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="alert('Histórico de Consumo em desenvolvimento')">
+                                <i class="bi bi-graph-up"></i>
+                                Histórico de Consumo
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="alert('Relatórios em desenvolvimento')">
+                                <i class="bi bi-file-earmark-text"></i>
+                                Relatórios
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {% endif %}
+
+                <!-- DROPDOWN CONTROLE DE FROTAS LOCADAS - App Separado -->
+                {% if user.is_authenticated and user.perfil.codigo_perfil in 'ADMIN,SUPERVISOR,MANUTENCAO_CONT_PTA,CONTROLE_MAN_PTA,CONTROLE_PROD_PTA' %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-truck"></i>
+                        Frotas
+                    </a>
+                    <ul class="dropdown-menu">
+                        {% if user.perfil.codigo_perfil in 'ADMIN,SUPERVISOR' %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:dashboard' %}">
+                                <i class="bi bi-speedometer2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="bi bi-truck"></i> Veículos</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:listar_veiculos' %}">
+                                <i class="bi bi-list-ul"></i>
+                                Listar Veículos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:cadastrar_veiculo' %}">
+                                <i class="bi bi-plus-circle"></i>
+                                Cadastrar Veículo
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        {% endif %}
+                        <li><h6 class="dropdown-header"><i class="bi bi-tools"></i> Manutenção</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:listar_chamados' %}">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Chamados de Manutenção
+                            </a>
+                        </li>
+                        {% if request.user.perfil.pode_abrir_chamados_manutencao %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:abrir_chamado' %}">
+                                <i class="bi bi-plus-circle"></i>
+                                Abrir Chamado Equipamentos Locados
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:listar_maquinas' %}">
+                                <i class="bi bi-gear"></i>
+                                Máquinas/Equipamentos
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="bi bi-truck"></i> Manutenção Veículos</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:agendar_manutencao' %}">
+                                <i class="bi bi-wrench"></i>
+                                Agendar Manutenção
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:listar_manutencoes' %}">
+                                <i class="bi bi-clock-history"></i>
+                                Histórico de Manutenções
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="bi bi-file-earmark-text"></i> Relatórios</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:relatorio_custos' %}">
+                                <i class="bi bi-graph-up"></i>
+                                Relatório de Custos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:relatorio_km' %}">
+                                <i class="bi bi-file-earmark-spreadsheet"></i>
+                                Relatório de KM
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="bi bi-gear"></i> Configurações</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:listar_fornecedores' %}">
+                                <i class="bi bi-building"></i>
+                                Fornecedores
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:listar_tipos_veiculo' %}">
+                                <i class="bi bi-truck"></i>
+                                Tipos de Veículo
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frota_locada:listar_marcas' %}">
+                                <i class="bi bi-tags"></i>
+                                Marcas de Veículos
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {% endif %}
+
+            </ul>
+
+            <!-- User Menu -->
+            <ul class="navbar-nav">
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown user-dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <div class="user-info">
+                            <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                            <div class="user-role">{{ user.perfil.nome_perfil }}</div>
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <!-- ADMINISTRAÇÃO - Apenas ADMIN e SUPERVISOR -->
+                        {% if user.perfil.codigo_perfil in 'ADMIN,SUPERVISOR' %}
+                        <li><h6 class="dropdown-header"><i class="bi bi-gear-fill"></i> Administração</h6></li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="abrirModalUsuariosGlobal()">
+                                <i class="bi bi-people"></i>
+                                Gerenciar Usuários
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="abrirModalPerfisAcesso()">
+                                <i class="bi bi-shield-check"></i>
+                                Perfis de Acesso
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="abrirModalEmpresas()">
+                                <i class="bi bi-building"></i>
+                                Gerenciar Empresas
+                            </a>
+                        </li>
+                        {% if user.perfil.codigo_perfil == 'ADMIN' %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'configurar_estaleiro' %}">
+                                <i class="bi bi-sliders"></i>
+                                Configurações do Sistema
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/admin/" target="_blank">
+                                <i class="bi bi-shield-lock"></i>
+                                Admin Django
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        {% endif %}
+
+                        <!-- Opções do Usuário -->
+                        <li>
+                            <a class="dropdown-item" href="{% url 'alterar_senha' %}">
+                                <i class="bi bi-key"></i>
+                                Alterar Senha
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="alert('Perfil em desenvolvimento')">
+                                <i class="bi bi-person"></i>
+                                Meu Perfil
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item" style="border: none; background: none; width: 100%; text-align: left;">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    Sair
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+                {% else %}
+                <!-- Botão de Login quando não autenticado -->
+                <li class="nav-item">
+                    <a class="nav-link btn btn-outline-light" href="{% url 'login' %}" style="border-radius: 20px; padding: 8px 20px;">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        Entrar
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

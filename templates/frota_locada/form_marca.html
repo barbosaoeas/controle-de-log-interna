@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - Frota Locada{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border-bottom: none;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+    }
+    
+    .btn-success:hover {
+        background: linear-gradient(135deg, #218838, #1ea085);
+        transform: translateY(-1px);
+    }
+    
+    @media (max-width: 768px) {
+        .form-container {
+            margin: 0;
+        }
+        
+        .btn-group {
+            width: 100%;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="form-container">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="bi bi-tag"></i> {{ titulo }}</h2>
+                <p class="text-muted mb-0">Preencha os dados da marca de veículo</p>
+            </div>
+            <a href="{% url 'frota_locada:listar_marcas' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i>
+                Voltar
+            </a>
+        </div>
+
+        <!-- Formulário -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-tag"></i>
+                    Dados da Marca
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Nome da Marca -->
+                    <div class="mb-3">
+                        <label for="{{ form.nome.id_for_label }}" class="form-label required-field">
+                            <i class="bi bi-tag"></i>
+                            Nome da Marca
+                        </label>
+                        {{ form.nome }}
+                        {% if form.nome.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.nome.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Ex: Toyota, Ford, Volkswagen, Mercedes-Benz
+                        </div>
+                    </div>
+
+                    <!-- Status Ativo -->
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            {{ form.ativo }}
+                            <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                                <i class="bi bi-toggle-on"></i>
+                                Marca ativa
+                            </label>
+                        </div>
+                        {% if form.ativo.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.ativo.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Marcas inativas não aparecerão nos formulários de cadastro
+                        </div>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'frota_locada:listar_marcas' %}" class="btn btn-outline-secondary me-md-2">
+                            <i class="bi bi-x-circle"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i>
+                            {{ botao_texto }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus no primeiro campo
+    const nomeInput = document.getElementById('{{ form.nome.id_for_label }}');
+    if (nomeInput) {
+        nomeInput.focus();
+    }
+    
+    // Validação em tempo real
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const nome = document.getElementById('{{ form.nome.id_for_label }}').value.trim();
+        
+        if (!nome) {
+            e.preventDefault();
+            alert('Por favor, informe o nome da marca.');
+            return false;
+        }
+        
+        if (nome.length < 2) {
+            e.preventDefault();
+            alert('O nome da marca deve ter pelo menos 2 caracteres.');
+            return false;
+        }
+        
+        if (nome.length > 50) {
+            e.preventDefault();
+            alert('O nome da marca deve ter no máximo 50 caracteres.');
+            return false;
+        }
+    });
+    
+    // Capitalizar primeira letra ao digitar
+    const nomeField = document.getElementById('{{ form.nome.id_for_label }}');
+    if (nomeField) {
+        nomeField.addEventListener('blur', function() {
+            this.value = this.value.trim().replace(/\b\w/g, l => l.toUpperCase());
+        });
+    }
+});
+</script>
+{% endblock %}

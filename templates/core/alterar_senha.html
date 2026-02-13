@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}Alterar Senha{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-key"></i>
+        Alterar Senha
+    </h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        {% if precisa_alterar %}
+        <div class="alert alert-warning">
+            <h5><i class="bi bi-exclamation-triangle"></i> Alteração Obrigatória</h5>
+            <p class="mb-0">Você está usando a senha padrão. Por segurança, é necessário alterá-la antes de continuar.</p>
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-lock"></i>
+                    Nova Senha
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="alterarSenhaForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="senha_atual" class="form-label">
+                            <i class="bi bi-key"></i>
+                            Senha Atual *
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="senha_atual" name="senha_atual" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('senha_atual')">
+                                <i class="bi bi-eye" id="senha_atual_icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="nova_senha" class="form-label">
+                            <i class="bi bi-key-fill"></i>
+                            Nova Senha *
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="nova_senha" name="nova_senha" required minlength="6">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('nova_senha')">
+                                <i class="bi bi-eye" id="nova_senha_icon"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i>
+                            A senha deve ter pelo menos 6 caracteres
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirmar_senha" class="form-label">
+                            <i class="bi bi-check2-square"></i>
+                            Confirmar Nova Senha *
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha" required minlength="6">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirmar_senha')">
+                                <i class="bi bi-eye" id="confirmar_senha_icon"></i>
+                            </button>
+                        </div>
+                        <div id="senha_match_feedback" class="form-text"></div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="bi bi-check-circle"></i>
+                            Alterar Senha
+                        </button>
+                        {% if not precisa_alterar %}
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i>
+                            Voltar ao Dashboard
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Dicas de Segurança -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-shield-check"></i>
+                    Dicas de Segurança
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Use pelo menos 6 caracteres</li>
+                    <li>Combine letras, números e símbolos</li>
+                    <li>Não use informações pessoais óbvias</li>
+                    <li>Não reutilize a senha padrão (123456)</li>
+                    <li>Mantenha sua senha em segredo</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + '_icon');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        field.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+}
+
+// Validação em tempo real
+document.getElementById('confirmar_senha').addEventListener('input', function() {
+    const novaSenha = document.getElementById('nova_senha').value;
+    const confirmarSenha = this.value;
+    const feedback = document.getElementById('senha_match_feedback');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (confirmarSenha.length > 0) {
+        if (novaSenha === confirmarSenha) {
+            feedback.innerHTML = '<i class="bi bi-check-circle text-success"></i> Senhas coincidem';
+            feedback.className = 'form-text text-success';
+            submitBtn.disabled = false;
+        } else {
+            feedback.innerHTML = '<i class="bi bi-x-circle text-danger"></i> Senhas não coincidem';
+            feedback.className = 'form-text text-danger';
+            submitBtn.disabled = true;
+        }
+    } else {
+        feedback.innerHTML = '';
+        submitBtn.disabled = false;
+    }
+});
+
+// Validação antes do envio
+document.getElementById('alterarSenhaForm').addEventListener('submit', function(e) {
+    const novaSenha = document.getElementById('nova_senha').value;
+    const confirmarSenha = document.getElementById('confirmar_senha').value;
+    
+    if (novaSenha !== confirmarSenha) {
+        alert('As senhas não coincidem!');
+        e.preventDefault();
+        return;
+    }
+    
+    if (novaSenha.length < 6) {
+        alert('A nova senha deve ter pelo menos 6 caracteres!');
+        e.preventDefault();
+        return;
+    }
+    
+    if (novaSenha === '123456') {
+        alert('A nova senha não pode ser a senha padrão (123456)!');
+        e.preventDefault();
+        return;
+    }
+});
+
+// Foco no primeiro campo se for alteração obrigatória
+{% if precisa_alterar %}
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('senha_atual').focus();
+});
+{% endif %}
+</script>
+{% endblock %}

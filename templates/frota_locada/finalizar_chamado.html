@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .finalizar-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        margin: 2rem auto;
+        max-width: 900px;
+    }
+
+    .chamado-info {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .chamado-info h3 {
+        margin: 0 0 1rem 0;
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .info-item {
+        background: rgba(255,255,255,0.1);
+        padding: 0.75rem;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        opacity: 0.9;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .form-section h4 {
+        color: #495057;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+
+    .btn-finalizar {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-finalizar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+
+    .btn-cancelar {
+        background: #6c757d;
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-cancelar:hover {
+        background: #5a6268;
+        color: white;
+    }
+
+    .tempo-atendimento {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .tempo-valor {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .tempo-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+        .finalizar-container {
+            margin: 1rem;
+            padding: 1.5rem;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="finalizar-container">
+    <!-- Informações do Chamado -->
+    <div class="chamado-info">
+        <h3><i class="bi bi-wrench-adjustable"></i> {{ chamado.numero_chamado }}</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Máquina/Equipamento</div>
+                <div class="info-value">{{ chamado.maquina.nome }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Código</div>
+                <div class="info-value">{{ chamado.maquina.codigo }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Tipo do Problema</div>
+                <div class="info-value">{{ chamado.get_tipo_problema_display }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Prioridade</div>
+                <div class="info-value">{{ chamado.get_prioridade_display }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Solicitante</div>
+                <div class="info-value">{{ chamado.solicitante.get_full_name|default:chamado.solicitante.username }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Data de Abertura</div>
+                <div class="info-value">{{ chamado.data_abertura|date:"d/m/Y H:i" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tempo de Atendimento -->
+    {% if chamado.data_inicio_atendimento %}
+    <div class="tempo-atendimento">
+        <p class="tempo-valor" id="tempoAtendimento">Calculando...</p>
+        <p class="tempo-label">Tempo de Atendimento</p>
+    </div>
+    {% endif %}
+
+    <!-- Formulário de Finalização -->
+    <div class="form-section">
+        <h4><i class="bi bi-check-circle"></i> Finalizar Atendimento</h4>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <label for="{{ form.descricao_solucao.id_for_label }}" class="form-label">
+                        <i class="bi bi-tools"></i> Descrição da Solução *
+                    </label>
+                    {{ form.descricao_solucao }}
+                    {% if form.descricao_solucao.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.descricao_solucao.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.pecas_utilizadas.id_for_label }}" class="form-label">
+                        <i class="bi bi-gear"></i> Peças Utilizadas
+                    </label>
+                    {{ form.pecas_utilizadas }}
+                    {% if form.pecas_utilizadas.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.pecas_utilizadas.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.observacoes.id_for_label }}" class="form-label">
+                        <i class="bi bi-chat-text"></i> Observações Gerais
+                    </label>
+                    {{ form.observacoes }}
+                    {% if form.observacoes.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.observacoes.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Botões -->
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <a href="{% url 'frota_locada:listar_chamados' %}" class="btn btn-cancelar">
+                    <i class="bi bi-arrow-left"></i> Cancelar
+                </a>
+
+                <button type="submit" class="btn btn-finalizar">
+                    <i class="bi bi-check-circle"></i> {{ acao }} Atendimento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calcular tempo de atendimento
+    {% if chamado.data_inicio_atendimento %}
+    const dataInicio = new Date('{{ chamado.data_inicio_atendimento|date:"c" }}');
+    const agora = new Date();
+
+    function atualizarTempo() {
+        const diff = agora - dataInicio;
+        const horas = Math.floor(diff / (1000 * 60 * 60));
+        const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+        document.getElementById('tempoAtendimento').textContent =
+            `${horas}h ${minutos}min`;
+    }
+
+    atualizarTempo();
+    setInterval(function() {
+        agora.setTime(Date.now());
+        atualizarTempo();
+    }, 60000); // Atualiza a cada minuto
+    {% endif %}
+
+    // Validação do formulário
+    const form = document.querySelector('form');
+    const descricaoSolucao = document.getElementById('{{ form.descricao_solucao.id_for_label }}');
+
+    form.addEventListener('submit', function(e) {
+        if (!descricaoSolucao.value.trim()) {
+            e.preventDefault();
+            alert('Por favor, descreva a solução aplicada.');
+            descricaoSolucao.focus();
+        }
+    });
+});
+</script>
+{% endblock %}

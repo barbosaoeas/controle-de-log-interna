@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Modal Equipamentos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>🚨 TESTE DO MODAL DE EQUIPAMENTOS 🚨</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTeste">
+            Abrir Modal de Teste
+        </button>
+    </div>
+
+    <!-- Modal de Teste -->
+    <div class="modal fade" id="modalTeste" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        🚨 TESTE - MODAL DE EQUIPAMENTOS v3.0 🚨
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success text-center mb-3" style="font-size: 20px; font-weight: bold;">
+                        ✅ SE VOCÊ VÊ ESTA MENSAGEM, O MODAL ESTÁ FUNCIONANDO! ✅
+                    </div>
+                    
+                    <form id="formTeste">
+                        <!-- Nome -->
+                        <div class="mb-3">
+                            <label for="teste_nome" class="form-label">Nome <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="teste_nome" required>
+                        </div>
+                        
+                        <!-- Código -->
+                        <div class="mb-3">
+                            <label for="teste_codigo" class="form-label">Código</label>
+                            <input type="text" class="form-control" id="teste_codigo">
+                        </div>
+                        
+                        <!-- Categoria -->
+                        <div class="mb-3">
+                            <label for="teste_categoria" class="form-label">Categoria</label>
+                            <select class="form-select" id="teste_categoria">
+                                <option value="MATERIAL">Material</option>
+                                <option value="FERRAMENTA">Ferramenta</option>
+                                <option value="EQUIPAMENTO">Equipamento</option>
+                                <option value="CONSUMIVEL">Consumível</option>
+                                <option value="OUTROS">Outros</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Status Operacional -->
+                        <div class="mb-3" style="background-color: #ffeeee; padding: 15px; border: 3px solid red;">
+                            <label for="teste_status" class="form-label" style="color: red; font-weight: bold; font-size: 18px;">
+                                🔴 STATUS OPERACIONAL <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="teste_status" style="border: 3px solid red !important; font-size: 16px;">
+                                <option value="OPERACIONAL">✅ Operacional</option>
+                                <option value="MANUTENCAO">⚠️ Em Manutenção</option>
+                                <option value="INATIVO">❌ Inativo</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Ativo -->
+                        <div class="mb-3" style="background-color: #eeeeff; padding: 15px; border: 3px solid blue;">
+                            <label for="teste_ativo" class="form-label" style="color: blue; font-weight: bold; font-size: 18px;">
+                                🔵 ATIVO NO SISTEMA
+                            </label>
+                            <select class="form-select" id="teste_ativo" style="border: 3px solid blue !important; font-size: 16px;">
+                                <option value="true">✅ Sim</option>
+                                <option value="false">❌ Não</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Descrição -->
+                        <div class="mb-3">
+                            <label for="teste_descricao" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="teste_descricao" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i>
+                                TESTE - Adicionar Equipamento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('formTeste').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const nome = document.getElementById('teste_nome').value;
+            const codigo = document.getElementById('teste_codigo').value;
+            const categoria = document.getElementById('teste_categoria').value;
+            const status = document.getElementById('teste_status').value;
+            const ativo = document.getElementById('teste_ativo').value;
+            const descricao = document.getElementById('teste_descricao').value;
+            
+            alert(`TESTE FUNCIONANDO!\n\nDados capturados:\n- Nome: ${nome}\n- Código: ${codigo}\n- Categoria: ${categoria}\n- Status: ${status}\n- Ativo: ${ativo}\n- Descrição: ${descricao}`);
+        });
+    </script>
+</body>
+</html>

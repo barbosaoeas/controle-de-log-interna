@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manutenções de Veículos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-tools"></i> Manutenções de Veículos</h2>
+                <a href="{% url 'frota_locada:agendar_manutencao' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Agendar Manutenção
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" name="search" class="form-control" placeholder="Placa, tipo, oficina..." value="{{ search }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Veículo</label>
+                    <select name="veiculo" class="form-select">
+                        <option value="">Todos</option>
+                        {% for veiculo in veiculos %}
+                        <option value="{{ veiculo.id }}" {% if veiculo_filter == veiculo.id|stringformat:"s" %}selected{% endif %}>
+                            {{ veiculo.placa }} - {{ veiculo.modelo }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">Todos</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Manutenções -->
+    <div class="card">
+        <div class="card-body">
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Veículo</th>
+                            <th>Tipo</th>
+                            <th>Agendamento</th>
+                            <th>Status</th>
+                            <th>Oficina</th>
+                            <th>KM</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for manutencao in page_obj %}
+                        <tr>
+                            <td>
+                                <strong>{{ manutencao.veiculo.placa }}</strong><br>
+                                <small class="text-muted">{{ manutencao.veiculo.modelo }}</small>
+                            </td>
+                            <td>{{ manutencao.tipo_manutencao.nome }}</td>
+                            <td>{{ manutencao.data_agendamento|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if manutencao.status == 'AGENDADA' %}
+                                    <span class="badge bg-secondary">Agendada</span>
+                                {% elif manutencao.status == 'EM_ANDAMENTO' %}
+                                    <span class="badge bg-primary">Em Andamento</span>
+                                {% elif manutencao.status == 'CONCLUIDA' %}
+                                    <span class="badge bg-success">Concluída</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Cancelada</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ manutencao.oficina|default:"-" }}</td>
+                            <td>{{ manutencao.km_veiculo|default:"-" }}</td>
+                            <td>
+                                <a href="{% url 'frota_locada:detalhes_manutencao' manutencao.id %}" class="btn btn-sm btn-info" title="Ver detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if manutencao.status != 'CONCLUIDA' and manutencao.status != 'CANCELADA' %}
+                                <a href="{% url 'frota_locada:editar_manutencao' manutencao.id %}" class="btn btn-sm btn-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Navegação de página">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if veiculo_filter %}&veiculo={{ veiculo_filter }}{% endif %}">Anterior</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if veiculo_filter %}&veiculo={{ veiculo_filter }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if veiculo_filter %}&veiculo={{ veiculo_filter }}{% endif %}">Próxima</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle"></i> Nenhuma manutenção encontrada.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

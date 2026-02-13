@@ -1,0 +1,741 @@
+<!-- Modal de Gerenciamento de Setores -->
+<div class="modal fade" id="modalSetoresGlobal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-building"></i>
+                    Gerenciar Setores
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário para adicionar setor -->
+                <div class="card mb-4" id="cardNovoSetorGlobal">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-plus-circle"></i>
+                            Adicionar Novo Setor
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formNovoSetorGlobal">
+                            <div class="mb-3">
+                                <label for="nomeSetorGlobal" class="form-label">Nome do Setor *</label>
+                                <input type="text" class="form-control" id="nomeSetorGlobal" required
+                                       style="text-transform: capitalize;"
+                                       oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                            </div>
+                            <button type="submit" class="btn btn-info">
+                                <i class="bi bi-plus-circle"></i>
+                                Adicionar Setor
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Formulário para editar setor (inicialmente oculto) -->
+                <div class="card mb-4" id="cardEditarSetorGlobal" style="display: none;">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="bi bi-pencil"></i>
+                            Editar Setor
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formEditarSetorGlobal">
+                            <input type="hidden" id="editSetorIdGlobal">
+                            <div class="mb-3">
+                                <label for="editNomeSetorGlobal" class="form-label">Nome do Setor *</label>
+                                <input type="text" class="form-control" id="editNomeSetorGlobal" required
+                                       style="text-transform: capitalize;"
+                                       oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle"></i>
+                                    Salvar Alterações
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelarEdicaoSetorGlobal()">
+                                    <i class="bi bi-x-circle"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Lista de setores -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-list"></i>
+                            Setores Cadastrados
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaSetoresGlobal">
+                                    <!-- Setores serão carregados aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Gerenciamento de Equipamentos -->
+<div class="modal fade" id="modalEquipamentosGlobal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-gear"></i>
+                    Gerenciar Equipamentos
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário para adicionar equipamento -->
+                <div class="card mb-4" id="cardNovoEquipamentoGlobal">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-plus-circle"></i>
+                            Adicionar Novo Equipamento
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formNovoEquipamentoGlobal">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="nomeEquipamentoGlobal" class="form-label">Nome do Equipamento *</label>
+                                        <input type="text" class="form-control" id="nomeEquipamentoGlobal" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="codigoEquipamentoGlobal" class="form-label">Código</label>
+                                        <input type="text" class="form-control" id="codigoEquipamentoGlobal">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="categoriaEquipamentoGlobal" class="form-label">Categoria</label>
+                                        <select class="form-select" id="categoriaEquipamentoGlobal">
+                                            <option value="MATERIAL">Material</option>
+                                            <option value="EQUIPAMENTO">Equipamento</option>
+                                            <option value="FERRAMENTA">Ferramenta</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="descricaoEquipamentoGlobal" class="form-label">Descrição</label>
+                                        <textarea class="form-control" id="descricaoEquipamentoGlobal" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i>
+                                Adicionar Equipamento
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Formulário para editar equipamento (inicialmente oculto) -->
+                <div class="card mb-4" id="cardEditarEquipamentoGlobal" style="display: none;">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="bi bi-pencil"></i>
+                            Editar Equipamento
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formEditarEquipamentoGlobal">
+                            <input type="hidden" id="editEquipamentoIdGlobal">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editNomeEquipamentoGlobal" class="form-label">Nome do Equipamento *</label>
+                                        <input type="text" class="form-control" id="editNomeEquipamentoGlobal" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editCodigoEquipamentoGlobal" class="form-label">Código</label>
+                                        <input type="text" class="form-control" id="editCodigoEquipamentoGlobal">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editCategoriaEquipamentoGlobal" class="form-label">Categoria</label>
+                                        <select class="form-select" id="editCategoriaEquipamentoGlobal">
+                                            <option value="MATERIAL">Material</option>
+                                            <option value="EQUIPAMENTO">Equipamento</option>
+                                            <option value="FERRAMENTA">Ferramenta</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editDescricaoEquipamentoGlobal" class="form-label">Descrição</label>
+                                        <textarea class="form-control" id="editDescricaoEquipamentoGlobal" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle"></i>
+                                    Salvar Alterações
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelarEdicaoEquipamentoGlobal()">
+                                    <i class="bi bi-x-circle"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Lista de equipamentos -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-list"></i>
+                            Equipamentos Cadastrados
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Código</th>
+                                        <th>Categoria</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaEquipamentosGlobal">
+                                    <!-- Equipamentos serão carregados aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Gerenciamento de Clientes -->
+<div class="modal fade" id="modalClientesGlobal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-badge"></i>
+                    Gerenciar Clientes
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário para adicionar cliente -->
+                <div class="card mb-4" id="cardNovoClienteGlobal">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-plus-circle"></i>
+                            Adicionar Novo Cliente
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formNovoClienteGlobal">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="nomeClienteGlobal" class="form-label">Nome do Cliente *</label>
+                                        <input type="text" class="form-control" id="nomeClienteGlobal" required
+                                               style="text-transform: capitalize;"
+                                               oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="emailClienteGlobal" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="emailClienteGlobal">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="telefoneClienteGlobal" class="form-label">Telefone</label>
+                                        <input type="text" class="form-control" id="telefoneClienteGlobal">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="enderecoClienteGlobal" class="form-label">Endereço</label>
+                                        <textarea class="form-control" id="enderecoClienteGlobal" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="ativoClienteGlobal" checked>
+                                            <label class="form-check-label" for="ativoClienteGlobal">
+                                                <i class="bi bi-check-circle text-success"></i>
+                                                Cliente Ativo
+                                            </label>
+                                            <div class="form-text">
+                                                <i class="bi bi-info-circle"></i>
+                                                Desmarque para inativar o cliente temporariamente
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i>
+                                Adicionar Cliente
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Formulário para editar cliente (inicialmente oculto) -->
+                <div class="card mb-4" id="cardEditarClienteGlobal" style="display: none;">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="bi bi-pencil"></i>
+                            Editar Cliente
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formEditarClienteGlobal">
+                            <input type="hidden" id="editClienteIdGlobal">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editNomeClienteGlobal" class="form-label">Nome do Cliente *</label>
+                                        <input type="text" class="form-control" id="editNomeClienteGlobal" required
+                                               style="text-transform: capitalize;"
+                                               oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editEmailClienteGlobal" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="editEmailClienteGlobal">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editTelefoneClienteGlobal" class="form-label">Telefone</label>
+                                        <input type="text" class="form-control" id="editTelefoneClienteGlobal">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editEnderecoClienteGlobal" class="form-label">Endereço</label>
+                                        <textarea class="form-control" id="editEnderecoClienteGlobal" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="editAtivoClienteGlobal">
+                                            <label class="form-check-label" for="editAtivoClienteGlobal">
+                                                <i class="bi bi-check-circle text-success"></i>
+                                                Cliente Ativo
+                                            </label>
+                                            <div class="form-text">
+                                                <i class="bi bi-info-circle"></i>
+                                                Desmarque para inativar o cliente temporariamente
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle"></i>
+                                    Salvar Alterações
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelarEdicaoClienteGlobal()">
+                                    <i class="bi bi-x-circle"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Lista de clientes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-list"></i>
+                            Clientes Cadastrados
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Email</th>
+                                        <th>Telefone</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaClientesGlobal">
+                                    <!-- Clientes serão carregados aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Gerenciamento de Usuários -->
+<div class="modal fade" id="modalUsuariosGlobal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-people"></i>
+                    Gerenciar Usuários
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário para adicionar usuário -->
+                <div class="card mb-4" id="cardNovoUsuarioGlobal">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-person-plus"></i>
+                            Adicionar Novo Usuário
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formNovoUsuarioGlobal">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="usernameUsuarioGlobal" class="form-label">Nome de Usuário *</label>
+                                        <input type="text" class="form-control" id="usernameUsuarioGlobal" required
+                                               style="text-transform: capitalize;"
+                                               oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                                        <div class="form-text">Usado para fazer login no sistema</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="firstNameUsuarioGlobal" class="form-label">Primeiro Nome</label>
+                                        <input type="text" class="form-control" id="firstNameUsuarioGlobal"
+                                               style="text-transform: capitalize;"
+                                               oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="lastNameUsuarioGlobal" class="form-label">Sobrenome</label>
+                                        <input type="text" class="form-control" id="lastNameUsuarioGlobal"
+                                               style="text-transform: capitalize;"
+                                               oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="emailUsuarioGlobal" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="emailUsuarioGlobal">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="telefoneUsuarioGlobal" class="form-label">Telefone</label>
+                                        <input type="text" class="form-control" id="telefoneUsuarioGlobal" placeholder="(11) 99999-9999" maxlength="15">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="setorUsuarioGlobal" class="form-label">Setor *</label>
+                                        <select class="form-select" id="setorUsuarioGlobal" required>
+                                            <option value="">Selecione um setor</option>
+                                            <!-- Setores serão carregados via JavaScript -->
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="perfilUsuarioGlobal" class="form-label">Perfil de Acesso *</label>
+                                        <select class="form-select" id="perfilUsuarioGlobal" required>
+                                            <option value="">Selecione um perfil</option>
+                                            <option value="ADMIN">Administrador</option>
+                                            <option value="SUPERVISOR">Supervisor</option>
+                                            <option value="DEMANDANTE">Demandante</option>
+                                            <option value="TRANSPORTES">Setor de Transportes</option>
+                                            <option value="MANUTENCAO">Manutenção</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="empresaUsuarioGlobal" class="form-label">
+                                            <i class="bi bi-building"></i>
+                                            Empresa
+                                        </label>
+                                        <select class="form-select" id="empresaUsuarioGlobal">
+                                            <option value="">Nenhuma (Funcionário Interno)</option>
+                                            <!-- Empresas serão carregadas via JavaScript -->
+                                        </select>
+                                        <div class="form-text">
+                                            <i class="bi bi-info-circle"></i>
+                                            Obrigatório para perfis terceirizados
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="disponivelUsuarioGlobal" class="form-check-label">
+                                            <input type="checkbox" class="form-check-input" id="disponivelUsuarioGlobal" checked>
+                                            Mecânico Disponível
+                                        </label>
+                                        <div class="form-text">
+                                            <i class="bi bi-info-circle"></i>
+                                            Marque se o mecânico está disponível para atender chamados
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Senha Inicial</label>
+                                        <div class="alert alert-info mb-0">
+                                            <i class="bi bi-info-circle"></i>
+                                            Senha padrão: <strong>123456</strong><br>
+                                            <small>O usuário será obrigado a alterar no primeiro login</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-person-plus"></i>
+                                Adicionar Usuário
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Formulário para editar usuário (inicialmente oculto) -->
+                <div class="card mb-4" id="cardEditarUsuarioGlobal" style="display: none;">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="bi bi-pencil"></i>
+                            Editar Usuário
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formEditarUsuarioGlobal">
+                            <input type="hidden" id="editUsuarioIdGlobal">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="editUsernameUsuarioGlobal" class="form-label">Nome de Usuário *</label>
+                                        <input type="text" class="form-control" id="editUsernameUsuarioGlobal" required
+                                               style="text-transform: capitalize;"
+                                               oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                                        <div class="form-text">Usado para fazer login no sistema</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="editFirstNameUsuarioGlobal" class="form-label">Primeiro Nome</label>
+                                        <input type="text" class="form-control" id="editFirstNameUsuarioGlobal"
+                                               style="text-transform: capitalize;"
+                                               oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="editLastNameUsuarioGlobal" class="form-label">Sobrenome</label>
+                                        <input type="text" class="form-control" id="editLastNameUsuarioGlobal"
+                                               style="text-transform: capitalize;"
+                                               oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="editEmailUsuarioGlobal" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="editEmailUsuarioGlobal">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="editTelefoneUsuarioGlobal" class="form-label">Telefone</label>
+                                        <input type="text" class="form-control" id="editTelefoneUsuarioGlobal" placeholder="(11) 99999-9999" maxlength="15">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="editSetorUsuarioGlobal" class="form-label">Setor *</label>
+                                        <select class="form-select" id="editSetorUsuarioGlobal" required>
+                                            <option value="">Selecione um setor</option>
+                                            <!-- Setores serão carregados via JavaScript -->
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editPerfilUsuarioGlobal" class="form-label">Perfil de Acesso *</label>
+                                        <select class="form-select" id="editPerfilUsuarioGlobal" required>
+                                            <option value="">Selecione um perfil</option>
+                                            <option value="ADMIN">Administrador</option>
+                                            <option value="SUPERVISOR">Supervisor</option>
+                                            <option value="REQUISITANTE">Requisitante</option>
+                                            <option value="DEMANDANTE">Demandante</option>
+                                            <option value="TRANSPORTES">Setor de Transportes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editEmpresaUsuarioGlobal" class="form-label">
+                                            <i class="bi bi-building"></i>
+                                            Empresa
+                                        </label>
+                                        <select class="form-select" id="editEmpresaUsuarioGlobal">
+                                            <option value="">Nenhuma (Funcionário Interno)</option>
+                                            <!-- Empresas serão carregadas via JavaScript -->
+                                        </select>
+                                        <div class="form-text">
+                                            <i class="bi bi-info-circle"></i>
+                                            Obrigatório para perfis terceirizados
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editDisponivelUsuarioGlobal" class="form-check-label">
+                                            <input type="checkbox" class="form-check-input" id="editDisponivelUsuarioGlobal">
+                                            Mecânico Disponível
+                                        </label>
+                                        <div class="form-text">
+                                            <i class="bi bi-info-circle"></i>
+                                            Marque se o mecânico está disponível para atender chamados
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editAtivoUsuarioGlobal" class="form-label">Status do Usuário</label>
+                                        <select class="form-select" id="editAtivoUsuarioGlobal">
+                                            <option value="true">Ativo</option>
+                                            <option value="false">Inativo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle"></i>
+                                    Salvar Alterações
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelarEdicaoUsuarioGlobal()">
+                                    <i class="bi bi-x-circle"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Lista de usuários -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-list"></i>
+                            Usuários Cadastrados
+                        </h6>
+                        <button class="btn btn-sm btn-outline-primary" onclick="carregarUsuariosGlobal()">
+                            <i class="bi bi-arrow-clockwise"></i> Recarregar
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Usuário</th>
+                                        <th>Nome Completo</th>
+                                        <th>Email</th>
+                                        <th>Setor</th>
+                                        <th>Perfil</th>
+                                        <th>Empresa</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaUsuariosGlobal">
+                                    <!-- Usuários serão carregados aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>

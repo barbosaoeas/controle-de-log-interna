@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fornecedores - Frota Locada{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 20px 20px;
+    }
+
+    .page-header h1 {
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .fornecedor-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+
+    .fornecedor-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 3px solid #28a745;
+        border-radius: 15px 15px 0 0 !important;
+        padding: 1.25rem;
+    }
+
+    .card-header h5 {
+        margin: 0;
+        color: #28a745;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+    }
+
+    .info-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .info-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-row i {
+        color: #28a745;
+        width: 20px;
+        text-align: center;
+    }
+
+    .btn-action {
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 1rem 0;
+        }
+        
+        .btn-action {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1>
+                    <i class="bi bi-building"></i>
+                    Fornecedores
+                </h1>
+                <p class="mb-0">Gerencie os fornecedores de veículos locados</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'frota_locada:cadastrar_fornecedor' %}" class="btn btn-light btn-lg">
+                    <i class="bi bi-plus-circle"></i>
+                    Novo Fornecedor
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    {% if fornecedores %}
+        <div class="row">
+            {% for fornecedor in fornecedores %}
+            <div class="col-lg-6 col-xl-4">
+                <div class="card fornecedor-card">
+                    <div class="card-header">
+                        <h5>
+                            <i class="bi bi-building"></i>
+                            {{ fornecedor.nome }}
+                            {% if fornecedor.ativo %}
+                                <span class="badge bg-success status-badge ms-auto">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary status-badge ms-auto">Inativo</span>
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <i class="bi bi-card-text"></i>
+                            <strong>CNPJ:</strong> {{ fornecedor.cnpj }}
+                        </div>
+                        
+                        {% if fornecedor.telefone %}
+                        <div class="info-row">
+                            <i class="bi bi-telephone"></i>
+                            <strong>Telefone:</strong> {{ fornecedor.telefone }}
+                        </div>
+                        {% endif %}
+                        
+                        {% if fornecedor.email %}
+                        <div class="info-row">
+                            <i class="bi bi-envelope"></i>
+                            <strong>E-mail:</strong> {{ fornecedor.email }}
+                        </div>
+                        {% endif %}
+                        
+                        {% if fornecedor.contato_responsavel %}
+                        <div class="info-row">
+                            <i class="bi bi-person"></i>
+                            <strong>Responsável:</strong> {{ fornecedor.contato_responsavel }}
+                        </div>
+                        {% endif %}
+                        
+                        {% if fornecedor.endereco %}
+                        <div class="info-row">
+                            <i class="bi bi-geo-alt"></i>
+                            <strong>Endereço:</strong> {{ fornecedor.endereco|truncatechars:50 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="{% url 'frota_locada:editar_fornecedor' fornecedor.id %}" 
+                               class="btn btn-outline-primary btn-action">
+                                <i class="bi bi-pencil"></i>
+                                Editar
+                            </a>
+                            <button class="btn btn-outline-danger btn-action" 
+                                    onclick="confirmarExclusao('{{ fornecedor.nome }}', '{{ fornecedor.id }}')">
+                                <i class="bi bi-trash"></i>
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Paginação -->
+        {% if is_paginated %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <nav aria-label="Paginação">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">Primeira</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% endif %}
+        
+    {% else %}
+        <div class="empty-state">
+            <i class="bi bi-building"></i>
+            <h3>Nenhum fornecedor cadastrado</h3>
+            <p>Comece cadastrando o primeiro fornecedor de veículos locados.</p>
+            <a href="{% url 'frota_locada:cadastrar_fornecedor' %}" class="btn btn-success btn-lg">
+                <i class="bi bi-plus-circle"></i>
+                Cadastrar Primeiro Fornecedor
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function confirmarExclusao(nome, id) {
+    if (confirm(`Tem certeza que deseja excluir o fornecedor "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+        // Aqui você pode implementar a exclusão via AJAX ou redirect
+        window.location.href = `/frota-locada/fornecedores/${id}/excluir/`;
+    }
+}
+</script>
+{% endblock %}

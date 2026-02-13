@@ -1,0 +1,630 @@
+{% extends 'base.html' %}
+
+{% block title %}Pedido #{{ pedido.id }} - Detalhes{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-file-earmark-text"></i>
+        Pedido #{{ pedido.id }}
+        {% if pedido.prioridade == 'URGENTE' %}
+            <span class="badge bg-danger ms-2">URGENTE</span>
+        {% elif pedido.prioridade == 'ALTA' %}
+            <span class="badge bg-warning ms-2">ALTA</span>
+        {% endif %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'listar_pedidos' %}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left"></i>
+            Voltar
+        </a>
+        {% if perfil.pode_iniciar_finalizar and pedido.status != 'CONCLUIDO' and pedido.status != 'CANCELADO' %}
+            <div class="btn-group">
+                {% if pedido.status == 'PENDENTE' %}
+                    <button class="btn btn-success" onclick="atualizarStatus({{ pedido.id }}, 'EM_ANDAMENTO')">
+                        <i class="bi bi-play"></i> Iniciar Atendimento
+                    </button>
+                {% elif pedido.status == 'EM_ANDAMENTO' %}
+                    <button class="btn btn-success" onclick="atualizarStatus({{ pedido.id }}, 'CONCLUIDO')">
+                        <i class="bi bi-check"></i> Concluir Atendimento
+                    </button>
+                {% endif %}
+                <button class="btn btn-outline-danger" onclick="atualizarStatus({{ pedido.id }}, 'CANCELADO')">
+                    <i class="bi bi-x"></i> Cancelar
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informações Principais -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Informações do Pedido
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Setor Solicitante</label>
+                        <div class="fw-bold">{{ pedido.setor_solicitante.nome }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Tipo de Pedido</label>
+                        <div>
+                            <span class="badge bg-secondary">{{ pedido.get_tipo_pedido_display }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Status</label>
+                        <div>
+                            {% if pedido.status == 'PENDENTE' %}
+                                <span class="badge bg-warning">{{ pedido.get_status_display }}</span>
+                            {% elif pedido.status == 'EM_ANDAMENTO' %}
+                                <span class="badge bg-info">{{ pedido.get_status_display }}</span>
+                            {% elif pedido.status == 'CONCLUIDO' %}
+                                <span class="badge bg-success">{{ pedido.get_status_display }}</span>
+                            {% else %}
+                                <span class="badge bg-danger">{{ pedido.get_status_display }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Prioridade</label>
+                        <div>
+                            {% if pedido.prioridade == 'URGENTE' %}
+                                <span class="badge bg-danger">{{ pedido.get_prioridade_display }}</span>
+                            {% elif pedido.prioridade == 'ALTA' %}
+                                <span class="badge bg-warning">{{ pedido.get_prioridade_display }}</span>
+                            {% elif pedido.prioridade == 'MEDIA' %}
+                                <span class="badge bg-primary">{{ pedido.get_prioridade_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ pedido.get_prioridade_display }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted">Descrição</label>
+                    <div class="border rounded p-3 bg-light">{{ pedido.descricao }}</div>
+                </div>
+
+                <!-- 📅 Data e Hora de Agendamento -->
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted">
+                            <i class="bi bi-calendar-event"></i> Data do Serviço
+                        </label>
+                        <div class="fw-bold fs-5">
+                            {% if pedido.is_agendado_futuro %}
+                                <span class="text-info">
+                                    <i class="bi bi-calendar-plus"></i>
+                                    {{ pedido.data_agendamento|date:"d/m/Y" }}
+                                </span>
+                                <span class="badge bg-info ms-2">Agendado</span>
+                            {% elif pedido.is_agendado_hoje %}
+                                <span class="text-success">
+                                    <i class="bi bi-calendar-check"></i>
+                                    {{ pedido.data_agendamento|date:"d/m/Y" }}
+                                </span>
+                                <span class="badge bg-success ms-2">Hoje</span>
+                            {% else %}
+                                <span class="text-danger">
+                                    <i class="bi bi-calendar-x"></i>
+                                    {{ pedido.data_agendamento|date:"d/m/Y" }}
+                                </span>
+                                <span class="badge bg-danger ms-2">Atrasado</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">
+                            Criado em: {{ pedido.data_solicitacao|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+
+                    <!-- ⏰ Hora Desejada -->
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label text-muted">
+                            <i class="bi bi-clock"></i> Hora Desejada
+                        </label>
+                        <div class="fw-bold fs-5">
+                            {% if pedido.hora_agendamento %}
+                                <span class="text-primary">
+                                    <i class="bi bi-alarm"></i>
+                                    {{ pedido.hora_agendamento|time:"H:i" }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">
+                                    Não informada
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 📸 Foto do Material -->
+                    {% if pedido.foto_material %}
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">
+                            <i class="bi bi-camera"></i> Foto do Material
+                        </label>
+                        <div>
+                            <img src="{{ pedido.foto_material.url }}"
+                                 alt="Foto do Material"
+                                 class="img-thumbnail"
+                                 style="max-height: 150px; cursor: pointer;"
+                                 onclick="visualizarFoto('{{ pedido.foto_material.url }}', 'Material do Pedido #{{ pedido.id }}')"
+                                 title="Clique para ampliar">
+                            <div class="mt-1">
+                                <a href="{{ pedido.foto_material.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-zoom-in"></i> Ver em tamanho real
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-muted">Quantidade</label>
+                        <div class="fw-bold">{{ pedido.quantidade }} {{ pedido.get_unidade_medida_display }}</div>
+                    </div>
+                    {% if pedido.equipamento %}
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label text-muted">Equipamento/Material</label>
+                        <div class="fw-bold">
+                            <i class="bi bi-gear text-primary"></i>
+                            {{ pedido.equipamento.nome }}
+                            {% if pedido.equipamento.codigo %}
+                                <small class="text-muted">({{ pedido.equipamento.codigo }})</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if pedido.area_origem or pedido.area_destino %}
+                <div class="row">
+                    {% if pedido.area_origem %}
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Área de Origem</label>
+                        <div class="fw-bold">
+                            <i class="bi bi-geo-alt text-warning"></i>
+                            {{ pedido.area_origem.nome }}
+                            {% if pedido.area_origem.localizacao %}
+                                <small class="text-muted d-block">{{ pedido.area_origem.localizacao }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if pedido.area_destino %}
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Área de Destino</label>
+                        <div class="fw-bold">
+                            <i class="bi bi-geo-alt-fill text-success"></i>
+                            {{ pedido.area_destino.nome }}
+                            {% if pedido.area_destino.localizacao %}
+                                <small class="text-muted d-block">{{ pedido.area_destino.localizacao }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Requisitante -->
+                <div class="mb-3">
+                    <label class="form-label text-muted">Requisitante</label>
+                    <div class="fw-bold">
+                        <i class="bi bi-person-check text-success"></i>
+                        {{ pedido.nome_requisitante|default:"Não informado" }}
+                        <small class="text-muted">({{ pedido.criado_por.username }})</small>
+                    </div>
+                </div>
+
+                {% if pedido.cliente %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Cliente/Destinatário Adicional</label>
+                    <div class="fw-bold">
+                        <i class="bi bi-person-badge text-info"></i>
+                        {{ pedido.cliente.nome }}
+                        {% if pedido.cliente.documento %}
+                            <small class="text-muted">({{ pedido.cliente.documento }})</small>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if pedido.observacoes %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Observações</label>
+                    <div class="border rounded p-3 bg-light">{{ pedido.observacoes }}</div>
+                </div>
+                {% endif %}
+
+                <!-- Foto de Comprovação -->
+                {% if pedido.foto_comprovacao %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">
+                        <i class="bi bi-camera"></i> Foto de Comprovação
+                    </label>
+                    <div class="border rounded p-3 bg-light">
+                        <!-- Thumbnail pequena com preview -->
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <img src="{{ pedido.foto_comprovacao.url }}"
+                                 alt="Thumbnail"
+                                 class="rounded border foto-thumbnail"
+                                 style="width: 60px; height: 60px; object-fit: cover; cursor: pointer;"
+                                 onclick="visualizarFoto('{{ pedido.foto_comprovacao.url }}', '{{ pedido.id }}')"
+                                 title="Clique para ampliar">
+                            <div>
+                                <div class="fw-bold text-success">
+                                    <i class="bi bi-check-circle"></i> Serviço Comprovado
+                                </div>
+                                <small class="text-muted">Foto anexada na conclusão</small>
+                            </div>
+                        </div>
+
+                        <!-- Imagem maior centralizada -->
+                        <div class="text-center">
+                            <img src="{{ pedido.foto_comprovacao.url }}"
+                                 alt="Foto de Comprovação"
+                                 class="img-fluid rounded mb-2"
+                                 style="max-height: 250px; cursor: pointer;"
+                                 onclick="visualizarFoto('{{ pedido.foto_comprovacao.url }}', '{{ pedido.id }}')">
+                            <br>
+                            <small class="text-muted">Clique na imagem para ampliar</small>
+                            <br>
+                            <a href="{{ pedido.foto_comprovacao.url }}"
+                               download="comprovacao_pedido_{{ pedido.id }}.jpg"
+                               class="btn btn-outline-primary btn-sm mt-2">
+                                <i class="bi bi-download"></i> Baixar Foto
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações de Controle -->
+    <div class="col-lg-4">
+        <!-- Datas -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-calendar"></i>
+                    Cronologia
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Data de Solicitação</label>
+                    <div class="fw-bold">{{ pedido.data_solicitacao|date:"d/m/Y H:i" }}</div>
+                </div>
+                
+                {% if pedido.data_inicio %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Data de Início</label>
+                    <div class="fw-bold text-info">{{ pedido.data_inicio|date:"d/m/Y H:i" }}</div>
+                </div>
+                {% endif %}
+                
+                {% if pedido.data_conclusao %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Data de Conclusão</label>
+                    <div class="fw-bold text-success">{{ pedido.data_conclusao|date:"d/m/Y H:i" }}</div>
+                </div>
+                {% endif %}
+                
+                {% if pedido.tempo_pendente %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Tempo Pendente</label>
+                    <div class="fw-bold text-warning">{{ pedido.tempo_pendente.days }} dias</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Responsáveis -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-people"></i>
+                    Responsáveis
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Criado por</label>
+                    <div class="fw-bold">
+                        {{ pedido.criado_por.get_full_name|default:pedido.criado_por.username }}
+                    </div>
+                </div>
+                
+                {% if pedido.atualizado_por %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Última atualização</label>
+                    <div class="fw-bold">
+                        {{ pedido.atualizado_por.get_full_name|default:pedido.atualizado_por.username }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Histórico -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i>
+                    Histórico do Pedido
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if historico %}
+                    <div class="timeline">
+                        {% for item in historico %}
+                        <div class="timeline-item mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    {% if item.status_novo == 'PENDENTE' %}
+                                        <div class="timeline-marker bg-warning"></div>
+                                    {% elif item.status_novo == 'EM_ANDAMENTO' %}
+                                        <div class="timeline-marker bg-info"></div>
+                                    {% elif item.status_novo == 'CONCLUIDO' %}
+                                        <div class="timeline-marker bg-success"></div>
+                                    {% else %}
+                                        <div class="timeline-marker bg-danger"></div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-1">
+                                            {% if item.status_anterior %}
+                                                {{ item.status_anterior }} → {{ item.status_novo }}
+                                            {% else %}
+                                                {{ item.status_novo }}
+                                            {% endif %}
+                                        </h6>
+                                        <small class="text-muted">{{ item.data_alteracao|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                    {% if item.observacao %}
+                                        <p class="mb-1 text-muted">{{ item.observacao }}</p>
+                                    {% endif %}
+                                    <small class="text-muted">
+                                        por {{ item.usuario.get_full_name|default:item.usuario.username }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-clock display-4 text-muted"></i>
+                        <p class="text-muted mt-2">Nenhum histórico disponível</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para atualizar status -->
+{% if perfil.is_transportes %}
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Atualizar Status do Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="statusForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" id="pedidoId" name="pedido_id">
+                    <input type="hidden" id="novoStatus" name="status">
+
+                    <!-- Alerta para foto obrigatória -->
+                    <div id="alertaFoto" class="alert alert-warning d-none" role="alert">
+                        <i class="bi bi-camera"></i>
+                        <strong>📸 Atenção!</strong> Para concluir o serviço, é necessário anexar uma foto comprovando a realização do trabalho.
+                    </div>
+
+                    <!-- Campo de foto (aparece apenas para conclusão) -->
+                    <div id="campoFoto" class="mb-3 d-none">
+                        <label for="fotoComprovacao" class="form-label">
+                            <i class="bi bi-camera"></i> Foto de Comprovação *
+                        </label>
+                        <input type="file" class="form-control" id="fotoComprovacao" name="foto_comprovacao"
+                               accept="image/*" capture="environment">
+                        <div class="form-text">
+                            Tire uma foto para comprovar a conclusão do serviço. Formatos aceitos: JPG, PNG, WEBP
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label">Observação <span id="obsObrigatoria" class="d-none text-danger">*</span></label>
+                        <textarea class="form-control" id="observacao" name="observacao" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarStatus()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para visualizar foto de comprovação -->
+<div class="modal fade" id="fotoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Foto de Comprovação - Pedido #<span id="pedidoNumero"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="fotoComprovacaoImg" src="" alt="Foto de Comprovação" class="img-fluid rounded" style="max-height: 500px;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <a id="downloadFoto" href="" download class="btn btn-primary">
+                    <i class="bi bi-download"></i> Baixar Foto
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-top: 6px;
+}
+
+/* Estilos para thumbnails de foto */
+.foto-thumbnail {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.foto-thumbnail:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 10;
+    position: relative;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Função para atualizar status (disponível para todos, mas com verificação de permissão)
+function atualizarStatus(pedidoId, novoStatus) {
+    // Verificar se usuário tem permissão
+    {% if not perfil.pode_iniciar_finalizar %}
+    alert('❌ Acesso negado. Você não tem permissão para alterar status de pedidos.');
+    return;
+    {% endif %}
+
+    {% if perfil.pode_iniciar_finalizar %}
+    $('#pedidoId').val(pedidoId);
+    $('#novoStatus').val(novoStatus);
+    $('#observacao').val('');
+    $('#fotoComprovacao').val('');
+
+    let statusText = '';
+    switch(novoStatus) {
+        case 'EM_ANDAMENTO':
+            statusText = 'Em Andamento';
+            break;
+        case 'CONCLUIDO':
+            statusText = 'Concluído';
+            break;
+        case 'CANCELADO':
+            statusText = 'Cancelado';
+            break;
+    }
+
+    // Mostrar/ocultar campo de foto baseado no status
+    if (novoStatus === 'CONCLUIDO') {
+        $('#alertaFoto').removeClass('d-none');
+        $('#campoFoto').removeClass('d-none');
+        $('#obsObrigatoria').removeClass('d-none');
+        $('#fotoComprovacao').prop('required', true);
+    } else {
+        $('#alertaFoto').addClass('d-none');
+        $('#campoFoto').addClass('d-none');
+        $('#obsObrigatoria').addClass('d-none');
+        $('#fotoComprovacao').prop('required', false);
+    }
+
+    $('.modal-title').text(`Atualizar Status para: ${statusText}`);
+    $('#statusModal').modal('show');
+}
+
+function confirmarStatus() {
+    const pedidoId = $('#pedidoId').val();
+    const status = $('#novoStatus').val();
+    const observacao = $('#observacao').val();
+    const fotoInput = document.getElementById('fotoComprovacao');
+
+    // Validar foto obrigatória para conclusão
+    if (status === 'CONCLUIDO' && (!fotoInput.files || fotoInput.files.length === 0)) {
+        alert('📸 Atenção: É obrigatório anexar uma foto para comprovar a conclusão do serviço!');
+        return;
+    }
+
+    // Criar FormData para enviar arquivo
+    const formData = new FormData();
+    formData.append('status', status);
+    formData.append('observacao', observacao);
+    formData.append('csrfmiddlewaretoken', $('[name=csrfmiddlewaretoken]').val());
+
+    if (fotoInput.files && fotoInput.files.length > 0) {
+        formData.append('foto_comprovacao', fotoInput.files[0]);
+    }
+
+    // Mostrar loading
+    const btnConfirmar = document.querySelector('#statusModal .btn-primary');
+    const textoOriginal = btnConfirmar.innerHTML;
+    btnConfirmar.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando...';
+    btnConfirmar.disabled = true;
+
+    $.ajax({
+        url: `/pedidos/${pedidoId}/atualizar-status/`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+            if (data.success) {
+                $('#statusModal').modal('hide');
+                if (status === 'CONCLUIDO') {
+                    alert('✅ Serviço concluído com sucesso! Foto de comprovação salva.');
+                }
+                location.reload();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        },
+        error: function() {
+            alert('Erro ao atualizar status do pedido');
+        },
+        complete: function() {
+            // Restaurar botão
+            btnConfirmar.innerHTML = textoOriginal;
+            btnConfirmar.disabled = false;
+        }
+    });
+    {% endif %}
+}
+</script>
+
+<!-- Função para visualizar foto de comprovação (disponível para todos) -->
+<script>
+function visualizarFoto(fotoUrl, pedidoId) {
+    console.log('🔧 Visualizando foto:', fotoUrl, 'Pedido:', pedidoId);
+    $('#pedidoNumero').text(pedidoId);
+    $('#fotoComprovacaoImg').attr('src', fotoUrl);
+    $('#downloadFoto').attr('href', fotoUrl);
+    $('#fotoModal').modal('show');
+}
+</script>
+{% endblock %}

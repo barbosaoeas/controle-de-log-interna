@@ -1,0 +1,616 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detalhes-container {
+        max-width: 1000px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .chamado-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(220, 53, 69, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .chamado-header.aguardando {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        box-shadow: 0 10px 30px rgba(108, 117, 125, 0.3);
+    }
+
+    .chamado-header.em-atendimento {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        box-shadow: 0 10px 30px rgba(0, 123, 255, 0.3);
+    }
+
+    .chamado-header.concluido {
+        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+    }
+
+    .chamado-header.pausado {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: #212529;
+        box-shadow: 0 10px 30px rgba(255, 193, 7, 0.3);
+    }
+
+    .chamado-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+    }
+
+    .chamado-numero {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 1rem 0;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        position: relative;
+        z-index: 1;
+    }
+
+    .chamado-status {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        position: relative;
+        z-index: 1;
+    }
+
+    .info-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .info-card h5 {
+        color: #495057;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+        font-weight: 600;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .info-value {
+        color: #212529;
+        font-weight: 500;
+        text-align: right;
+        max-width: 60%;
+    }
+
+    .prioridade-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .prioridade-baixa { background: #d4edda; color: #155724; }
+    .prioridade-media { background: #fff3cd; color: #856404; }
+    .prioridade-alta { background: #f8d7da; color: #721c24; }
+    .prioridade-critica { background: #f5c6cb; color: #721c24; animation: blink 1s infinite; }
+
+    @keyframes blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0.7; }
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.75rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.75rem;
+        top: 0.5rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #007bff;
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px #007bff;
+    }
+
+    .timeline-item.concluido::before {
+        background: #28a745;
+        box-shadow: 0 0 0 2px #28a745;
+    }
+
+    .timeline-content {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 10px;
+        border-left: 4px solid #007bff;
+    }
+
+    .timeline-item.concluido .timeline-content {
+        border-left-color: #28a745;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-iniciar {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    }
+
+    .btn-iniciar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+        color: white;
+    }
+
+    .btn-finalizar {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-finalizar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .detalhes-container {
+            margin: 1rem;
+            padding: 0;
+        }
+        
+        .chamado-header {
+            padding: 1.5rem;
+        }
+        
+        .chamado-numero {
+            font-size: 1.5rem;
+        }
+        
+        .info-cards {
+            grid-template-columns: 1fr;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detalhes-container">
+    <!-- Header do Chamado -->
+    <div class="chamado-header {{ chamado.status|lower|slugify }}">
+        <h1 class="chamado-numero">
+            <i class="bi bi-wrench-adjustable"></i>
+            {{ chamado.numero_chamado }}
+        </h1>
+        <span class="chamado-status">
+            <i class="bi bi-circle-fill"></i>
+            {{ chamado.get_status_display }}
+        </span>
+    </div>
+
+    <!-- Cards de Informações -->
+    <div class="info-cards">
+        <!-- Informações da Máquina/Equipamento -->
+        <div class="info-card">
+            <h5><i class="bi bi-gear-wide-connected"></i> Equipamento/Veículo</h5>
+            <div class="info-item">
+                <span class="info-label">Identificação</span>
+                <span class="info-value">{{ chamado.equipamento_nome }}</span>
+            </div>
+            {% if chamado.veiculo_locado %}
+            <div class="info-item">
+                <span class="info-label">Fornecedor</span>
+                <span class="info-value">{{ chamado.veiculo_locado.fornecedor.nome }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Tipo</span>
+                <span class="info-value">{{ chamado.veiculo_locado.tipo_veiculo.nome }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Status do Equipamento</span>
+                <span class="info-value">{{ chamado.veiculo_locado.get_status_display }}</span>
+            </div>
+            {% elif chamado.maquina %}
+            <div class="info-item">
+                <span class="info-label">Código</span>
+                <span class="info-value">{{ chamado.maquina.codigo }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Localização</span>
+                <span class="info-value">{{ chamado.maquina.localizacao|default:"Não informada" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Status da Máquina</span>
+                <span class="info-value">{{ chamado.maquina.get_status_display }}</span>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <span class="info-label">Fornecedor Responsável</span>
+                <span class="info-value">{{ chamado.maquina.fornecedor.nome }}</span>
+            </div>
+        </div>
+
+        <!-- Informações do Problema -->
+        <div class="info-card">
+            <h5><i class="bi bi-exclamation-triangle"></i> Problema Reportado</h5>
+            <div class="info-item">
+                <span class="info-label">Tipo</span>
+                <span class="info-value">{{ chamado.get_tipo_problema_display }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Prioridade</span>
+                <span class="info-value">
+                    <span class="prioridade-badge prioridade-{{ chamado.prioridade|lower }}">
+                        {{ chamado.get_prioridade_display }}
+                    </span>
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Data de Abertura</span>
+                <span class="info-value">{{ chamado.data_abertura|date:"d/m/Y H:i" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Solicitante</span>
+                <span class="info-value">{{ chamado.solicitante.get_full_name|default:chamado.solicitante.username }}</span>
+            </div>
+
+            <!-- Tempo de Espera -->
+            {% if chamado.tempo_aguardando %}
+            <div class="info-item">
+                <span class="info-label">Tempo de Espera</span>
+                <span class="info-value">
+                    <i class="bi bi-hourglass-split text-warning me-1"></i>
+                    <strong class="text-warning" data-tempo-espera>{{ chamado.tempo_aguardando_formatado }}</strong>
+                    {% if chamado.status == 'AGUARDANDO' %}
+                        <small class="text-muted">(aguardando atendimento)</small>
+                    {% else %}
+                        <small class="text-muted">(até início do atendimento)</small>
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Informações do Atendimento -->
+        <div class="info-card">
+            <h5><i class="bi bi-person-gear"></i> Atendimento</h5>
+            <div class="info-item">
+                <span class="info-label">Mecânico</span>
+                <span class="info-value">
+                    {% if chamado.mecanico %}
+                        {{ chamado.mecanico.get_full_name|default:chamado.mecanico.username }}
+                    {% else %}
+                        Não atribuído
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Início do Atendimento</span>
+                <span class="info-value">
+                    {% if chamado.data_inicio_atendimento %}
+                        {{ chamado.data_inicio_atendimento|date:"d/m/Y H:i" }}
+                    {% else %}
+                        Não iniciado
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Fim do Atendimento</span>
+                <span class="info-value">
+                    {% if chamado.data_fim_atendimento %}
+                        {{ chamado.data_fim_atendimento|date:"d/m/Y H:i" }}
+                    {% else %}
+                        Em andamento
+                    {% endif %}
+                </span>
+            </div>
+            {% if chamado.data_inicio_atendimento and chamado.data_fim_atendimento %}
+            <div class="info-item">
+                <span class="info-label">Tempo de Atendimento/Reparo</span>
+                <span class="info-value">
+                    <i class="bi bi-wrench text-success me-1"></i>
+                    <strong class="text-success">{{ chamado.tempo_atendimento_formatado }}</strong>
+                </span>
+            </div>
+            {% endif %}
+
+            <!-- Tempo Total de Indisponibilidade -->
+            {% if chamado.tempo_total_indisponibilidade %}
+            <div class="info-item">
+                <span class="info-label">Tempo Total de Indisponibilidade</span>
+                <span class="info-value">
+                    <i class="bi bi-exclamation-triangle text-danger me-1"></i>
+                    <strong class="text-danger" data-tempo-total>{{ chamado.tempo_total_indisponibilidade_formatado }}</strong>
+                    <small class="text-muted">(Espera + Reparo)</small>
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Descrições -->
+    <div class="info-cards">
+        <div class="info-card">
+            <h5><i class="bi bi-chat-square-text"></i> Descrição do Problema</h5>
+            <p class="mb-0">{{ chamado.descricao_problema|linebreaks }}</p>
+        </div>
+
+        {% if chamado.foto_problema %}
+        <div class="info-card">
+            <h5><i class="bi bi-camera"></i> Foto do Problema</h5>
+            <div class="text-center">
+                <img src="{{ chamado.foto_problema.url }}"
+                     alt="Foto do problema"
+                     class="img-fluid rounded shadow-sm"
+                     style="max-width: 100%; max-height: 400px; cursor: pointer;"
+                     onclick="abrirModalFoto('{{ chamado.foto_problema.url }}')">
+                <p class="text-muted mt-2 mb-0">
+                    <small><i class="bi bi-info-circle me-1"></i>Clique na imagem para ampliar</small>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if chamado.descricao_solucao %}
+        <div class="info-card">
+            <h5><i class="bi bi-tools"></i> Solução Aplicada</h5>
+            <p class="mb-0">{{ chamado.descricao_solucao|linebreaks }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if chamado.pecas_utilizadas or chamado.observacoes %}
+    <div class="info-cards">
+        {% if chamado.pecas_utilizadas %}
+        <div class="info-card">
+            <h5><i class="bi bi-gear"></i> Peças Utilizadas</h5>
+            <p class="mb-0">{{ chamado.pecas_utilizadas|linebreaks }}</p>
+        </div>
+        {% endif %}
+
+        {% if chamado.observacoes %}
+        <div class="info-card">
+            <h5><i class="bi bi-chat-text"></i> Observações</h5>
+            <p class="mb-0">{{ chamado.observacoes|linebreaks }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Timeline do Atendimento -->
+    <div class="info-card">
+        <h5><i class="bi bi-clock-history"></i> Histórico do Atendimento</h5>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <strong>Chamado Aberto</strong><br>
+                    <small class="text-muted">{{ chamado.data_abertura|date:"d/m/Y H:i" }} - {{ chamado.solicitante.get_full_name|default:chamado.solicitante.username }}</small>
+                </div>
+            </div>
+
+            {% if chamado.data_inicio_atendimento %}
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <strong>Atendimento Iniciado</strong><br>
+                    <small class="text-muted">{{ chamado.data_inicio_atendimento|date:"d/m/Y H:i" }} - {{ chamado.mecanico.get_full_name|default:chamado.mecanico.username }}</small>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if chamado.data_fim_atendimento %}
+            <div class="timeline-item concluido">
+                <div class="timeline-content">
+                    <strong>Atendimento Finalizado</strong><br>
+                    <small class="text-muted">{{ chamado.data_fim_atendimento|date:"d/m/Y H:i" }} - {{ chamado.mecanico.get_full_name|default:chamado.mecanico.username }}</small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="action-buttons">
+        <a href="{% url 'frota_locada:listar_chamados' %}" class="btn btn-secondary btn-action">
+            <i class="bi bi-arrow-left"></i> Voltar à Lista
+        </a>
+
+        {% if chamado.status == 'AGUARDANDO' %}
+            {% if user.perfil.codigo_perfil in 'ADMIN,SUPERVISOR' or pode_atender %}
+            <a href="{% url 'frota_locada:iniciar_atendimento' chamado.id %}" class="btn-iniciar btn-action">
+                <i class="bi bi-play-circle"></i> Iniciar Atendimento
+            </a>
+            {% else %}
+            <div class="alert alert-info mt-3">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Aguardando atendimento:</strong> Apenas mecânicos do fornecedor <strong>{{ chamado.fornecedor_responsavel.nome }}</strong> podem iniciar este atendimento.
+            </div>
+            {% endif %}
+        {% endif %}
+
+        {% if chamado.status == 'EM_ATENDIMENTO' %}
+        <a href="{% url 'frota_locada:finalizar_chamado' chamado.id %}" class="btn-finalizar btn-action">
+            <i class="bi bi-check-circle"></i> Finalizar Atendimento
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para visualizar foto em tamanho maior -->
+{% if chamado.foto_problema %}
+<div class="modal fade" id="modalFoto" tabindex="-1" aria-labelledby="modalFotoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalFotoLabel">
+                    <i class="bi bi-camera me-2"></i>Foto do Problema - {{ chamado.numero_chamado }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalFotoImg" src="" alt="Foto do problema" class="img-fluid rounded">
+            </div>
+            <div class="modal-footer">
+                <a id="modalFotoDownload" href="" download class="btn btn-primary">
+                    <i class="bi bi-download me-2"></i>Baixar Foto
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirModalFoto(urlFoto) {
+    const modalFotoImg = document.getElementById('modalFotoImg');
+    const modalFotoDownload = document.getElementById('modalFotoDownload');
+
+    if (modalFotoImg && modalFotoDownload) {
+        modalFotoImg.src = urlFoto;
+        modalFotoDownload.href = urlFoto;
+
+        const modal = new bootstrap.Modal(document.getElementById('modalFoto'));
+        modal.show();
+    }
+}
+
+// ⏱️ ATUALIZAÇÃO AUTOMÁTICA DE TEMPOS
+(function() {
+    const chamadoId = {{ chamado.id }};
+    const updateInterval = 60000; // 60 segundos
+
+    function atualizarTempos() {
+        fetch(`/frota-locada/ajax/atualizar-tempos-chamado/${chamadoId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Atualizar Tempo de Espera
+                    const tempoEsperaElement = document.querySelector('[data-tempo-espera]');
+                    if (tempoEsperaElement && data.tempo_aguardando) {
+                        tempoEsperaElement.textContent = data.tempo_aguardando;
+                    }
+
+                    // Atualizar Tempo Total de Indisponibilidade
+                    const tempoTotalElement = document.querySelector('[data-tempo-total]');
+                    if (tempoTotalElement && data.tempo_total_indisponibilidade) {
+                        tempoTotalElement.textContent = data.tempo_total_indisponibilidade;
+                    }
+
+                    // Atualizar Tempo Decorrido (se em atendimento)
+                    const tempoDecorridoElement = document.querySelector('[data-tempo-decorrido]');
+                    if (tempoDecorridoElement && data.tempo_decorrido) {
+                        tempoDecorridoElement.textContent = data.tempo_decorrido;
+                    }
+
+                    console.log('✅ Tempos atualizados:', new Date().toLocaleTimeString());
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao atualizar tempos:', error);
+            });
+    }
+
+    // Atualizar a cada 60 segundos
+    setInterval(atualizarTempos, updateInterval);
+
+    // Log inicial
+    console.log('🔄 Atualização automática de tempos ativada (a cada 60s)');
+})();
+</script>
+{% endif %}
+
+{% endblock %}

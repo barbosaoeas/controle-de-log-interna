@@ -1,0 +1,1517 @@
+{% extends 'base.html' %}
+
+{% block title %}Novo Pedido - {{ perfil.setor.nome }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-plus-circle"></i>
+        Novo Pedido - {{ perfil.setor.nome }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'listar_pedidos' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Voltar
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-earmark-plus"></i>
+                    Informações do Pedido
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="pedidoForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <!-- Tipo de Pedido -->
+                        <div class="col-md-4 mb-3">
+                            <label for="tipo_pedido" class="form-label">
+                                <i class="bi bi-arrow-left-right"></i>
+                                Tipo de Pedido <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="tipo_pedido" name="tipo_pedido" required>
+                                <option value="">Selecione o tipo</option>
+                                {% for value, label in tipo_choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Prioridade -->
+                        <div class="col-md-4 mb-3">
+                            <label for="prioridade" class="form-label">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Prioridade <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="prioridade" name="prioridade" required>
+                                {% for value, label in prioridade_choices %}
+                                    <option value="{{ value }}" {% if value == 'MEDIA' %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- 📅 Data de Agendamento -->
+                        <div class="col-md-3 mb-3">
+                            <label for="data_agendamento" class="form-label">
+                                <i class="bi bi-calendar-event"></i>
+                                Data do Serviço
+                            </label>
+                            <input type="date" class="form-control" id="data_agendamento" name="data_agendamento"
+                                   value="{{ data_hoje }}" min="{{ data_hoje }}" onchange="toggleHoraAgendamento()">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                Padrão: hoje (imediato)
+                            </small>
+                        </div>
+
+                        <!-- ⏰ Hora Desejada (só aparece se for agendamento futuro) -->
+                        <div class="col-md-3 mb-3" id="horaAgendamentoContainer" style="display: none;">
+                            <label for="hora_agendamento" class="form-label">
+                                <i class="bi bi-clock"></i>
+                                Hora Desejada
+                            </label>
+                            <input type="time" class="form-control" id="hora_agendamento" name="hora_agendamento"
+                                   value="07:30">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                Padrão: 7:30
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Descrição -->
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">
+                            <i class="bi bi-file-text"></i>
+                            Descrição do Pedido <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="descricao" name="descricao" rows="3"
+                                  placeholder="Descreva detalhadamente o que precisa ser transportado..." required></textarea>
+                    </div>
+
+                    <!-- 📸 Foto do Material (Opcional) -->
+                    <div class="mb-4">
+                        <label for="foto_material" class="form-label">
+                            <i class="bi bi-camera"></i>
+                            Foto do Material <span class="badge bg-secondary">Opcional</span>
+                        </label>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <input type="file" class="form-control" id="foto_material" name="foto_material"
+                                       accept="image/*" onchange="previewFotoMaterial(this)">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    Anexe uma foto do material para facilitar a identificação pelo operador.
+                                </small>
+                            </div>
+                            <div class="col-md-4">
+                                <div id="previewContainer" class="text-center" style="display: none;">
+                                    <img id="previewImage" src="" alt="Preview"
+                                         class="img-thumbnail" style="max-height: 120px; max-width: 100%;">
+                                    <button type="button" class="btn btn-sm btn-outline-danger mt-1" onclick="removerFotoMaterial()">
+                                        <i class="bi bi-x-circle"></i> Remover
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Equipamento -->
+                    <div class="row justify-content-center">
+                        <div class="col-md-6 mb-3">
+                            <label for="equipamento" class="form-label">
+                                <i class="bi bi-gear"></i>
+                                Equipamento/Material
+                            </label>
+                            <div class="input-group">
+                                <select class="form-select" id="equipamento" name="equipamento">
+                                    <option value="">Selecione (opcional)</option>
+                                    {% for equipamento in equipamentos %}
+                                        {% if equipamento.status_operacional == 'OPERACIONAL' %}
+                                            <!-- ✅ DISPONÍVEL: Operacional + Ativo + Em Serviço -->
+                                            <option value="{{ equipamento.id }}">
+                                                {{ equipamento.nome }}
+                                                {% if equipamento.codigo %}({{ equipamento.codigo }}){% endif %}
+                                            </option>
+                                        {% elif equipamento.status_operacional == 'MANUTENCAO' %}
+                                            <!-- ⚠️ VISÍVEL MAS BLOQUEADO: Em Manutenção -->
+                                            <option value="" disabled class="text-muted">
+                                                {{ equipamento.nome }}
+                                                {% if equipamento.codigo %}({{ equipamento.codigo }}){% endif %}
+                                                - Em Manutenção
+                                            </option>
+                                        {% endif %}
+                                    {% empty %}
+                                        <option value="" disabled class="text-muted">Nenhum equipamento cadastrado</option>
+                                    {% endfor %}
+                                </select>
+                                {% if perfil.is_admin_ou_supervisor %}
+                                <button class="btn btn-outline-primary" type="button" onclick="abrirModalEquipamentos()" title="Gerenciar Equipamentos">
+                                    <i class="bi bi-plus-circle"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                            {% if not equipamentos %}
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                Nenhum equipamento cadastrado.
+                                {% if perfil.is_admin_ou_supervisor %}
+                                Clique no <i class="bi bi-plus-circle"></i> para adicionar.
+                                {% endif %}
+                            </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Área de Origem -->
+                        <div class="col-md-6 mb-3">
+                            <label for="area_origem" class="form-label">
+                                <i class="bi bi-geo-alt"></i>
+                                Área de Origem
+                            </label>
+                            <div class="input-group">
+                                <select class="form-select" id="area_origem" name="area_origem">
+                                    <option value="">Selecione (opcional)</option>
+                                    {% for area in areas %}
+                                        <option value="{{ area.id }}">
+                                            {{ area.nome }}
+                                            {% if area.localizacao %} - {{ area.localizacao }}{% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if perfil.is_admin_ou_supervisor %}
+                                <button class="btn btn-outline-primary" type="button" onclick="abrirModalAreas()" title="Gerenciar Áreas">
+                                    <i class="bi bi-plus-circle"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Área de Destino -->
+                        <div class="col-md-6 mb-3">
+                            <label for="area_destino" class="form-label">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                Área de Destino
+                            </label>
+                            <select class="form-select" id="area_destino" name="area_destino">
+                                <option value="">Selecione (opcional)</option>
+                                {% for area in areas %}
+                                    <option value="{{ area.id }}">
+                                        {{ area.nome }}
+                                        {% if area.localizacao %} - {{ area.localizacao }}{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Requisitante e Cliente -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-person-check"></i>
+                            Requisitante
+                        </label>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text">
+                                <i class="bi bi-person-fill"></i>
+                            </span>
+                            <input type="text" class="form-control bg-light"
+                                   value="{{ user.get_full_name|default:user.username }}" readonly>
+                            <span class="input-group-text text-success">
+                                <i class="bi bi-check-circle"></i>
+                            </span>
+                        </div>
+                        <div class="form-text text-success">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Você é o requisitante deste pedido.</strong> Seu nome será automaticamente registrado.
+                        </div>
+                    </div>
+
+                    <!-- Cliente Adicional (Opcional) -->
+                    <div class="mb-3">
+                        <label for="cliente" class="form-label">
+                            <i class="bi bi-person-badge"></i>
+                            Cliente/Destinatário Adicional
+                        </label>
+                        <div class="input-group">
+                            <select class="form-select" id="cliente" name="cliente">
+                                <option value="">Nenhum cliente adicional</option>
+                                {% for cliente in clientes %}
+                                    <option value="{{ cliente.id }}">
+                                        {{ cliente.nome }}
+                                        {% if cliente.email %} - {{ cliente.email }}{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if perfil.is_supervisor %}
+                            <button class="btn btn-outline-primary" type="button" onclick="abrirModalClientes()" title="Gerenciar Clientes">
+                                <i class="bi bi-plus-circle"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                        <div class="form-text">
+                            <i class="bi bi-lightbulb"></i>
+                            Selecione apenas se houver um cliente específico além de você como requisitante.
+                        </div>
+                    </div>
+                    
+                    <!-- Observações -->
+                    <div class="mb-4">
+                        <label for="observacoes" class="form-label">
+                            <i class="bi bi-chat-left-text"></i>
+                            Observações Adicionais
+                        </label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3" 
+                                  placeholder="Informações adicionais, instruções especiais, etc..."></textarea>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'listar_pedidos' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i>
+                            Criar Pedido
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Informações de Ajuda -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Dicas para Preenchimento
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Tipo de Pedido:</strong> Escolha "Entrega" para levar materiais a um local ou "Recolhimento" para buscar materiais.</li>
+                    <li><strong>Prioridade:</strong> Use "Urgente" apenas para casos críticos que afetam a produção.</li>
+                    <li><strong>Descrição:</strong> Seja específico sobre o que precisa ser transportado, incluindo quantidade e quaisquer cuidados especiais.</li>
+                    <li><strong>Áreas:</strong> Informe origem e destino para facilitar o planejamento logístico.</li>
+                    <li><strong>Equipamento:</strong> Selecione da lista se o material estiver cadastrado no sistema.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Gerenciar Áreas -->
+<div class="modal fade" id="areasModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-geo-alt"></i>
+                    Gerenciar Áreas
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário para Nova Área (apenas para admin/supervisor) -->
+                {% if perfil.is_admin_ou_supervisor %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-plus-circle"></i>
+                            Adicionar Nova Área
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="novaAreaForm">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="nova_area_nome" class="form-label">Nome da Área <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="nova_area_nome" name="nome" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="nova_area_localizacao" class="form-label">Localização</label>
+                                    <input type="text" class="form-control" id="nova_area_localizacao" name="localizacao" placeholder="Ex: Área Norte, Setor A">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="nova_area_descricao" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="nova_area_descricao" name="descricao" rows="2" placeholder="Descrição opcional da área"></textarea>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="adicionarArea()">
+                                <i class="bi bi-plus-circle"></i>
+                                Adicionar Área
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Visualização apenas:</strong> Apenas administradores e supervisores podem gerenciar áreas.
+                </div>
+                {% endif %}
+
+                <!-- Lista de Áreas Existentes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-list"></i>
+                            Áreas Cadastradas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="listaAreas">
+                            <!-- Será preenchido via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar Área -->
+<div class="modal fade" id="editarAreaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil"></i>
+                    Editar Área
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editarAreaForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="editar_area_id" name="area_id">
+
+                    <div class="mb-3">
+                        <label for="editar_area_nome" class="form-label">Nome da Área <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editar_area_nome" name="nome" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editar_area_localizacao" class="form-label">Localização</label>
+                        <input type="text" class="form-control" id="editar_area_localizacao" name="localizacao" placeholder="Ex: Área Norte, Setor A">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editar_area_descricao" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="editar_area_descricao" name="descricao" rows="2" placeholder="Descrição opcional da área"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editar_area_ativa" name="ativa" checked>
+                            <label class="form-check-label" for="editar_area_ativa">
+                                Área ativa
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarEdicaoArea()">
+                    <i class="bi bi-check-circle"></i>
+                    Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Gerenciamento de Equipamentos -->
+<div class="modal fade" id="modalEquipamentos" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-gear"></i>
+                    Gerenciar Equipamentos
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário para adicionar equipamento -->
+                <div class="card mb-4" id="cardNovoEquipamento">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-plus-circle"></i>
+                            Adicionar Novo Equipamento
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formNovoEquipamento">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="nomeEquipamento" class="form-label">Nome do Equipamento *</label>
+                                        <input type="text" class="form-control" id="nomeEquipamento" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="codigoEquipamento" class="form-label">Código</label>
+                                        <input type="text" class="form-control" id="codigoEquipamento">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="categoriaEquipamento" class="form-label">Categoria</label>
+                                        <select class="form-select" id="categoriaEquipamento">
+                                            <option value="MATERIAL">Material</option>
+                                            <option value="EQUIPAMENTO">Equipamento</option>
+                                            <option value="FERRAMENTA">Ferramenta</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="descricaoEquipamento" class="form-label">Descrição</label>
+                                        <textarea class="form-control" id="descricaoEquipamento" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i>
+                                Adicionar Equipamento
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Formulário para editar equipamento (inicialmente oculto) -->
+                <div class="card mb-4" id="cardEditarEquipamento" style="display: none;">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="bi bi-pencil"></i>
+                            Editar Equipamento
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formEditarEquipamento">
+                            <input type="hidden" id="editEquipamentoId">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editNomeEquipamento" class="form-label">Nome do Equipamento *</label>
+                                        <input type="text" class="form-control" id="editNomeEquipamento" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editCodigoEquipamento" class="form-label">Código</label>
+                                        <input type="text" class="form-control" id="editCodigoEquipamento">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editCategoriaEquipamento" class="form-label">Categoria</label>
+                                        <select class="form-select" id="editCategoriaEquipamento">
+                                            <option value="MATERIAL">Material</option>
+                                            <option value="EQUIPAMENTO">Equipamento</option>
+                                            <option value="FERRAMENTA">Ferramenta</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editDescricaoEquipamento" class="form-label">Descrição</label>
+                                        <textarea class="form-control" id="editDescricaoEquipamento" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle"></i>
+                                    Salvar Alterações
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelarEdicaoEquipamento()">
+                                    <i class="bi bi-x-circle"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Lista de equipamentos -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-list"></i>
+                            Equipamentos Cadastrados
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Código</th>
+                                        <th>Categoria</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaEquipamentos">
+                                    <!-- Equipamentos serão carregados aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Gerenciamento de Clientes -->
+<div class="modal fade" id="modalClientes" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-badge"></i>
+                    Gerenciar Clientes
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário para adicionar cliente -->
+                <div class="card mb-4" id="cardNovoCliente">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-plus-circle"></i>
+                            Adicionar Novo Cliente
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formNovoCliente">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="nomeCliente" class="form-label">Nome do Cliente *</label>
+                                        <input type="text" class="form-control" id="nomeCliente" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="emailCliente" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="emailCliente">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="telefoneCliente" class="form-label">Telefone</label>
+                                        <input type="text" class="form-control" id="telefoneCliente">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="enderecoCliente" class="form-label">Endereço</label>
+                                        <textarea class="form-control" id="enderecoCliente" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i>
+                                Adicionar Cliente
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Formulário para editar cliente (inicialmente oculto) -->
+                <div class="card mb-4" id="cardEditarCliente" style="display: none;">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="bi bi-pencil"></i>
+                            Editar Cliente
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formEditarCliente">
+                            <input type="hidden" id="editClienteId">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editNomeCliente" class="form-label">Nome do Cliente *</label>
+                                        <input type="text" class="form-control" id="editNomeCliente" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editEmailCliente" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="editEmailCliente">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editTelefoneCliente" class="form-label">Telefone</label>
+                                        <input type="text" class="form-control" id="editTelefoneCliente">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editEnderecoCliente" class="form-label">Endereço</label>
+                                        <textarea class="form-control" id="editEnderecoCliente" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle"></i>
+                                    Salvar Alterações
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelarEdicaoCliente()">
+                                    <i class="bi bi-x-circle"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Lista de clientes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-list"></i>
+                            Clientes Cadastrados
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Email</th>
+                                        <th>Telefone</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaClientes">
+                                    <!-- Clientes serão carregados aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Data de hoje para comparação
+const dataHoje = '{{ data_hoje }}';
+
+// ⏰ Mostrar hora apenas se for agendamento FUTURO (não hoje)
+function toggleHoraAgendamento() {
+    const dataInput = document.getElementById('data_agendamento');
+    const horaContainer = document.getElementById('horaAgendamentoContainer');
+    const horaInput = document.getElementById('hora_agendamento');
+
+    // Só mostra hora se a data for FUTURA (diferente de hoje)
+    if (dataInput.value && dataInput.value > dataHoje) {
+        horaContainer.style.display = 'block';
+    } else {
+        horaContainer.style.display = 'none';
+        horaInput.value = '07:30'; // Reset para padrão
+    }
+}
+
+$(document).ready(function() {
+    // Validação do formulário
+    $('#pedidoForm').on('submit', function(e) {
+        let isValid = true;
+        
+        // Verificar campos obrigatórios
+        const requiredFields = ['tipo_pedido', 'descricao', 'prioridade'];
+        
+        requiredFields.forEach(function(field) {
+            const element = $(`#${field}`);
+            if (!element.val() || element.val().trim() === '') {
+                element.addClass('is-invalid');
+                isValid = false;
+            } else {
+                element.removeClass('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+            return false;
+        }
+        
+        // Desabilitar botão para evitar duplo clique
+        $(this).find('button[type="submit"]').prop('disabled', true).html(
+            '<i class="bi bi-hourglass-split"></i> Criando...'
+        );
+    });
+    
+    // Remover classe de erro quando o usuário começar a digitar
+    $('.form-control, .form-select').on('input change', function() {
+        $(this).removeClass('is-invalid');
+    });
+
+    // Carregar áreas quando o modal for aberto
+    $('#areasModal').on('show.bs.modal', function() {
+        carregarAreas();
+    });
+});
+
+// Função para abrir o modal de áreas
+function abrirModalAreas() {
+    $('#areasModal').modal('show');
+}
+
+// Função para carregar a lista de áreas
+function carregarAreas() {
+    $.get('/api/areas/')
+        .done(function(data) {
+            let html = '';
+            if (data.length === 0) {
+                html = '<p class="text-muted">Nenhuma área cadastrada.</p>';
+            } else {
+                html = '<div class="table-responsive"><table class="table table-sm">';
+                html += '<thead><tr><th>Nome</th><th>Localização</th><th>Ações</th></tr></thead><tbody>';
+
+                data.forEach(function(area) {
+                    // Verificar se o usuário pode editar (apenas admin e supervisor)
+                    const podeEditar = {{ perfil.is_admin_ou_supervisor|yesno:"true,false" }};
+
+                    let botoesAcao = '';
+                    if (podeEditar) {
+                        botoesAcao = `
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editarArea(${area.id})" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removerArea(${area.id})" title="Remover">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        `;
+                    } else {
+                        botoesAcao = '<span class="text-muted">Sem permissão</span>';
+                    }
+
+                    html += `<tr>
+                        <td><strong>${area.nome}</strong></td>
+                        <td>${area.localizacao || '-'}</td>
+                        <td>${botoesAcao}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table></div>';
+            }
+            $('#listaAreas').html(html);
+        })
+        .fail(function() {
+            $('#listaAreas').html('<p class="text-danger">Erro ao carregar áreas.</p>');
+        });
+}
+
+// Função para adicionar nova área
+function adicionarArea() {
+    const nome = $('#nova_area_nome').val().trim();
+    const localizacao = $('#nova_area_localizacao').val().trim();
+    const descricao = $('#nova_area_descricao').val().trim();
+
+    if (!nome) {
+        alert('Por favor, informe o nome da área.');
+        $('#nova_area_nome').focus();
+        return;
+    }
+
+    $.post('/api/areas/', {
+        'nome': nome,
+        'localizacao': localizacao,
+        'descricao': descricao,
+        'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+    })
+    .done(function(data) {
+        if (data.success) {
+            // Limpar formulário
+            $('#novaAreaForm')[0].reset();
+
+            // Recarregar lista de áreas
+            carregarAreas();
+
+            // Atualizar selects de área
+            atualizarSelectsArea();
+
+            alert('Área adicionada com sucesso!');
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .fail(function() {
+        alert('Erro ao adicionar área.');
+    });
+}
+
+// Função para remover área
+function removerArea(areaId) {
+    if (confirm('Tem certeza que deseja remover esta área?')) {
+        $.ajax({
+            url: `/api/areas/${areaId}/delete/`,
+            type: 'DELETE',
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            }
+        })
+        .done(function(data) {
+            if (data.success) {
+                carregarAreas();
+                atualizarSelectsArea();
+                alert('Área removida com sucesso!');
+            } else {
+                alert('Erro: ' + (data.error || 'Erro desconhecido'));
+            }
+        })
+        .fail(function() {
+            alert('Erro ao remover área.');
+        });
+    }
+}
+
+// Função para editar área
+function editarArea(areaId) {
+    // Buscar dados da área
+    $.get(`/api/areas/${areaId}/`)
+        .done(function(area) {
+            // Preencher o formulário de edição
+            $('#editar_area_id').val(area.id);
+            $('#editar_area_nome').val(area.nome);
+            $('#editar_area_localizacao').val(area.localizacao || '');
+            $('#editar_area_descricao').val(area.descricao || '');
+            $('#editar_area_ativa').prop('checked', area.ativa);
+
+            // Abrir o modal de edição
+            $('#editarAreaModal').modal('show');
+        })
+        .fail(function() {
+            alert('Erro ao carregar dados da área.');
+        });
+}
+
+// Função para salvar edição da área
+function salvarEdicaoArea() {
+    const areaId = $('#editar_area_id').val();
+    const nome = $('#editar_area_nome').val().trim();
+    const localizacao = $('#editar_area_localizacao').val().trim();
+    const descricao = $('#editar_area_descricao').val().trim();
+    const ativa = $('#editar_area_ativa').is(':checked');
+
+    if (!nome) {
+        alert('Por favor, informe o nome da área.');
+        $('#editar_area_nome').focus();
+        return;
+    }
+
+    $.ajax({
+        url: `/api/areas/${areaId}/`,
+        type: 'PUT',
+        headers: {
+            'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val(),
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        data: {
+            'nome': nome,
+            'localizacao': localizacao,
+            'descricao': descricao,
+            'ativa': ativa
+        }
+    })
+    .done(function(data) {
+        if (data.success) {
+            // Fechar modal de edição
+            $('#editarAreaModal').modal('hide');
+
+            // Recarregar lista de áreas
+            carregarAreas();
+
+            // Atualizar selects de área
+            atualizarSelectsArea();
+
+            alert('Área atualizada com sucesso!');
+        } else {
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    })
+    .fail(function() {
+        alert('Erro ao atualizar área.');
+    });
+}
+
+// Função para atualizar os selects de área
+function atualizarSelectsArea() {
+    $.get('/api/areas/')
+        .done(function(data) {
+            const selectOrigemHtml = '<option value="">Selecione (opcional)</option>' +
+                data.map(area => `<option value="${area.id}">${area.nome}${area.localizacao ? ' - ' + area.localizacao : ''}</option>`).join('');
+
+            $('#area_origem').html(selectOrigemHtml);
+            $('#area_destino').html(selectOrigemHtml);
+        });
+}
+
+// ==================== MODAL DE EQUIPAMENTOS ====================
+
+function abrirModalEquipamentos() {
+    carregarEquipamentos();
+    new bootstrap.Modal(document.getElementById('modalEquipamentos')).show();
+}
+
+function carregarEquipamentos() {
+    fetch('/api/equipamentos/')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('listaEquipamentos');
+            tbody.innerHTML = '';
+
+            data.forEach(equipamento => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${equipamento.nome}</strong></td>
+                    <td>${equipamento.codigo || '-'}</td>
+                    <td><span class="badge bg-secondary">${equipamento.categoria}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-1" onclick="editarEquipamento(${equipamento.id})" title="Editar equipamento">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="removerEquipamento(${equipamento.id}, '${equipamento.nome}')" title="Remover equipamento">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao carregar equipamentos:', error);
+            alert('Erro ao carregar equipamentos');
+        });
+}
+
+// Formulário de novo equipamento
+document.getElementById('formNovoEquipamento').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const nome = document.getElementById('nomeEquipamento').value.trim();
+    const codigo = document.getElementById('codigoEquipamento').value.trim();
+    const categoria = document.getElementById('categoriaEquipamento').value;
+    const descricao = document.getElementById('descricaoEquipamento').value.trim();
+
+    if (!nome) {
+        alert('Nome do equipamento é obrigatório');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('nome', nome);
+    formData.append('codigo', codigo);
+    formData.append('categoria', categoria);
+    formData.append('descricao', descricao);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch('/api/equipamentos/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('formNovoEquipamento').reset();
+            carregarEquipamentos();
+            atualizarSelectEquipamentos();
+            alert('Equipamento adicionado com sucesso!');
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao adicionar equipamento');
+    });
+});
+
+function editarEquipamento(equipamentoId) {
+    fetch(`/api/equipamentos/${equipamentoId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const equipamento = data.equipamento;
+
+                document.getElementById('editEquipamentoId').value = equipamento.id;
+                document.getElementById('editNomeEquipamento').value = equipamento.nome;
+                document.getElementById('editCodigoEquipamento').value = equipamento.codigo || '';
+                document.getElementById('editCategoriaEquipamento').value = equipamento.categoria;
+                document.getElementById('editDescricaoEquipamento').value = equipamento.descricao || '';
+
+                document.getElementById('cardNovoEquipamento').style.display = 'none';
+                document.getElementById('cardEditarEquipamento').style.display = 'block';
+
+                document.getElementById('editNomeEquipamento').focus();
+            } else {
+                alert('Erro ao carregar dados do equipamento: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao carregar dados do equipamento');
+        });
+}
+
+function cancelarEdicaoEquipamento() {
+    document.getElementById('cardEditarEquipamento').style.display = 'none';
+    document.getElementById('cardNovoEquipamento').style.display = 'block';
+    document.getElementById('formEditarEquipamento').reset();
+}
+
+// Formulário de editar equipamento
+document.getElementById('formEditarEquipamento').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const equipamentoId = document.getElementById('editEquipamentoId').value;
+    const nome = document.getElementById('editNomeEquipamento').value.trim();
+    const codigo = document.getElementById('editCodigoEquipamento').value.trim();
+    const categoria = document.getElementById('editCategoriaEquipamento').value;
+    const descricao = document.getElementById('editDescricaoEquipamento').value.trim();
+
+    if (!nome) {
+        alert('Nome do equipamento é obrigatório');
+        return;
+    }
+
+    const data = {
+        nome: nome,
+        codigo: codigo,
+        categoria: categoria,
+        descricao: descricao
+    };
+
+    fetch(`/api/equipamentos/${equipamentoId}/`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            cancelarEdicaoEquipamento();
+            carregarEquipamentos();
+            atualizarSelectEquipamentos();
+            alert(data.message || 'Equipamento atualizado com sucesso!');
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar equipamento');
+    });
+});
+
+function removerEquipamento(equipamentoId, nomeEquipamento) {
+    if (!confirm(`Tem certeza que deseja remover o equipamento "${nomeEquipamento}"?`)) {
+        return;
+    }
+
+    fetch(`/api/equipamentos/${equipamentoId}/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            carregarEquipamentos();
+            atualizarSelectEquipamentos();
+            alert(data.message);
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao remover equipamento');
+    });
+}
+
+// Função para obter cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function atualizarSelectEquipamentos() {
+    fetch('/api/equipamentos-pedido/', {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            const select = document.getElementById('equipamento');
+            if (!select) {
+                console.error('Select de equipamento não encontrado!');
+                return;
+            }
+
+            const valorAtual = select.value;
+            select.innerHTML = '<option value="">Selecione (opcional)</option>';
+
+            if (!Array.isArray(data)) {
+                console.error('Dados da API não são um array:', data);
+                return;
+            }
+
+            data.forEach(equipamento => {
+                const option = document.createElement('option');
+
+                if (equipamento.disponivel) {
+                    // ✅ DISPONÍVEL: Operacional + Ativo + Em Serviço
+                    option.value = equipamento.id;
+                    option.textContent = equipamento.texto_completo;
+                    option.className = '';
+                } else {
+                    // ⚠️ BLOQUEADO: Em Manutenção (visível mas não selecionável)
+                    option.value = '';
+                    option.disabled = true;
+                    option.textContent = equipamento.texto_disabled;
+                    option.className = 'text-muted';
+                }
+
+                if (equipamento.id == valorAtual && equipamento.disponivel) {
+                    option.selected = true;
+                }
+
+                select.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao atualizar select de equipamentos:', error);
+        });
+}
+
+// ==================== MODAL DE CLIENTES ====================
+
+function abrirModalClientes() {
+    carregarClientes();
+    new bootstrap.Modal(document.getElementById('modalClientes')).show();
+}
+
+function carregarClientes() {
+    fetch('/api/clientes/')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('listaClientes');
+            tbody.innerHTML = '';
+
+            data.forEach(cliente => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${cliente.nome}</strong></td>
+                    <td>${cliente.email || '-'}</td>
+                    <td>${cliente.telefone || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-1" onclick="editarCliente(${cliente.id})" title="Editar cliente">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="removerCliente(${cliente.id}, '${cliente.nome}')" title="Remover cliente">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao carregar clientes:', error);
+            alert('Erro ao carregar clientes');
+        });
+}
+
+// Formulário de novo cliente
+document.getElementById('formNovoCliente').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const nome = document.getElementById('nomeCliente').value.trim();
+    const email = document.getElementById('emailCliente').value.trim();
+    const telefone = document.getElementById('telefoneCliente').value.trim();
+    const endereco = document.getElementById('enderecoCliente').value.trim();
+
+    if (!nome) {
+        alert('Nome do cliente é obrigatório');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('nome', nome);
+    formData.append('email', email);
+    formData.append('telefone', telefone);
+    formData.append('endereco', endereco);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch('/api/clientes/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('formNovoCliente').reset();
+            carregarClientes();
+            atualizarSelectClientes();
+            alert('Cliente adicionado com sucesso!');
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao adicionar cliente');
+    });
+});
+
+function editarCliente(clienteId) {
+    fetch(`/api/clientes/${clienteId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const cliente = data.cliente;
+
+                document.getElementById('editClienteId').value = cliente.id;
+                document.getElementById('editNomeCliente').value = cliente.nome;
+                document.getElementById('editEmailCliente').value = cliente.email || '';
+                document.getElementById('editTelefoneCliente').value = cliente.telefone || '';
+                document.getElementById('editEnderecoCliente').value = cliente.endereco || '';
+
+                document.getElementById('cardNovoCliente').style.display = 'none';
+                document.getElementById('cardEditarCliente').style.display = 'block';
+
+                document.getElementById('editNomeCliente').focus();
+            } else {
+                alert('Erro ao carregar dados do cliente: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao carregar dados do cliente');
+        });
+}
+
+function cancelarEdicaoCliente() {
+    document.getElementById('cardEditarCliente').style.display = 'none';
+    document.getElementById('cardNovoCliente').style.display = 'block';
+    document.getElementById('formEditarCliente').reset();
+}
+
+// Formulário de editar cliente
+document.getElementById('formEditarCliente').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const clienteId = document.getElementById('editClienteId').value;
+    const nome = document.getElementById('editNomeCliente').value.trim();
+    const email = document.getElementById('editEmailCliente').value.trim();
+    const telefone = document.getElementById('editTelefoneCliente').value.trim();
+    const endereco = document.getElementById('editEnderecoCliente').value.trim();
+
+    if (!nome) {
+        alert('Nome do cliente é obrigatório');
+        return;
+    }
+
+    const data = {
+        nome: nome,
+        email: email,
+        telefone: telefone,
+        endereco: endereco
+    };
+
+    fetch(`/api/clientes/${clienteId}/`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            cancelarEdicaoCliente();
+            carregarClientes();
+            atualizarSelectClientes();
+            alert(data.message || 'Cliente atualizado com sucesso!');
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar cliente');
+    });
+});
+
+function removerCliente(clienteId, nomeCliente) {
+    if (!confirm(`Tem certeza que deseja remover o cliente "${nomeCliente}"?`)) {
+        return;
+    }
+
+    fetch(`/api/clientes/${clienteId}/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            carregarClientes();
+            atualizarSelectClientes();
+            alert(data.message);
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao remover cliente');
+    });
+}
+
+function atualizarSelectClientes() {
+    fetch('/api/clientes/')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('cliente');
+            const valorAtual = select.value;
+
+            select.innerHTML = '<option value="">Nenhum cliente adicional</option>';
+
+            data.forEach(cliente => {
+                const option = document.createElement('option');
+                option.value = cliente.id;
+                option.textContent = cliente.nome + (cliente.email ? ` - ${cliente.email}` : '');
+                if (cliente.id == valorAtual) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao atualizar select:', error);
+        });
+}
+
+// Inicializar selects quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    atualizarSelectEquipamentos();
+    atualizarSelectsArea();
+    atualizarSelectClientes();
+});
+
+// ==================== PREVIEW DA FOTO DO MATERIAL ====================
+
+function previewFotoMaterial(input) {
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImage = document.getElementById('previewImage');
+
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+
+        // Validar tamanho (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('A imagem deve ter no máximo 5MB');
+            input.value = '';
+            previewContainer.style.display = 'none';
+            return;
+        }
+
+        // Validar tipo
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor, selecione apenas arquivos de imagem');
+            input.value = '';
+            previewContainer.style.display = 'none';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            previewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewContainer.style.display = 'none';
+    }
+}
+
+function removerFotoMaterial() {
+    const input = document.getElementById('foto_material');
+    const previewContainer = document.getElementById('previewContainer');
+
+    input.value = '';
+    previewContainer.style.display = 'none';
+}
+</script>
+{% endblock %}

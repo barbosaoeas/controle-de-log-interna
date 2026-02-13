@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Histórico de Abastecimentos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filtros-card {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    .badge-consumo {
+        font-size: 0.85em;
+        padding: 0.4em 0.6em;
+    }
+    
+    .btn-filtrar {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        font-weight: bold;
+    }
+    
+    .btn-limpar {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+        border: none;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-clock-history"></i> Histórico de Abastecimentos</h2>
+                    <p class="text-muted mb-0">Consulta e relatórios de abastecimentos</p>
+                </div>
+                <div>
+                    <a href="{% url 'dashboard_diesel' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                    <a href="{% url 'abastecer_veiculo' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Novo Abastecimento
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros-card">
+        <form method="get" id="formFiltros">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="veiculo" class="form-label">
+                        <i class="bi bi-truck"></i> Veículo
+                    </label>
+                    <select class="form-select" id="veiculo" name="veiculo">
+                        <option value="">Todos os veículos</option>
+                        {% for veiculo in veiculos %}
+                        <option value="{{ veiculo.id }}" {% if filtros.veiculo_id == veiculo.id|stringformat:"s" %}selected{% endif %}>
+                            {{ veiculo.nome }} ({{ veiculo.placa }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="cliente" class="form-label">
+                        <i class="bi bi-person-badge"></i> Cliente
+                    </label>
+                    <select class="form-select" id="cliente" name="cliente">
+                        <option value="">Todos os clientes</option>
+                        {% for cliente in clientes %}
+                        <option value="{{ cliente.id }}" {% if filtros.cliente_id == cliente.id|stringformat:"s" %}selected{% endif %}>
+                            {{ cliente.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="data_inicio" class="form-label">
+                        <i class="bi bi-calendar"></i> Data Início
+                    </label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                           value="{{ filtros.data_inicio }}">
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="data_fim" class="form-label">
+                        <i class="bi bi-calendar"></i> Data Fim
+                    </label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" 
+                           value="{{ filtros.data_fim }}">
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="mes_ano" class="form-label">
+                        <i class="bi bi-calendar-month"></i> Mês/Ano
+                    </label>
+                    <input type="month" class="form-control" id="mes_ano" name="mes_ano" 
+                           value="{{ filtros.mes_ano }}">
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-filtrar">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                    <a href="{% url 'historico_abastecimentos' %}" class="btn btn-limpar ms-2">
+                        <i class="bi bi-x-circle"></i> Limpar Filtros
+                    </a>
+                    <button type="button" class="btn btn-success ms-2" onclick="exportarExcel()">
+                        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estatísticas dos Filtros -->
+    {% if abastecimentos %}
+    <div class="stats-card">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <h3 class="mb-0">{{ total_abastecimentos }}</h3>
+                <small>Abastecimentos</small>
+            </div>
+            <div class="col-md-3">
+                <h3 class="mb-0">{{ total_litros|floatformat:0 }}L</h3>
+                <small>Total de Litros</small>
+            </div>
+            <div class="col-md-3">
+                <h3 class="mb-0">{{ media_litros|floatformat:1 }}L</h3>
+                <small>Média por Abastecimento</small>
+            </div>
+            <div class="col-md-3">
+                <h3 class="mb-0">R$ {{ custo_estimado|floatformat:2 }}</h3>
+                <small>Custo Estimado</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabela de Abastecimentos -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-list-ul"></i> 
+                Abastecimentos Encontrados
+                {% if total_abastecimentos %}
+                    <span class="badge bg-primary ms-2">{{ total_abastecimentos }}</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if abastecimentos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Veículo</th>
+                                <th>Cliente</th>
+                                <th>Quantidade</th>
+                                <th>Odômetro</th>
+                                <th>Consumo</th>
+                                <th>Operador</th>
+                                <th>Observações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for abastecimento in abastecimentos %}
+                            <tr>
+                                <td>
+                                    <strong>{{ abastecimento.data_abastecimento|date:"d/m/Y" }}</strong><br>
+                                    <small class="text-muted">{{ abastecimento.data_abastecimento|time:"H:i" }}</small>
+                                </td>
+                                <td>
+                                    <strong>{{ abastecimento.veiculo.nome }}</strong><br>
+                                    <small class="text-muted">{{ abastecimento.veiculo.placa }} - {{ abastecimento.veiculo.get_tipo_display }}</small>
+                                </td>
+                                <td>
+                                    {% if abastecimento.cliente %}
+                                        <span class="badge bg-info">{{ abastecimento.cliente.nome }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary fs-6">{{ abastecimento.quantidade_litros }}L</span>
+                                </td>
+                                <td>
+                                    {% if abastecimento.odometro_atual %}
+                                        {{ abastecimento.odometro_atual|floatformat:0 }} km
+                                        {% if abastecimento.km_rodados %}
+                                            <br><small class="text-success">+{{ abastecimento.km_rodados }} km</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-consumo {{ abastecimento.eficiencia_css_class }}">
+                                        {{ abastecimento.consumo_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ abastecimento.operador.get_full_name|default:abastecimento.operador.username }}
+                                </td>
+                                <td>
+                                    {% if abastecimento.observacoes %}
+                                        <small>{{ abastecimento.observacoes|truncatechars:50 }}</small>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Paginação (se implementada) -->
+                {% if abastecimentos|length >= 100 %}
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle"></i>
+                    Mostrando os primeiros 100 registros. Use os filtros para refinar a busca.
+                </div>
+                {% endif %}
+                
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-search fs-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">Nenhum abastecimento encontrado</h4>
+                    <p class="text-muted">Tente ajustar os filtros ou registrar um novo abastecimento.</p>
+                    <a href="{% url 'abastecer_veiculo' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Registrar Abastecimento
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function exportarExcel() {
+    // Coletar parâmetros dos filtros
+    const form = document.getElementById('formFiltros');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    params.append('export', 'excel');
+    
+    // Criar URL de download
+    const url = `{% url 'historico_abastecimentos' %}?${params.toString()}`;
+    
+    // Abrir em nova janela para download
+    window.open(url, '_blank');
+}
+
+// Auto-submit quando selecionar mês/ano
+document.getElementById('mes_ano').addEventListener('change', function() {
+    if (this.value) {
+        // Limpar datas específicas quando selecionar mês
+        document.getElementById('data_inicio').value = '';
+        document.getElementById('data_fim').value = '';
+    }
+});
+
+// Auto-submit quando selecionar datas
+document.getElementById('data_inicio').addEventListener('change', function() {
+    if (this.value) {
+        document.getElementById('mes_ano').value = '';
+    }
+});
+
+document.getElementById('data_fim').addEventListener('change', function() {
+    if (this.value) {
+        document.getElementById('mes_ano').value = '';
+    }
+});
+</script>
+{% endblock %}

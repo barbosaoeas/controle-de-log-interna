@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Controle de Frotas Locadas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .dashboard-card .card-body {
+        padding: 2rem;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        margin-bottom: 1rem;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: #2c3e50;
+    }
+
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+
+    .bg-primary-gradient {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+
+    .bg-success-gradient {
+        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    }
+
+    .bg-warning-gradient {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    }
+
+    .bg-info-gradient {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+
+    .bg-danger-gradient {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0,123,255,0.05);
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.5em 0.75em;
+    }
+
+    .quick-actions {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .quick-actions .btn {
+        margin: 0.25rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .quick-actions .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-truck text-primary"></i>
+        Dashboard - Controle de Frotas Locadas
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'frota_locada:cadastrar_veiculo' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i>
+                Novo Veículo
+            </a>
+            <a href="{% url 'frota_locada:abrir_chamado' %}" class="btn btn-outline-primary">
+                <i class="bi bi-wrench"></i>
+                Abrir Chamado Manutenção
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="quick-actions">
+    <h5 class="mb-3">
+        <i class="bi bi-lightning-charge text-warning"></i>
+        Ações Rápidas
+    </h5>
+    <div class="row">
+        <div class="col-md-6">
+            <a href="{% url 'frota_locada:listar_veiculos' %}" class="btn btn-outline-primary">
+                <i class="bi bi-list-ul"></i> Ver Todos os Veículos
+            </a>
+            <a href="{% url 'frota_locada:listar_manutencoes' %}" class="btn btn-outline-warning">
+                <i class="bi bi-tools"></i> Manutenções
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="{% url 'frota_locada:relatorio_custos' %}" class="btn btn-outline-success">
+                <i class="bi bi-graph-up"></i> Relatório de Custos
+            </a>
+            <a href="{% url 'frota_locada:registrar_km' %}" class="btn btn-outline-info">
+                <i class="bi bi-clock-history"></i> Registrar Horímetro
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas Principais -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-card">
+            <div class="card-body text-center">
+                <div class="stat-icon bg-primary-gradient mx-auto">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <h3 class="stat-number">{{ total_veiculos }}</h3>
+                <p class="stat-label">Total de Veículos</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-card">
+            <div class="card-body text-center">
+                <div class="stat-icon bg-success-gradient mx-auto">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <h3 class="stat-number">{{ veiculos_ativos }}</h3>
+                <p class="stat-label">Veículos Ativos</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-card">
+            <div class="card-body text-center">
+                <div class="stat-icon bg-warning-gradient mx-auto">
+                    <i class="bi bi-tools"></i>
+                </div>
+                <h3 class="stat-number">{{ veiculos_manutencao }}</h3>
+                <p class="stat-label">Em Manutenção</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-card">
+            <div class="card-body text-center">
+                <div class="stat-icon bg-info-gradient mx-auto">
+                    <i class="bi bi-currency-dollar"></i>
+                </div>
+                <h3 class="stat-number">R$ {{ custo_mensal|floatformat:2 }}</h3>
+                <p class="stat-label">Custo Mensal</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manutenções e Fornecedores -->
+<div class="row mb-4">
+    <!-- Próximas Manutenções -->
+    <div class="col-lg-8 mb-4">
+        <div class="card dashboard-card">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-calendar-check text-warning"></i>
+                    Próximas Manutenções (7 dias)
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if proximas_manutencoes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Veículo</th>
+                                    <th>Tipo</th>
+                                    <th>Data</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for manutencao in proximas_manutencoes %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ manutencao.veiculo.placa }}</strong><br>
+                                        <small class="text-muted">{{ manutencao.veiculo.marca }} {{ manutencao.veiculo.modelo }}</small>
+                                    </td>
+                                    <td>{{ manutencao.tipo_manutencao.nome }}</td>
+                                    <td>{{ manutencao.data_agendamento|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge {{ manutencao.status_badge_class }}">
+                                            {{ manutencao.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'frota_locada:listar_manutencoes' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye"></i> Ver Todas as Manutenções
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">Nenhuma manutenção agendada para os próximos 7 dias</p>
+                        <a href="{% url 'frota_locada:abrir_chamado' %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-circle"></i> Abrir Chamado Manutenção
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas de Manutenção -->
+    <div class="col-lg-4 mb-4">
+        <div class="card dashboard-card">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-wrench text-info"></i>
+                    Manutenções
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="stat-icon bg-info-gradient mx-auto" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <i class="bi bi-calendar-plus"></i>
+                        </div>
+                        <h4 class="stat-number" style="font-size: 1.8rem;">{{ manutencoes_agendadas }}</h4>
+                        <p class="stat-label" style="font-size: 0.8rem;">Agendadas</p>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="stat-icon bg-warning-gradient mx-auto" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <i class="bi bi-gear"></i>
+                        </div>
+                        <h4 class="stat-number" style="font-size: 1.8rem;">{{ manutencoes_andamento }}</h4>
+                        <p class="stat-label" style="font-size: 0.8rem;">Em Andamento</p>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'frota_locada:listar_manutencoes' %}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-list-ul"></i> Ver Todas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Veículos por Fornecedor -->
+<div class="row">
+    <div class="col-12">
+        <div class="card dashboard-card">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-building text-success"></i>
+                    Veículos por Fornecedor (Top 5)
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if veiculos_por_fornecedor %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fornecedor</th>
+                                    <th class="text-center">Total de Veículos</th>
+                                    <th class="text-center">Veículos Ativos</th>
+                                    <th class="text-center">% Ativos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in veiculos_por_fornecedor %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.fornecedor__nome }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">{{ item.total }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">{{ item.ativos }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% widthratio item.ativos item.total 100 as percentual %}
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar"
+                                                 style="width: {{ percentual }}%;"
+                                                 aria-valuenow="{{ percentual }}"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                                {{ percentual }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-building-x text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">Nenhum fornecedor cadastrado ainda</p>
+                        <a href="{% url 'frota_locada:cadastrar_veiculo' %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-circle"></i> Cadastrar Primeiro Veículo
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

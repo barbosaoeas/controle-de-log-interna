@@ -1,0 +1,816 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-speedometer2"></i> {{ titulo }}</h2>
+            {% if empresa_filtro %}
+            <p class="text-muted mb-0">
+                <i class="bi bi-building"></i> Fornecedor: <strong>{{ empresa_filtro.nome }}</strong>
+            </p>
+            {% endif %}
+        </div>
+        <div>
+            {% if request.user.perfil.pode_abrir_chamados_manutencao %}
+            <a href="{% url 'frota_locada:abrir_chamado' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Novo Chamado
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filtro por Mês/Ano/Empresa -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end">
+                {% if mostrar_filtro_empresa %}
+                <div class="col-md-3">
+                    <label for="empresa" class="form-label"><i class="bi bi-building"></i> Fornecedor</label>
+                    <select name="empresa" id="empresa" class="form-select">
+                        <option value="">Todos os Fornecedores</option>
+                        {% for empresa in empresas_disponiveis %}
+                        <option value="{{ empresa.id }}" {% if empresa_filtro and empresa.id == empresa_filtro.id %}selected{% endif %}>
+                            {{ empresa.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <div class="{% if mostrar_filtro_empresa %}col-md-2{% else %}col-md-3{% endif %}">
+                    <label for="mes" class="form-label"><i class="bi bi-calendar"></i> Mês</label>
+                    <select name="mes" id="mes" class="form-select">
+                        {% for num, nome in meses %}
+                        <option value="{{ num }}" {% if num == mes_selecionado %}selected{% endif %}>{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="{% if mostrar_filtro_empresa %}col-md-2{% else %}col-md-3{% endif %}">
+                    <label for="ano" class="form-label"><i class="bi bi-calendar-event"></i> Ano</label>
+                    <select name="ano" id="ano" class="form-select">
+                        {% for ano in anos_disponiveis %}
+                        <option value="{{ ano }}" {% if ano == ano_selecionado %}selected{% endif %}>{{ ano }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="{% if mostrar_filtro_empresa %}col-md-2{% else %}col-md-3{% endif %}">
+                    <label for="status" class="form-label"><i class="bi bi-filter"></i> Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="ABERTOS" {% if status_filtro == 'ABERTOS' %}selected{% endif %}>Abertos (Aguardando + Em Atendimento)</option>
+                        <option value="CONCLUIDOS" {% if status_filtro == 'CONCLUIDOS' %}selected{% endif %}>Concluídos</option>
+                        <option value="TODOS" {% if status_filtro == 'TODOS' %}selected{% endif %}>Todos</option>
+                    </select>
+                </div>
+                <div class="{% if mostrar_filtro_empresa %}col-md-2{% else %}col-md-3{% endif %}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                    <a href="{% url 'frota_locada:dashboard_manutencao' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Limpar
+                    </a>
+                </div>
+                <div class="{% if mostrar_filtro_empresa %}col-md-3{% else %}col-md-3{% endif %} text-end">
+                    <button type="button" class="btn btn-success" onclick="imprimirRelatorio()">
+                        <i class="bi bi-printer"></i> Imprimir Relatório
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estatísticas Principais -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Chamados
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_chamados }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-clipboard-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Aguardando Atendimento
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ chamados_aguardando }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-clock-history fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Em Atendimento
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ chamados_em_atendimento }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-wrench fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Chamados Críticos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ chamados_criticos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas de Manutenção (MTBF, MTTR, Disponibilidade) -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Horas Atendimento
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_horas_atendimento|floatformat:1 }}h</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                MTTR (Tempo Médio Reparo)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ mttr|floatformat:1 }}h</div>
+                            <small class="text-muted">Média de tempo para reparar</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-tools fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                MTBF (Tempo Entre Falhas)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ mtbf|floatformat:1 }}h</div>
+                            <small class="text-muted">Média entre falhas</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-arrow-repeat fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Disponibilidade Média
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ disponibilidade_media|floatformat:1 }}%</div>
+                            <small class="text-muted">MTBF / (MTBF + MTTR)</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-speedometer2 fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⏱️ NOVAS MÉTRICAS: TEMPO DE ESPERA E INDISPONIBILIDADE -->
+    <div class="row mb-4">
+        <div class="col-xl-6 col-md-6 mb-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                ⏱️ Tempo Médio de Espera
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ tempo_medio_espera|floatformat:1 }}h</div>
+                            <small class="text-muted">Tempo médio aguardando atendimento</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-hourglass-split fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-md-6 mb-3">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                ⏰ Tempo Médio de Indisponibilidade
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ tempo_medio_indisponibilidade|floatformat:1 }}h</div>
+                            <small class="text-muted">Tempo médio total (Espera + Reparo)</small>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📊 TEMPO DE ESPERA POR PRIORIDADE -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="bi bi-hourglass-split"></i> Tempo Médio de Espera por Prioridade</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for item in tempo_espera_por_prioridade %}
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-{% if item.prioridade == 'CRITICA' %}danger{% elif item.prioridade == 'ALTA' %}warning{% elif item.prioridade == 'MEDIA' %}info{% else %}secondary{% endif %} h-100">
+                                <div class="card-body">
+                                    <h6 class="text-{% if item.prioridade == 'CRITICA' %}danger{% elif item.prioridade == 'ALTA' %}warning{% elif item.prioridade == 'MEDIA' %}info{% else %}secondary{% endif %}">
+                                        {{ item.prioridade_display }}
+                                    </h6>
+                                    <h4 class="mb-0">{{ item.tempo_medio|floatformat:1 }}h</h4>
+                                    <small class="text-muted">{{ item.total_chamados }} chamado{{ item.total_chamados|pluralize }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔧 MTTR POR TIPO DE PROBLEMA -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-tools"></i> MTTR (Tempo Médio de Reparo) por Tipo de Problema</h5>
+                </div>
+                <div class="card-body">
+                    {% if mttr_por_tipo_problema %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tipo de Problema</th>
+                                    <th class="text-center">Total de Chamados</th>
+                                    <th class="text-center">MTTR (Tempo Médio de Reparo)</th>
+                                    <th class="text-center">Indicador</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in mttr_por_tipo_problema %}
+                                <tr>
+                                    <td><strong>{{ item.tipo_problema }}</strong></td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">{{ item.total_chamados }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <strong class="{% if item.mttr > 24 %}text-danger{% elif item.mttr > 12 %}text-warning{% else %}text-success{% endif %}">
+                                            {{ item.mttr|floatformat:1 }}h
+                                        </strong>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.mttr > 24 %}
+                                            <span class="badge bg-danger">Alto</span>
+                                        {% elif item.mttr > 12 %}
+                                            <span class="badge bg-warning">Médio</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Baixo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center mb-0">Nenhum dado disponível para o período selecionado.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chamados Recentes e Atendimentos -->
+    <div class="row">
+        <!-- Chamados Recentes -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-list-ul"></i> Chamados Recentes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if chamados_recentes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nº Chamado</th>
+                                    <th>Máquina</th>
+                                    <th>Problema</th>
+                                    <th>Prioridade</th>
+                                    <th>Status</th>
+                                    <th>Data</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for chamado in chamados_recentes %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'frota_locada:detalhes_chamado' chamado.id %}">
+                                            {{ chamado.numero_chamado }}
+                                        </a>
+                                    </td>
+                                    <td>{{ chamado.equipamento_nome }}</td>
+                                    <td>{{ chamado.get_tipo_problema_display }}</td>
+                                    <td>
+                                        <span class="badge {{ chamado.prioridade_badge_class }}">
+                                            {{ chamado.get_prioridade_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ chamado.status_badge_class }}">
+                                            {{ chamado.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ chamado.data_abertura|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">Nenhum chamado registrado.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Atendimentos em Andamento -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="bi bi-gear"></i> Atendimentos em Andamento
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if atendimentos_andamento %}
+                    <div class="list-group">
+                        {% for atendimento in atendimentos_andamento %}
+                        <a href="{% url 'frota_locada:detalhes_atendimento' atendimento.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ atendimento.chamado.numero_chamado }}</h6>
+                                <small>{{ atendimento.data_inicio|date:"d/m H:i" }}</small>
+                            </div>
+                            <p class="mb-1 small">{{ atendimento.chamado.maquina.nome }}</p>
+                            <small class="text-muted">{{ atendimento.mecanico.get_full_name }}</small>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">Nenhum atendimento em andamento.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RELATÓRIO DE MÁQUINAS PARADAS (PARA FORNECEDOR) -->
+    <div class="row mb-4" id="relatorio-impressao">
+        <div class="col-12">
+            <div class="card shadow border-danger">
+                <div class="card-header py-3 bg-danger text-white">
+                    <h5 class="m-0 font-weight-bold">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Relatório de Indisponibilidade de Equipamentos
+                    </h5>
+                    <small>Período:
+                        {% for num, nome in meses %}
+                            {% if num == mes_selecionado %}{{ nome }}{% endif %}
+                        {% endfor %}
+                        de {{ ano_selecionado }}
+                    </small>
+                </div>
+                <div class="card-body">
+                    {% if relatorio_maquinas_paradas %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Este relatório documenta as horas de indisponibilidade dos equipamentos locados.</strong>
+                        Use este documento para reclamações formais junto ao fornecedor sobre a disponibilidade dos equipamentos.
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Equipamento</th>
+                                    <th>Código</th>
+                                    <th>Fornecedor</th>
+                                    <th class="text-center">Nº Falhas</th>
+                                    <th class="text-center">Mau Uso</th>
+                                    <th class="text-center">Total Horas Paradas</th>
+                                    <th class="text-center">% Indisponibilidade</th>
+                                    <th class="text-center">Impacto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in relatorio_maquinas_paradas %}
+                                <tr>
+                                    <td><strong>{{ item.maquina.nome }}</strong></td>
+                                    <td><code>{{ item.maquina.codigo }}</code></td>
+                                    <td>{{ item.maquina.empresa.nome }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-warning">{{ item.total_chamados }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.chamados_mau_uso > 0 %}
+                                            <span class="badge bg-danger" title="Falhas causadas por mau uso do equipamento">
+                                                <i class="bi bi-exclamation-triangle"></i> {{ item.chamados_mau_uso }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <strong class="text-danger">{{ item.total_horas_paradas|floatformat:1 }}h</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <strong class="
+                                            {% if item.percentual_indisponibilidade >= 10 %}text-danger
+                                            {% elif item.percentual_indisponibilidade >= 5 %}text-warning
+                                            {% else %}text-info
+                                            {% endif %}
+                                        ">
+                                            {{ item.percentual_indisponibilidade|floatformat:2 }}%
+                                        </strong>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.percentual_indisponibilidade >= 10 %}
+                                            <span class="badge bg-danger">CRÍTICO</span>
+                                        {% elif item.percentual_indisponibilidade >= 5 %}
+                                            <span class="badge bg-warning">ALTO</span>
+                                        {% else %}
+                                            <span class="badge bg-info">MODERADO</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>TOTAL:</strong></td>
+                                    <td class="text-center">
+                                        <strong>{{ relatorio_maquinas_paradas|length }}</strong> equipamento(s)
+                                    </td>
+                                    <td class="text-center">
+                                        {% with total_mau_uso=0 %}
+                                            {% for item in relatorio_maquinas_paradas %}
+                                                {% if item.chamados_mau_uso > 0 %}
+                                                    {% with total_mau_uso=total_mau_uso|add:item.chamados_mau_uso %}{% endwith %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endwith %}
+                                        <span class="text-muted">-</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <strong class="text-danger">
+                                            {{ total_horas_paradas_geral|floatformat:1 }}h
+                                        </strong>
+                                    </td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="mt-3 p-3 bg-light border">
+                        <h6><i class="bi bi-file-text"></i> Observações para o Fornecedor:</h6>
+                        <ul>
+                            <li>Os equipamentos listados apresentaram <strong>{{ relatorio_maquinas_paradas|length }}</strong> falhas no período.</li>
+                            <li>O tempo total de indisponibilidade impactou diretamente nas operações.</li>
+                            {% with total_mau_uso=0 %}
+                                {% for item in relatorio_maquinas_paradas %}
+                                    {% if item.chamados_mau_uso > 0 %}
+                                        {% with total_mau_uso=total_mau_uso|add:item.chamados_mau_uso %}{% endwith %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if total_mau_uso > 0 %}
+                                <li class="text-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <strong>Importante:</strong> Algumas falhas foram identificadas como causadas por <strong>mau uso do equipamento</strong> pelos operadores.
+                                    Estas ocorrências estão destacadas na coluna "Mau Uso" e não devem ser consideradas como falhas de responsabilidade do fornecedor.
+                                </li>
+                                {% endif %}
+                            {% endwith %}
+                            <li>Solicitamos providências para melhorar a confiabilidade dos equipamentos.</li>
+                            <li>Este relatório serve como base para revisão contratual e/ou aplicação de penalidades previstas em contrato.</li>
+                        </ul>
+                        <p class="mb-0"><strong>Data de Emissão:</strong> {{ "now"|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle"></i>
+                        <strong>Excelente!</strong> Nenhum equipamento apresentou falhas no período selecionado.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas por Equipamento -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-bar-chart"></i> Métricas de Manutenção por Equipamento
+                    </h6>
+                    <small class="text-muted">Ordenado por disponibilidade (menor = mais problemático)</small>
+                </div>
+                <div class="card-body">
+                    {% if metricas_por_equipamento %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Equipamento</th>
+                                    <th>Código</th>
+                                    <th class="text-center">Chamados</th>
+                                    <th class="text-center">Horas Manutenção</th>
+                                    <th class="text-center">MTTR (h)</th>
+                                    <th class="text-center">MTBF (h)</th>
+                                    <th class="text-center">Disponibilidade</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for metrica in metricas_por_equipamento %}
+                                <tr>
+                                    <td>{{ metrica.maquina.nome }}</td>
+                                    <td><code>{{ metrica.maquina.codigo }}</code></td>
+                                    <td class="text-center">{{ metrica.total_chamados }}</td>
+                                    <td class="text-center">{{ metrica.total_horas_manutencao|floatformat:1 }}h</td>
+                                    <td class="text-center">{{ metrica.mttr|floatformat:1 }}h</td>
+                                    <td class="text-center">
+                                        {% if metrica.mtbf > 0 %}
+                                            {{ metrica.mtbf|floatformat:1 }}h
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if metrica.disponibilidade > 0 %}
+                                            <strong class="
+                                                {% if metrica.disponibilidade >= 90 %}text-success
+                                                {% elif metrica.disponibilidade >= 75 %}text-warning
+                                                {% else %}text-danger
+                                                {% endif %}
+                                            ">
+                                                {{ metrica.disponibilidade|floatformat:1 }}%
+                                            </strong>
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if metrica.disponibilidade >= 90 %}
+                                            <span class="badge bg-success">Excelente</span>
+                                        {% elif metrica.disponibilidade >= 75 %}
+                                            <span class="badge bg-warning">Atenção</span>
+                                        {% elif metrica.disponibilidade > 0 %}
+                                            <span class="badge bg-danger">Crítico</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Sem Dados</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">Nenhum equipamento com dados de manutenção disponíveis.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas por Tipo e Prioridade -->
+    <div class="row">
+        <!-- Chamados por Tipo de Problema -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="bi bi-pie-chart"></i> Chamados por Tipo de Problema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if chamados_por_tipo %}
+                    <table class="table table-sm">
+                        <tbody>
+                            {% for item in chamados_por_tipo %}
+                            <tr>
+                                <td>
+                                    {% if item.tipo_problema == 'ELETRICO' %}Elétrico
+                                    {% elif item.tipo_problema == 'MECANICO' %}Mecânico
+                                    {% elif item.tipo_problema == 'HIDRAULICO' %}Hidráulico
+                                    {% elif item.tipo_problema == 'PNEUMATICO' %}Pneumático
+                                    {% elif item.tipo_problema == 'SOFTWARE' %}Software
+                                    {% elif item.tipo_problema == 'ESTRUTURAL' %}Estrutural
+                                    {% else %}{{ item.tipo_problema }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-end"><strong>{{ item.total }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted text-center">Nenhum dado disponível.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Máquinas com Mais Chamados -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="bi bi-truck"></i> Máquinas com Mais Chamados
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if maquinas_com_mais_chamados %}
+                    <table class="table table-sm">
+                        <tbody>
+                            {% for item in maquinas_com_mais_chamados %}
+                            <tr>
+                                <td>{{ item.maquina__nome }} ({{ item.maquina__codigo }})</td>
+                                <td class="text-end"><strong>{{ item.total }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted text-center">Nenhum dado disponível.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-danger {
+    border-left: 0.25rem solid #e74a3b !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+/* Estilos para impressão */
+@media print {
+    /* Ocultar tudo exceto o relatório */
+    body * {
+        visibility: hidden;
+    }
+
+    #relatorio-impressao, #relatorio-impressao * {
+        visibility: visible;
+    }
+
+    #relatorio-impressao {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+
+    /* Ocultar botões e elementos de navegação */
+    .btn, .navbar, .sidebar, nav, button {
+        display: none !important;
+    }
+
+    /* Ajustar tamanho da página */
+    @page {
+        size: A4 landscape;
+        margin: 1cm;
+    }
+
+    /* Melhorar aparência da tabela */
+    table {
+        page-break-inside: auto;
+    }
+
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    tfoot {
+        display: table-footer-group;
+    }
+}
+</style>
+
+<script>
+function imprimirRelatorio() {
+    // Verificar se há dados para imprimir
+    const relatorio = document.getElementById('relatorio-impressao');
+    if (!relatorio) {
+        alert('Nenhum relatório disponível para impressão.');
+        return;
+    }
+
+    // Imprimir
+    window.print();
+}
+</script>
+{% endblock %}
+

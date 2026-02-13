@@ -1,0 +1,419 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        margin: 2rem auto;
+        max-width: 800px;
+    }
+
+    .form-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .form-header h2 {
+        color: #dc3545;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-header p {
+        color: #6c757d;
+        margin: 0;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        color: white;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3);
+        color: white;
+    }
+
+    .btn-cancel {
+        background: #6c757d;
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        color: white;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    .btn-cancel:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+        color: white;
+    }
+
+    .priority-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+    }
+
+    .priority-baixa { background-color: #28a745; }
+    .priority-media { background-color: #17a2b8; }
+    .priority-alta { background-color: #ffc107; }
+    .priority-critica { background-color: #dc3545; }
+
+    .machine-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+        border-left: 4px solid #dc3545;
+    }
+
+    .machine-info h6 {
+        color: #dc3545;
+        margin-bottom: 0.5rem;
+    }
+
+    .machine-info p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .form-container {
+            margin: 1rem;
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="form-container">
+        <div class="form-header">
+            <h2>
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                {{ titulo }}
+            </h2>
+            <p>Preencha as informações do problema encontrado na máquina</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.veiculo_locado.id_for_label }}" class="form-label">
+                            <i class="bi bi-gear-fill text-danger me-1"></i>
+                            Equipamento/Veículo Locado *
+                        </label>
+                        {{ form.veiculo_locado }}
+                        {% if form.veiculo_locado.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.veiculo_locado.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Span do fornecedor -->
+                        <div id="fornecedor-info" class="mt-2" style="display: none;">
+                            <div class="alert alert-info py-2 px-3 mb-0">
+                                <i class="bi bi-building text-info me-1"></i>
+                                <strong>Fornecedor Responsável:</strong>
+                                <span id="fornecedor-nome" class="fw-bold"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-calendar-event text-primary me-1"></i>
+                            Data e Hora de Abertura
+                        </label>
+                        <div class="alert alert-primary py-2 px-3 mb-0">
+                            <i class="bi bi-clock text-primary me-1"></i>
+                            <strong id="data-hora-atual"></strong>
+                        </div>
+
+                        <!-- Identificação do Usuário -->
+                        <div class="alert alert-success py-2 px-3 mb-0 mt-2">
+                            <i class="bi bi-person-check text-success me-1"></i>
+                            <strong>Solicitante:</strong>
+                            <span class="text-success">
+                                {{ user.get_full_name|default:user.username }}
+                                {% if user.perfil %}
+                                    <small class="ms-1">({{ user.perfil.nome_perfil }})</small>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.tipo_problema.id_for_label }}" class="form-label">
+                            <i class="bi bi-wrench text-danger me-1"></i>
+                            Tipo do Problema *
+                        </label>
+                        {{ form.tipo_problema }}
+                        {% if form.tipo_problema.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.tipo_problema.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.prioridade.id_for_label }}" class="form-label">
+                    <i class="bi bi-flag-fill text-danger me-1"></i>
+                    Prioridade *
+                </label>
+                {{ form.prioridade }}
+                {% if form.prioridade.errors %}
+                    <div class="text-danger mt-1">
+                        {% for error in form.prioridade.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    <span class="priority-indicator priority-baixa"></span>Baixa: Não afeta produção |
+                    <span class="priority-indicator priority-media"></span>Média: Afeta parcialmente |
+                    <span class="priority-indicator priority-alta"></span>Alta: Afeta significativamente |
+                    <span class="priority-indicator priority-critica"></span>Crítica: Para a produção
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.descricao_problema.id_for_label }}" class="form-label">
+                    <i class="bi bi-chat-text text-danger me-1"></i>
+                    Descrição Detalhada do Problema *
+                </label>
+                {{ form.descricao_problema }}
+                {% if form.descricao_problema.errors %}
+                    <div class="text-danger mt-1">
+                        {% for error in form.descricao_problema.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    Descreva o problema de forma clara e detalhada. Inclua sintomas, quando começou, condições em que ocorre, etc.
+                </small>
+            </div>
+
+            <!-- Campo de Foto do Problema -->
+            <div class="form-group">
+                <label for="{{ form.foto_problema.id_for_label }}" class="form-label">
+                    <i class="bi bi-camera text-info me-1"></i>
+                    Foto do Problema
+                    <small class="text-muted">(Opcional)</small>
+                </label>
+                {{ form.foto_problema }}
+                {% if form.foto_problema.errors %}
+                    <div class="text-danger mt-1">
+                        {% for error in form.foto_problema.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Adicione uma foto para ajudar na identificação do problema.
+                    <strong>Formatos aceitos:</strong> JPG, PNG, GIF.
+                    <strong>Tamanho máximo:</strong> 5MB.
+                </small>
+
+                <!-- Preview da imagem -->
+                <div id="image-preview" class="mt-2" style="display: none;">
+                    <div class="alert alert-info py-2">
+                        <i class="bi bi-image me-1"></i>
+                        <strong>Prévia da imagem:</strong>
+                        <div class="mt-2">
+                            <img id="preview-img" src="" alt="Preview" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <button type="submit" class="btn btn-submit">
+                        <i class="bi bi-check-circle me-2"></i>
+                        {{ acao }} Chamado
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <a href="{% url 'frota_locada:listar_chamados' %}" class="btn btn-cancel">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Cancelar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus no primeiro campo
+    const firstField = document.querySelector('select, input, textarea');
+    if (firstField) {
+        firstField.focus();
+    }
+
+    // Atualizar data e hora atual
+    function atualizarDataHora() {
+        const agora = new Date();
+        const dataHoraFormatada = agora.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+
+        const elementoDataHora = document.getElementById('data-hora-atual');
+        if (elementoDataHora) {
+            elementoDataHora.textContent = dataHoraFormatada;
+        }
+    }
+
+    // Atualizar imediatamente e depois a cada segundo
+    atualizarDataHora();
+    setInterval(atualizarDataHora, 1000);
+    
+    // Atualizar indicador de prioridade
+    const prioridadeSelect = document.getElementById('{{ form.prioridade.id_for_label }}');
+    if (prioridadeSelect) {
+        prioridadeSelect.addEventListener('change', function() {
+            // Aqui podemos adicionar lógica para mostrar informações sobre a prioridade selecionada
+        });
+    }
+
+    // Mostrar fornecedor quando equipamento for selecionado
+    const veiculoSelect = document.getElementById('{{ form.veiculo_locado.id_for_label }}');
+    const fornecedorInfo = document.getElementById('fornecedor-info');
+    const fornecedorNome = document.getElementById('fornecedor-nome');
+
+    if (veiculoSelect && fornecedorInfo && fornecedorNome) {
+        veiculoSelect.addEventListener('change', function() {
+            const veiculoId = this.value;
+
+            if (veiculoId) {
+                // Fazer requisição AJAX para buscar informações do fornecedor
+                fetch(`/frota-locada/api/veiculo-locado/${veiculoId}/fornecedor/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            fornecedorNome.textContent = data.fornecedor_nome;
+                            fornecedorInfo.style.display = 'block';
+                        } else {
+                            fornecedorInfo.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao buscar fornecedor:', error);
+                        fornecedorInfo.style.display = 'none';
+                    });
+            } else {
+                fornecedorInfo.style.display = 'none';
+            }
+        });
+    }
+
+    // Preview da imagem
+    const fotoInput = document.getElementById('{{ form.foto_problema.id_for_label }}');
+    const imagePreview = document.getElementById('image-preview');
+    const previewImg = document.getElementById('preview-img');
+
+    if (fotoInput && imagePreview && previewImg) {
+        fotoInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+
+            if (file) {
+                // Verificar se é uma imagem
+                if (file.type.startsWith('image/')) {
+                    // Verificar tamanho (5MB = 5 * 1024 * 1024 bytes)
+                    if (file.size <= 5 * 1024 * 1024) {
+                        const reader = new FileReader();
+
+                        reader.onload = function(e) {
+                            previewImg.src = e.target.result;
+                            imagePreview.style.display = 'block';
+                        };
+
+                        reader.readAsDataURL(file);
+                    } else {
+                        alert('❌ Arquivo muito grande! O tamanho máximo é 5MB.');
+                        fotoInput.value = '';
+                        imagePreview.style.display = 'none';
+                    }
+                } else {
+                    alert('❌ Por favor, selecione apenas arquivos de imagem (JPG, PNG, GIF).');
+                    fotoInput.value = '';
+                    imagePreview.style.display = 'none';
+                }
+            } else {
+                imagePreview.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

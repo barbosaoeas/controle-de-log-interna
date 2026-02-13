@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-tools text-primary"></i> {{ titulo }}</h2>
+                    <p class="text-muted">Preencha as informações da manutenção do veículo</p>
+                </div>
+                <a href="{% url 'frota_locada:listar_manutencoes' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulário -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Informações do Veículo -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.veiculo.id_for_label }}" class="form-label">
+                                    <i class="bi bi-truck text-primary"></i> Veículo *
+                                </label>
+                                {{ form.veiculo }}
+                                {% if form.veiculo.errors %}
+                                    <div class="text-danger small mt-1">{{ form.veiculo.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.tipo_manutencao.id_for_label }}" class="form-label">
+                                    <i class="bi bi-wrench text-primary"></i> Tipo de Manutenção *
+                                </label>
+                                {{ form.tipo_manutencao }}
+                                {% if form.tipo_manutencao.errors %}
+                                    <div class="text-danger small mt-1">{{ form.tipo_manutencao.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Datas -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.data_agendamento.id_for_label }}" class="form-label">
+                                    <i class="bi bi-calendar-check text-primary"></i> Data de Agendamento *
+                                </label>
+                                {{ form.data_agendamento }}
+                                {% if form.data_agendamento.errors %}
+                                    <div class="text-danger small mt-1">{{ form.data_agendamento.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.data_inicio.id_for_label }}" class="form-label">
+                                    <i class="bi bi-play-circle text-success"></i> Data de Início
+                                </label>
+                                {{ form.data_inicio }}
+                                {% if form.data_inicio.errors %}
+                                    <div class="text-danger small mt-1">{{ form.data_inicio.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.data_conclusao.id_for_label }}" class="form-label">
+                                    <i class="bi bi-check-circle text-info"></i> Data de Conclusão
+                                </label>
+                                {{ form.data_conclusao }}
+                                {% if form.data_conclusao.errors %}
+                                    <div class="text-danger small mt-1">{{ form.data_conclusao.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Descrição -->
+                        <div class="mb-3">
+                            <label for="{{ form.descricao.id_for_label }}" class="form-label">
+                                <i class="bi bi-file-text text-primary"></i> Descrição do Serviço *
+                            </label>
+                            {{ form.descricao }}
+                            {% if form.descricao.errors %}
+                                <div class="text-danger small mt-1">{{ form.descricao.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Oficina e KM -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.oficina.id_for_label }}" class="form-label">
+                                    <i class="bi bi-building text-primary"></i> Oficina/Prestador
+                                </label>
+                                {{ form.oficina }}
+                                {% if form.oficina.errors %}
+                                    <div class="text-danger small mt-1">{{ form.oficina.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.km_veiculo.id_for_label }}" class="form-label">
+                                    <i class="bi bi-speedometer text-primary"></i> KM do Veículo *
+                                </label>
+                                {{ form.km_veiculo }}
+                                {% if form.km_veiculo.errors %}
+                                    <div class="text-danger small mt-1">{{ form.km_veiculo.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Valores -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.valor_orcamento.id_for_label }}" class="form-label">
+                                    <i class="bi bi-currency-dollar text-success"></i> Valor do Orçamento
+                                </label>
+                                {{ form.valor_orcamento }}
+                                {% if form.valor_orcamento.errors %}
+                                    <div class="text-danger small mt-1">{{ form.valor_orcamento.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.valor_final.id_for_label }}" class="form-label">
+                                    <i class="bi bi-cash-stack text-success"></i> Valor Final
+                                </label>
+                                {{ form.valor_final }}
+                                {% if form.valor_final.errors %}
+                                    <div class="text-danger small mt-1">{{ form.valor_final.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Status e Observações -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">
+                                    <i class="bi bi-info-circle text-primary"></i> Status *
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="text-danger small mt-1">{{ form.status.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.observacoes.id_for_label }}" class="form-label">
+                                <i class="bi bi-chat-left-text text-primary"></i> Observações
+                            </label>
+                            {{ form.observacoes }}
+                            {% if form.observacoes.errors %}
+                                <div class="text-danger small mt-1">{{ form.observacoes.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'frota_locada:listar_manutencoes' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> {{ botao_texto|default:"Salvar" }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

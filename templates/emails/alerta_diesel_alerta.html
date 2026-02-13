@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerta de Atenção - Diesel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background: #f8f9fa;
+            padding: 30px;
+            border: 1px solid #dee2e6;
+        }
+        .alert-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .footer {
+            background: #6c757d;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 0 0 8px 8px;
+            font-size: 12px;
+        }
+        .warning {
+            font-size: 16px;
+            font-weight: bold;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚠️ ALERTA DE ATENÇÃO - DIESEL</h1>
+        <p>Estaleiro Atlântico Sul</p>
+    </div>
+    
+    <div class="content">
+        <p>Olá <strong>{{ destinatario }}</strong>,</p>
+        
+        <div class="alert-box">
+            <p class="warning">⚠️ ATENÇÃO: O nível de diesel está baixo!</p>
+            <p>Recomendamos programar o reabastecimento do tanque nos próximos dias para evitar problemas operacionais.</p>
+        </div>
+        
+        <div class="stats">
+            <h3>📊 Status Atual do Tanque:</h3>
+            <div class="stat-item">
+                <span><strong>Nível Atual:</strong></span>
+                <span style="color: #856404; font-weight: bold;">{{ nivel_atual }}L</span>
+            </div>
+            <div class="stat-item">
+                <span><strong>Capacidade Total:</strong></span>
+                <span>{{ capacidade_total }}L</span>
+            </div>
+            <div class="stat-item">
+                <span><strong>Percentual:</strong></span>
+                <span style="color: #856404; font-weight: bold;">{{ percentual|floatformat:1 }}%</span>
+            </div>
+            <div class="stat-item">
+                <span><strong>Status:</strong></span>
+                <span style="color: #856404; font-weight: bold;">{{ status }}</span>
+            </div>
+            <div class="stat-item">
+                <span><strong>Nível de Alerta:</strong></span>
+                <span>{{ nivel_alerta }}L</span>
+            </div>
+        </div>
+        
+        <div style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h4>📋 Ações Recomendadas:</h4>
+            <ul>
+                <li><strong>Programar reabastecimento</strong> para os próximos 2-3 dias</li>
+                <li><strong>Contatar fornecedor</strong> para agendar entrega</li>
+                <li><strong>Monitorar consumo</strong> diário</li>
+                <li><strong>Verificar previsão</strong> de operações intensivas</li>
+            </ul>
+        </div>
+        
+        <p><strong>Data/Hora do Alerta:</strong> {{ "now"|date:"d/m/Y H:i" }}</p>
+        
+        <p>Este é um alerta preventivo do sistema de controle de diesel.</p>
+    </div>
+    
+    <div class="footer">
+        <p>Sistema de Controle de Materiais - Estaleiro Atlântico Sul</p>
+        <p>Este email foi enviado automaticamente. Não responda a este email.</p>
+    </div>
+</body>
+</html>

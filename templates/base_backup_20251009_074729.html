@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}Sistema de Controle de Log Interna{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #0dcaf0;
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+        }
+        
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+        }
+        
+        .main-content {
+            min-height: calc(100vh - 56px);
+        }
+        
+        .card-stats {
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .card-stats.success {
+            border-left-color: var(--success-color);
+        }
+        
+        .card-stats.warning {
+            border-left-color: var(--warning-color);
+        }
+        
+        .card-stats.danger {
+            border-left-color: var(--danger-color);
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 5px;
+        }
+        
+        .nav-link.active {
+            background-color: var(--primary-color);
+            color: white !important;
+            border-radius: 5px;
+        }
+        
+        .btn-custom {
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(0,0,0,0.02);
+        }
+        
+        .badge-custom {
+            font-size: 0.75em;
+            padding: 0.35em 0.65em;
+        }
+        
+        .alert-custom {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .modal-header {
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .modal-footer {
+            border-top: 2px solid #dee2e6;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        
+        .text-truncate-custom {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        .status-indicator.active {
+            background-color: var(--success-color);
+        }
+        
+        .status-indicator.inactive {
+            background-color: var(--danger-color);
+        }
+        
+        .status-indicator.maintenance {
+            background-color: var(--warning-color);
+        }
+        
+        .dropdown-menu {
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .progress-custom {
+            height: 8px;
+            border-radius: 4px;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-group-custom .btn {
+            border-radius: 0;
+        }
+        
+        .btn-group-custom .btn:first-child {
+            border-top-left-radius: 6px;
+            border-bottom-left-radius: 6px;
+        }
+        
+        .btn-group-custom .btn:last-child {
+            border-top-right-radius: 6px;
+            border-bottom-right-radius: 6px;
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .sidebar-sticky {
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 56px);
+            overflow-y: auto;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
+
+        /* === RESPONSIVO MOBILE GLOBAL === */
+        @media (max-width: 400px) {
+            .container-fluid {
+                padding-left: 12px !important;
+                padding-right: 12px !important;
+            }
+
+            .navbar-brand {
+                font-size: 1rem !important;
+            }
+
+            .navbar-brand i {
+                font-size: 1.2rem !important;
+            }
+
+            .main-content {
+                padding: 8px !important;
+            }
+
+            .border-bottom {
+                margin-bottom: 1rem !important;
+                padding-bottom: 0.5rem !important;
+            }
+
+            .pt-3 {
+                padding-top: 0.5rem !important;
+            }
+
+            .pb-2 {
+                padding-bottom: 0.5rem !important;
+            }
+
+            .mb-3 {
+                margin-bottom: 1rem !important;
+            }
+
+            .card {
+                margin-bottom: 1rem !important;
+            }
+
+            .card-body {
+                padding: 1rem !important;
+            }
+
+            .btn-group .btn {
+                font-size: 0.8rem !important;
+                padding: 0.4rem 0.6rem !important;
+            }
+
+            .table-responsive {
+                border-radius: 8px !important;
+            }
+
+            .table {
+                font-size: 0.8rem !important;
+            }
+
+            .table th,
+            .table td {
+                padding: 0.5rem !important;
+            }
+
+            .btn-sm {
+                font-size: 0.7rem !important;
+                padding: 0.3rem 0.5rem !important;
+            }
+
+            .badge {
+                font-size: 0.7rem !important;
+            }
+
+            .modal-dialog {
+                margin: 0.5rem !important;
+            }
+
+            .modal-body {
+                padding: 1rem !important;
+            }
+
+            .form-control,
+            .form-select {
+                font-size: 0.9rem !important;
+            }
+
+            .alert {
+                padding: 0.75rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .nav-link {
+                padding: 0.5rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .dropdown-item {
+                padding: 0.5rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .card-header {
+                padding: 0.75rem 1rem !important;
+            }
+
+            .card-title {
+                font-size: 1.1rem !important;
+            }
+
+            .btn {
+                font-size: 0.9rem !important;
+            }
+
+            .input-group-text {
+                font-size: 0.9rem !important;
+            }
+
+            .pagination .page-link {
+                padding: 0.5rem 0.75rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .breadcrumb-item {
+                font-size: 0.9rem !important;
+            }
+
+            .list-group-item {
+                padding: 0.75rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .progress {
+                height: 1rem !important;
+            }
+
+            .spinner-border-sm {
+                width: 1rem !important;
+                height: 1rem !important;
+            }
+
+            .text-truncate-custom {
+                max-width: 120px !important;
+            }
+
+            .sidebar-heading {
+                font-size: 0.8rem !important;
+                padding: 0.5rem 1rem !important;
+            }
+
+            .nav-pills .nav-link {
+                padding: 0.5rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .tab-content {
+                padding: 1rem !important;
+            }
+
+            .accordion-button {
+                padding: 0.75rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+
+            .accordion-body {
+                padding: 1rem !important;
+            }
+
+            .offcanvas-body {
+                padding: 1rem !important;
+            }
+
+            .toast {
+                font-size: 0.9rem !important;
+            }
+
+            .tooltip-inner {
+                font-size: 0.8rem !important;
+            }
+
+            .popover-body {
+                font-size: 0.9rem !important;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                <i class="bi bi-clipboard-data"></i>
+                Controle de Log Interna
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i>
+                                {{ user.get_full_name|default:user.username }}
+                                {% if user.perfil %}
+                                    <small class="text-light opacity-75">({{ user.perfil.setor.nome }})</small>
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'dashboard' %}"><i class="bi bi-house"></i> Dashboard</a></li>
+                                <li><a class="dropdown-item" href="{% url 'listar_pedidos' %}"><i class="bi bi-list-ul"></i> Pedidos</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% if user.perfil.is_admin_ou_supervisor %}
+                                    <li><a class="dropdown-item" href="#" onclick="abrirModalUsuariosGlobal()"><i class="bi bi-people"></i> Gerenciar Usuários</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                <li><a class="dropdown-item" href="{% url 'alterar_senha' %}"><i class="bi bi-key"></i> Alterar Senha</a></li>
+                                {% if user.is_staff %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-gear"></i> Administração</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item" style="border: none; background: none; width: 100%; text-align: left;">
+                                            <i class="bi bi-box-arrow-right"></i> Sair
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <i class="bi bi-box-arrow-in-right"></i> Entrar
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            {% if user.is_authenticated %}
+                <!-- Sidebar -->
+                <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                    <div class="position-sticky pt-3">
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                                    <i class="bi bi-house"></i>
+                                    Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'listar_pedidos' %}active{% endif %}" href="{% url 'listar_pedidos' %}">
+                                    <i class="bi bi-list-ul"></i>
+                                    Pedidos
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'relatorios_pedidos' %}active{% endif %}" href="{% url 'relatorios_pedidos' %}">
+                                    <i class="bi bi-graph-up"></i>
+                                    Relatórios
+                                </a>
+                            </li>
+
+                            {% if user.perfil.is_admin_ou_supervisor %}
+                                <li class="nav-item">
+                                    <a class="nav-link {% if 'diesel' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard_diesel' %}">
+                                        <i class="bi bi-fuel-pump"></i>
+                                        Controle de Diesel
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% if user.perfil.is_admin_ou_supervisor %}
+                                <!-- Menu de Novo Pedido (Admins e Supervisores) -->
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.resolver_match.url_name == 'criar_pedido' %}active{% endif %}" href="{% url 'criar_pedido' %}">
+                                        <i class="bi bi-plus-circle"></i>
+                                        Novo Pedido
+                                    </a>
+                                </li>
+
+                                <!-- Divisor -->
+                                <hr class="my-3 text-muted">
+
+                                <!-- Menu de Cadastros (Admins e Supervisores) -->
+                                <li class="nav-item">
+                                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                                        <span><i class="bi bi-database-add"></i> Cadastros</span>
+                                    </h6>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.resolver_match.url_name == 'mapa_operadores' %}active{% endif %}" href="{% url 'mapa_operadores' %}">
+                                        <i class="bi bi-geo-alt"></i>
+                                        Mapa de Operadores
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" onclick="abrirModalSetoresGlobal()">
+                                        <i class="bi bi-building"></i>
+                                        Setores
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#modalEquipamentosNovo">
+                                        <i class="bi bi-gear"></i>
+                                        Equipamentos
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" onclick="abrirModalClientesGlobal()">
+                                        <i class="bi bi-person-badge"></i>
+                                        Clientes
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" onclick="abrirModalUsuariosGlobal()">
+                                        <i class="bi bi-people"></i>
+                                        Usuários
+                                    </a>
+                                </li>
+                            {% elif user.perfil.is_demandante %}
+                                <!-- Menu para Demandantes -->
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.resolver_match.url_name == 'criar_pedido' %}active{% endif %}" href="{% url 'criar_pedido' %}">
+                                        <i class="bi bi-plus-circle"></i>
+                                        Nova Solicitação
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </nav>
+
+                <!-- Main content -->
+                <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+            {% else %}
+                <main class="col-12 main-content">
+            {% endif %}
+
+                <!-- Messages -->
+                {% if messages %}
+                    <div class="mt-3">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Page content -->
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Modais Globais (Admins e Supervisores) -->
+    {% if user.is_authenticated and user.perfil.is_admin_ou_supervisor %}
+        {% include 'core/modais_cadastros.html' %}
+
+        <!-- MODAL NOVO DE EQUIPAMENTOS - FUNCIONANDO -->
+        <div class="modal fade" id="modalEquipamentosNovo" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-gear"></i>
+                            Gerenciar Equipamentos
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Formulário -->
+                            <div class="col-md-5">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">Adicionar Equipamento</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="formEquipamentoNovo">
+                                            <!-- Nome -->
+                                            <div class="mb-3">
+                                                <label for="nomeEquipamentoNovo" class="form-label">Nome <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="nomeEquipamentoNovo" required>
+                                            </div>
+
+                                            <!-- Código -->
+                                            <div class="mb-3">
+                                                <label for="codigoEquipamentoNovo" class="form-label">Código</label>
+                                                <input type="text" class="form-control" id="codigoEquipamentoNovo">
+                                            </div>
+
+                                            <!-- Categoria -->
+                                            <div class="mb-3">
+                                                <label for="categoriaEquipamentoNovo" class="form-label">Categoria <span class="text-danger">*</span></label>
+                                                <div class="input-group">
+                                                    <select class="form-select" id="categoriaEquipamentoNovo" required>
+                                                        <option value="">Selecione uma categoria</option>
+                                                        <!-- Categorias serão carregadas via JavaScript -->
+                                                    </select>
+                                                    <button class="btn btn-outline-primary" type="button" onclick="abrirModalCategorias()" title="Gerenciar Categorias">
+                                                        <i class="bi bi-gear"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Status Operacional -->
+                                            <div class="mb-3">
+                                                <label for="statusEquipamentoNovo" class="form-label">Status Operacional <span class="text-danger">*</span></label>
+                                                <select class="form-select" id="statusEquipamentoNovo" required>
+                                                    <option value="">Selecione o status</option>
+                                                    <option value="ATIVO">🟢 Operacional</option>
+                                                    <option value="MANUTENCAO">🟡 Em Manutenção</option>
+                                                    <option value="INATIVO">🔴 Inativo</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Ativo no Sistema -->
+                                            <div class="mb-3">
+                                                <label for="ativoEquipamentoNovo" class="form-label">Ativo no Sistema <span class="text-danger">*</span></label>
+                                                <select class="form-select" id="ativoEquipamentoNovo" required>
+                                                    <option value="">Selecione</option>
+                                                    <option value="true">✅ Sim</option>
+                                                    <option value="false">❌ Não</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Em Serviço / Fora de Serviço -->
+                                            <div class="mb-3">
+                                                <label for="emServicoEquipamentoNovo" class="form-label">Status de Serviço <span class="text-danger">*</span></label>
+                                                <select class="form-select" id="emServicoEquipamentoNovo" required>
+                                                    <option value="">Selecione</option>
+                                                    <option value="true">🟢 Em Serviço</option>
+                                                    <option value="false">🔴 Fora de Serviço</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Descrição -->
+                                            <div class="mb-3">
+                                                <label for="descricaoEquipamentoNovo" class="form-label">Descrição</label>
+                                                <textarea class="form-control" id="descricaoEquipamentoNovo" rows="3"></textarea>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-success btn-lg w-100">
+                                                <i class="bi bi-plus-circle"></i> Adicionar Equipamento
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lista de Equipamentos -->
+                            <div class="col-md-7">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-list"></i>
+                                            Equipamentos Cadastrados
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover">
+                                                <thead class="table-dark">
+                                                    <tr>
+                                                        <th>Nome</th>
+                                                        <th>Código</th>
+                                                        <th>Categoria</th>
+                                                        <th>Status Op.</th>
+                                                        <th>Em Serviço</th>
+                                                        <th>Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="listaEquipamentosNovo">
+                                                    <tr>
+                                                        <td colspan="5" class="text-center">
+                                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                                <span class="visually-hidden">Carregando...</span>
+                                                            </div>
+                                                            Carregando equipamentos...
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DE CATEGORIAS DE EQUIPAMENTOS -->
+        <div class="modal fade" id="modalCategorias" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-tags"></i>
+                            Gerenciar Categorias de Equipamentos
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Formulário -->
+                            <div class="col-md-5">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0" id="tituloFormCategoria">Adicionar Categoria</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="formCategoria">
+                                            <!-- Nome da Categoria -->
+                                            <div class="mb-3">
+                                                <label for="nomeCategoria" class="form-label">Nome da Categoria <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="nomeCategoria" required
+                                                       placeholder="Ex: Veículo, Ferramenta, Máquina...">
+                                            </div>
+
+                                            <!-- Descrição -->
+                                            <div class="mb-3">
+                                                <label for="descricaoCategoria" class="form-label">Descrição</label>
+                                                <textarea class="form-control" id="descricaoCategoria" rows="3"
+                                                          placeholder="Descrição opcional da categoria..."></textarea>
+                                            </div>
+
+                                            <!-- Cor da Categoria -->
+                                            <div class="mb-3">
+                                                <label for="corCategoria" class="form-label">Cor da Categoria</label>
+                                                <select class="form-select" id="corCategoria">
+                                                    <option value="primary">🔵 Azul (Padrão)</option>
+                                                    <option value="success">🟢 Verde</option>
+                                                    <option value="warning">🟡 Amarelo</option>
+                                                    <option value="danger">🔴 Vermelho</option>
+                                                    <option value="info">🔵 Azul Claro</option>
+                                                    <option value="secondary">⚫ Cinza</option>
+                                                    <option value="dark">⚫ Preto</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="d-grid gap-2">
+                                                <button type="submit" class="btn btn-success" id="btnSubmitCategoria">
+                                                    <i class="bi bi-plus-circle"></i> Adicionar Categoria
+                                                </button>
+                                                <button type="button" class="btn btn-secondary" id="btnCancelarCategoria" onclick="cancelarEdicaoCategoria()" style="display: none;">
+                                                    <i class="bi bi-x-circle"></i> Cancelar Edição
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lista de Categorias -->
+                            <div class="col-md-7">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-list"></i>
+                                            Categorias Cadastradas
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover">
+                                                <thead class="table-dark">
+                                                    <tr>
+                                                        <th>Nome</th>
+                                                        <th>Descrição</th>
+                                                        <th>Cor</th>
+                                                        <th>Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="listaCategorias">
+                                                    <tr>
+                                                        <td colspan="4" class="text-center">
+                                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                                <span class="visually-hidden">Carregando...</span>
+                                                            </div>
+                                                            Carregando categorias...
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+
+    <!-- JavaScript para Geolocalização (apenas para transportes) -->
+    {% if user.is_authenticated and user.perfil.is_transportes %}
+    <script>
+        let geoWatchId = null;
+        let ultimaLocalizacao = null;
+        let intervaloPosicao = null;
+
+        function iniciarRastreamento() {
+            if (navigator.geolocation) {
+                console.log('🌍 Iniciando rastreamento de localização...');
+
+                // Opções de geolocalização
+                const opcoes = {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 30000
+                };
+
+                // Iniciar rastreamento contínuo
+                geoWatchId = navigator.geolocation.watchPosition(
+                    function(posicao) {
+                        const lat = posicao.coords.latitude;
+                        const lng = posicao.coords.longitude;
+                        const precisao = posicao.coords.accuracy;
+
+                        console.log(`📍 Nova posição: ${lat}, ${lng} (±${precisao}m)`);
+
+                        // Verificar se a posição mudou significativamente
+                        if (ultimaLocalizacao) {
+                            const distancia = calcularDistancia(
+                                ultimaLocalizacao.lat, ultimaLocalizacao.lng,
+                                lat, lng
+                            );
+
+                            // Só enviar se mudou mais de 10 metros
+                            if (distancia < 10) {
+                                console.log(`📍 Posição muito próxima (${distancia}m), ignorando...`);
+                                return;
+                            }
+                        }
+
+                        ultimaLocalizacao = { lat, lng };
+                        enviarPosicao(lat, lng, precisao);
+                    },
+                    function(erro) {
+                        console.error('❌ Erro de geolocalização:', erro.message);
+
+                        switch(erro.code) {
+                            case erro.PERMISSION_DENIED:
+                                console.log('🚫 Usuário negou permissão de localização');
+                                break;
+                            case erro.POSITION_UNAVAILABLE:
+                                console.log('📍 Localização indisponível');
+                                break;
+                            case erro.TIMEOUT:
+                                console.log('⏰ Timeout na obtenção da localização');
+                                break;
+                        }
+                    },
+                    opcoes
+                );
+
+                // Também enviar posição a cada 2 minutos
+                intervaloPosicao = setInterval(function() {
+                    if (ultimaLocalizacao) {
+                        console.log('⏰ Enviando posição por intervalo...');
+                        enviarPosicao(ultimaLocalizacao.lat, ultimaLocalizacao.lng, 0);
+                    }
+                }, 120000); // 2 minutos
+
+            } else {
+                console.error('❌ Geolocalização não suportada pelo navegador');
+            }
+        }
+
+        function enviarPosicao(latitude, longitude, precisao) {
+            console.log(`📡 Enviando posição: ${latitude}, ${longitude}`);
+
+            fetch('/api/atualizar-posicao/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrf-token]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    latitude: latitude,
+                    longitude: longitude,
+                    precisao: precisao,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Posição enviada com sucesso');
+                } else {
+                    console.error('❌ Erro ao enviar posição:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro na requisição:', error);
+            });
+        }
+
+        function calcularDistancia(lat1, lng1, lat2, lng2) {
+            const R = 6371e3; // Raio da Terra em metros
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lng2-lng1) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c; // Distância em metros
+        }
+
+        function pararRastreamento() {
+            if (geoWatchId) {
+                navigator.geolocation.clearWatch(geoWatchId);
+                geoWatchId = null;
+                console.log('🛑 Rastreamento parado');
+            }
+
+            if (intervaloPosicao) {
+                clearInterval(intervaloPosicao);
+                intervaloPosicao = null;
+                console.log('🛑 Intervalo de posição parado');
+            }
+        }
+
+        // Iniciar rastreamento quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Página carregada, iniciando rastreamento...');
+            iniciarRastreamento();
+        });
+
+        // Parar rastreamento quando sair da página
+        window.addEventListener('beforeunload', function() {
+            console.log('👋 Saindo da página, parando rastreamento...');
+            pararRastreamento();
+        });
+
+        // Parar rastreamento quando a página ficar inativa
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                console.log('😴 Página inativa, parando rastreamento...');
+                pararRastreamento();
+            } else {
+                console.log('👀 Página ativa, reiniciando rastreamento...');
+                iniciarRastreamento();
+            }
+        });
+    </script>
+    {% endif %}
+
+    <!-- JAVASCRIPT PARA MODAIS DE CADASTROS -->
+    {% if user.is_authenticated and user.perfil.is_admin_ou_supervisor %}
+    <script>
+        // Função para obter cookie CSRF
+        function getCookieLocal(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // FUNCIONALIDADE DO MODAL DE EQUIPAMENTOS
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 DOM carregado, configurando modal de equipamentos...');
+
+            const formNovo = document.getElementById('formEquipamentoNovo');
+            if (formNovo) {
+                formNovo.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const isEdit = formNovo.hasAttribute('data-edit-id');
+                    const editId = formNovo.getAttribute('data-edit-id');
+
+                    console.log(isEdit ? `✏️ EDITANDO EQUIPAMENTO ${editId}!` : '🆕 CRIANDO NOVO EQUIPAMENTO!');
+
+                    const nome = document.getElementById('nomeEquipamentoNovo').value.trim();
+                    const codigo = document.getElementById('codigoEquipamentoNovo').value.trim();
+                    const categoria = document.getElementById('categoriaEquipamentoNovo').value;
+                    const status = document.getElementById('statusEquipamentoNovo').value;
+                    const ativo = document.getElementById('ativoEquipamentoNovo').value;
+                    const emServico = document.getElementById('emServicoEquipamentoNovo').value;
+                    const descricao = document.getElementById('descricaoEquipamentoNovo').value.trim();
+
+                    if (!nome || !categoria || !status || !ativo || !emServico) {
+                        alert('❌ Por favor, preencha todos os campos obrigatórios!');
+                        return;
+                    }
+
+                    const data = {
+                        nome: nome,
+                        codigo: codigo,
+                        categoria: categoria,
+                        status_operacional: status,
+                        ativo: ativo === 'true',
+                        em_servico: emServico === 'true',
+                        descricao: descricao
+                    };
+
+                    const url = isEdit ? `/api/equipamentos/${editId}/` : '/api/equipamentos/';
+                    const method = isEdit ? 'PUT' : 'POST';
+
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`✅ ${isEdit ? 'Equipamento atualizado' : 'Equipamento adicionado'} com sucesso!`);
+
+                            // Limpar formulário
+                            formNovo.reset();
+                            formNovo.removeAttribute('data-edit-id');
+
+                            // Restaurar botão
+                            const submitBtn = formNovo.querySelector('button[type="submit"]');
+                            submitBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Adicionar Equipamento';
+                            submitBtn.className = 'btn btn-success btn-lg w-100';
+
+                            // Recarregar lista
+                            carregarEquipamentosNovo();
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro na requisição:', error);
+                        alert('❌ Erro ao salvar equipamento: ' + error.message);
+                    });
+                });
+            }
+
+            // Carregar equipamentos quando o modal abrir
+            const modalElement = document.getElementById('modalEquipamentosNovo');
+            if (modalElement) {
+                modalElement.addEventListener('shown.bs.modal', function() {
+                    console.log('📋 Modal aberto, carregando equipamentos...');
+                    carregarEquipamentosNovo();
+                    // Carregar categorias para o select
+                    carregarCategoriasParaSelect();
+                });
+            }
+
+            // Event listener para formulário de categorias
+            const formCategoria = document.getElementById('formCategoria');
+            if (formCategoria) {
+                formCategoria.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const isEdit = formCategoria.hasAttribute('data-edit-id');
+                    const editId = formCategoria.getAttribute('data-edit-id');
+
+                    console.log(isEdit ? `✏️ EDITANDO CATEGORIA ${editId}!` : '🆕 CRIANDO NOVA CATEGORIA!');
+
+                    const nome = document.getElementById('nomeCategoria').value.trim();
+                    const descricao = document.getElementById('descricaoCategoria').value.trim();
+                    const cor = document.getElementById('corCategoria').value;
+
+                    if (!nome) {
+                        alert('❌ Por favor, preencha o nome da categoria!');
+                        return;
+                    }
+
+                    const data = {
+                        nome: nome,
+                        descricao: descricao,
+                        cor: cor
+                    };
+
+                    const url = isEdit ? `/api/categorias-equipamentos/${editId}/` : '/api/categorias-equipamentos/';
+                    const method = isEdit ? 'PUT' : 'POST';
+
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`✅ ${isEdit ? 'Categoria atualizada' : 'Categoria adicionada'} com sucesso!`);
+
+                            // Limpar formulário e restaurar interface
+                            cancelarEdicaoCategoria();
+
+                            // Recarregar lista
+                            carregarCategorias();
+                        } else {
+                            alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Erro na requisição:', error);
+                        alert('❌ Erro ao salvar categoria: ' + error.message);
+                    });
+                });
+            }
+        });
+
+        // FUNÇÃO PARA CARREGAR CATEGORIAS NO SELECT
+        function carregarCategoriasParaSelect() {
+            console.log('🏷️ Carregando categorias para select...');
+
+            fetch('/api/categorias-equipamentos/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // Se não existir API, usar categorias padrão
+                    console.log('⚠️ API de categorias não encontrada, usando padrões...');
+                    const categoriasDefault = [
+                        { nome: 'VEICULO', descricao: 'Veículos' },
+                        { nome: 'FERRAMENTA', descricao: 'Ferramentas' },
+                        { nome: 'MAQUINA', descricao: 'Máquinas' },
+                        { nome: 'EQUIPAMENTO', descricao: 'Equipamentos' },
+                        { nome: 'OUTRO', descricao: 'Outros' }
+                    ];
+                    atualizarSelectCategorias(categoriasDefault);
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.length > 0) {
+                    atualizarSelectCategorias(data);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar categorias:', error);
+                // Usar categorias padrão em caso de erro
+                const categoriasDefault = [
+                    { nome: 'VEICULO', descricao: 'Veículos' },
+                    { nome: 'FERRAMENTA', descricao: 'Ferramentas' },
+                    { nome: 'MAQUINA', descricao: 'Máquinas' },
+                    { nome: 'EQUIPAMENTO', descricao: 'Equipamentos' },
+                    { nome: 'OUTRO', descricao: 'Outros' }
+                ];
+                atualizarSelectCategorias(categoriasDefault);
+            });
+        }
+
+        // FUNÇÃO PARA CARREGAR EQUIPAMENTOS
+        function carregarEquipamentosNovo() {
+            console.log('📋 Carregando equipamentos...');
+
+            fetch('/api/equipamentos/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📋 Equipamentos recebidos:', data);
+                const tbody = document.getElementById('listaEquipamentosNovo');
+                tbody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                <i class="bi bi-inbox"></i><br>
+                                Nenhum equipamento cadastrado
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                data.forEach(equipamento => {
+                    const statusBadge = equipamento.status_operacional === 'ATIVO' ?
+                        '<span class="badge bg-success">🟢 Operacional</span>' :
+                        equipamento.status_operacional === 'MANUTENCAO' ?
+                        '<span class="badge bg-warning">🟡 Manutenção</span>' :
+                        '<span class="badge bg-danger">🔴 Inativo</span>';
+
+                    const servicoBadge = equipamento.em_servico ?
+                        '<span class="badge bg-success">🟢 Em Serviço</span>' :
+                        '<span class="badge bg-danger">🔴 Fora de Serviço</span>';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${equipamento.nome}</strong></td>
+                        <td>${equipamento.codigo || '-'}</td>
+                        <td><span class="badge bg-secondary">${equipamento.categoria}</span></td>
+                        <td>${statusBadge}</td>
+                        <td>${servicoBadge}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-warning" onclick="editarEquipamentoNovo(${equipamento.id})" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="removerEquipamentoNovo(${equipamento.id}, '${equipamento.nome}')" title="Remover">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar equipamentos:', error);
+                const tbody = document.getElementById('listaEquipamentosNovo');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-danger">
+                            <i class="bi bi-exclamation-triangle"></i><br>
+                            Erro ao carregar equipamentos: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // FUNÇÃO PARA EDITAR EQUIPAMENTO
+        function editarEquipamentoNovo(id) {
+            console.log(`✏️ Editando equipamento ${id}...`);
+
+            fetch(`/api/equipamentos/${id}/`, {
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const eq = data.equipamento;
+
+                    // Preencher formulário
+                    document.getElementById('nomeEquipamentoNovo').value = eq.nome;
+                    document.getElementById('codigoEquipamentoNovo').value = eq.codigo || '';
+                    document.getElementById('categoriaEquipamentoNovo').value = eq.categoria;
+                    document.getElementById('statusEquipamentoNovo').value = eq.status_operacional;
+                    document.getElementById('ativoEquipamentoNovo').value = eq.ativo.toString();
+                    document.getElementById('emServicoEquipamentoNovo').value = eq.em_servico.toString();
+                    document.getElementById('descricaoEquipamentoNovo').value = eq.descricao || '';
+
+                    // Marcar como modo de edição
+                    const form = document.getElementById('formEquipamentoNovo');
+                    form.setAttribute('data-edit-id', id);
+
+                    // Alterar o botão
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Atualizar Equipamento';
+                    submitBtn.className = 'btn btn-warning btn-lg w-100';
+
+                    // Focar no primeiro campo
+                    document.getElementById('nomeEquipamentoNovo').focus();
+                } else {
+                    alert('❌ Erro ao carregar equipamento: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar equipamento:', error);
+                alert('❌ Erro ao carregar equipamento');
+            });
+        }
+
+        // FUNÇÃO PARA REMOVER EQUIPAMENTO
+        function removerEquipamentoNovo(id, nome) {
+            if (confirm(`Tem certeza que deseja remover o equipamento "${nome}"?`)) {
+                console.log(`🗑️ Removendo equipamento ${id}...`);
+
+                fetch(`/api/equipamentos/${id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookieLocal('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Equipamento removido com sucesso!');
+                        carregarEquipamentosNovo();
+                    } else {
+                        alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao remover:', error);
+                    alert('❌ Erro ao remover equipamento');
+                });
+            }
+        }
+
+        // FUNÇÕES PARA MODAL DE CATEGORIAS
+        function abrirModalCategorias() {
+            console.log('🏷️ Abrindo modal de categorias...');
+            const modal = new bootstrap.Modal(document.getElementById('modalCategorias'));
+            modal.show();
+            carregarCategorias();
+        }
+
+        function carregarCategorias() {
+            console.log('📋 Carregando categorias...');
+
+            fetch('/api/categorias-equipamentos/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📋 Categorias recebidas:', data);
+                const tbody = document.getElementById('listaCategorias');
+                tbody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                <i class="bi bi-inbox"></i><br>
+                                Nenhuma categoria cadastrada
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                data.forEach(categoria => {
+                    const corBadge = `<span class="badge bg-${categoria.cor || 'primary'}">${categoria.nome}</span>`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${categoria.nome}</strong></td>
+                        <td>${categoria.descricao || '-'}</td>
+                        <td>${corBadge}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-warning" onclick="editarCategoria(${categoria.id})" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="removerCategoria(${categoria.id}, '${categoria.nome}')" title="Remover">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Atualizar select de categorias no formulário de equipamentos
+                atualizarSelectCategorias(data);
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar categorias:', error);
+                const tbody = document.getElementById('listaCategorias');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-danger">
+                            <i class="bi bi-exclamation-triangle"></i><br>
+                            Erro ao carregar categorias: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function atualizarSelectCategorias(categorias) {
+            const select = document.getElementById('categoriaEquipamentoNovo');
+            const valorAtual = select.value;
+
+            // Limpar opções existentes (exceto a primeira)
+            select.innerHTML = '<option value="">Selecione uma categoria</option>';
+
+            // Adicionar categorias
+            categorias.forEach(categoria => {
+                const option = document.createElement('option');
+                option.value = categoria.nome;
+                option.textContent = categoria.nome;
+                select.appendChild(option);
+            });
+
+            // Restaurar valor selecionado se ainda existir
+            if (valorAtual) {
+                select.value = valorAtual;
+            }
+        }
+
+        function editarCategoria(id) {
+            console.log(`✏️ Editando categoria ${id}...`);
+
+            fetch(`/api/categorias-equipamentos/${id}/`, {
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const cat = data.categoria;
+
+                    // Preencher formulário
+                    document.getElementById('nomeCategoria').value = cat.nome;
+                    document.getElementById('descricaoCategoria').value = cat.descricao || '';
+                    document.getElementById('corCategoria').value = cat.cor || 'primary';
+
+                    // Marcar como modo de edição
+                    const form = document.getElementById('formCategoria');
+                    form.setAttribute('data-edit-id', id);
+
+                    // Alterar interface
+                    document.getElementById('tituloFormCategoria').textContent = 'Editar Categoria';
+                    document.getElementById('btnSubmitCategoria').innerHTML = '<i class="bi bi-check-circle"></i> Atualizar Categoria';
+                    document.getElementById('btnSubmitCategoria').className = 'btn btn-warning';
+                    document.getElementById('btnCancelarCategoria').style.display = 'block';
+
+                    // Focar no primeiro campo
+                    document.getElementById('nomeCategoria').focus();
+                } else {
+                    alert('❌ Erro ao carregar categoria: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar categoria:', error);
+                alert('❌ Erro ao carregar categoria');
+            });
+        }
+
+        function cancelarEdicaoCategoria() {
+            const form = document.getElementById('formCategoria');
+            form.reset();
+            form.removeAttribute('data-edit-id');
+
+            // Restaurar interface
+            document.getElementById('tituloFormCategoria').textContent = 'Adicionar Categoria';
+            document.getElementById('btnSubmitCategoria').innerHTML = '<i class="bi bi-plus-circle"></i> Adicionar Categoria';
+            document.getElementById('btnSubmitCategoria').className = 'btn btn-success';
+            document.getElementById('btnCancelarCategoria').style.display = 'none';
+        }
+
+        function removerCategoria(id, nome) {
+            if (confirm(`Tem certeza que deseja remover a categoria "${nome}"?\n\nATENÇÃO: Equipamentos que usam esta categoria podem ser afetados.`)) {
+                console.log(`🗑️ Removendo categoria ${id}...`);
+
+                fetch(`/api/categorias-equipamentos/${id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookieLocal('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Categoria removida com sucesso!');
+                        carregarCategorias();
+                    } else {
+                        alert('❌ Erro: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao remover:', error);
+                    alert('❌ Erro ao remover categoria');
+                });
+            }
+        }
+
+        // FUNÇÕES PLACEHOLDER PARA OUTROS MODAIS
+        function abrirModalSetoresGlobal() {
+            console.log('🏢 Abrindo modal de setores...');
+            const modal = new bootstrap.Modal(document.getElementById('modalSetoresGlobal'));
+            modal.show();
+        }
+
+        function abrirModalClientesGlobal() {
+            console.log('👥 Abrindo modal de clientes...');
+            alert('🚧 Modal de clientes em desenvolvimento...');
+        }
+
+        function abrirModalUsuariosGlobal() {
+            console.log('👤 Abrindo modal de usuários...');
+            alert('🚧 Modal de usuários em desenvolvimento...');
+        }
+    </script>
+    {% endif %}
+
+</body>
+</html>

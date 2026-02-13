@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        max-width: 600px;
+        margin: 2rem auto;
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .form-header h2 {
+        margin: 0;
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .form-body {
+        padding: 2rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    }
+
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .form-check {
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+    }
+
+    .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card form-card">
+                <div class="form-header">
+                    <h2>
+                        <i class="bi bi-truck"></i>
+                        {{ titulo }}
+                    </h2>
+                </div>
+                
+                <div class="form-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label required-field">
+                                <i class="bi bi-truck"></i>
+                                Nome do Tipo
+                            </label>
+                            {{ form.nome }}
+                            {% if form.nome.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.nome.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Ex: Caminhão, Van, Carro, Pickup, Ônibus
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.descricao.id_for_label }}" class="form-label">
+                                <i class="bi bi-chat-text"></i>
+                                Descrição
+                            </label>
+                            {{ form.descricao }}
+                            {% if form.descricao.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.descricao.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Descrição detalhada do tipo de veículo
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Status</label>
+                            <div class="form-check form-switch">
+                                {{ form.ativo }}
+                                <label class="form-check-label" for="{{ form.ativo.id_for_label }}">
+                                    <i class="bi bi-toggle-on"></i>
+                                    Tipo ativo (disponível para seleção)
+                                </label>
+                            </div>
+                            {% if form.ativo.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.ativo.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between flex-wrap gap-2">
+                            <a href="{% url 'frota_locada:listar_tipos_veiculo' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                {{ botao_texto }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus no primeiro campo
+    const nomeInput = document.getElementById('{{ form.nome.id_for_label }}');
+    if (nomeInput) {
+        nomeInput.focus();
+    }
+    
+    // Validação em tempo real
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const nome = document.getElementById('{{ form.nome.id_for_label }}').value.trim();
+        
+        if (!nome) {
+            e.preventDefault();
+            alert('Por favor, informe o nome do tipo de veículo.');
+            return false;
+        }
+        
+        if (nome.length < 2) {
+            e.preventDefault();
+            alert('O nome deve ter pelo menos 2 caracteres.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

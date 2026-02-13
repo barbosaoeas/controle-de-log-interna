@@ -1,0 +1,434 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chamados de Manutenção{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chamado-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .chamado-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .chamado-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 1rem;
+        position: relative;
+    }
+
+    .chamado-header.aguardando {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    }
+
+    .chamado-header.em-atendimento {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+
+    .chamado-header.concluido {
+        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    }
+
+    .chamado-header.pausado {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: #212529;
+    }
+
+    .chamado-numero {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin: 0;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .chamado-maquina {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    .stats-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .stats-number {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .stats-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    .priority-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .btn-action {
+        border-radius: 20px;
+        padding: 0.375rem 1rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .tempo-info {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    .filtros-card {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #dee2e6;
+    }
+
+    @media (max-width: 768px) {
+        .chamado-card {
+            margin-bottom: 1rem;
+        }
+        
+        .stats-card {
+            margin-bottom: 1rem;
+        }
+        
+        .btn-action {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-tools text-danger me-2"></i>
+                        Chamados de Manutenção
+                    </h2>
+                    <p class="text-muted mb-0">Gerencie os chamados de manutenção das máquinas</p>
+                </div>
+                <div>
+                    {% if request.user.perfil.pode_abrir_chamados_manutencao %}
+                    <a href="{% url 'frota_locada:abrir_chamado' %}" class="btn btn-danger btn-lg">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Abrir Chamado
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stats-card text-center p-3">
+                <h3 class="stats-number text-primary">{{ stats.total }}</h3>
+                <p class="stats-label">Total de Chamados</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stats-card text-center p-3">
+                <h3 class="stats-number text-secondary">{{ stats.aguardando }}</h3>
+                <p class="stats-label">Aguardando</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stats-card text-center p-3">
+                <h3 class="stats-number text-primary">{{ stats.em_atendimento }}</h3>
+                <p class="stats-label">Em Atendimento</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card stats-card text-center p-3">
+                <h3 class="stats-number text-success">{{ stats.concluidos }}</h3>
+                <p class="stats-label">Concluídos</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="tipo_equipamento" class="form-label">
+                    <i class="bi bi-truck me-1"></i> Tipo de Equipamento
+                </label>
+                <select name="tipo_equipamento" id="tipo_equipamento" class="form-select">
+                    <option value="">Todos os Tipos de Equipamento</option>
+                    {% for tipo in tipos_equipamento %}
+                        <option value="{{ tipo.id }}" {% if tipo_equipamento_filtro == tipo.id %}selected{% endif %}>
+                            {{ tipo.nome }} ({{ tipo.total_chamados }} chamados)
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">
+                    <i class="bi bi-circle-fill me-1"></i> Status
+                </label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">Todos os Status</option>
+                    <option value="AGUARDANDO" {% if status_filtro == 'AGUARDANDO' %}selected{% endif %}>Aguardando</option>
+                    <option value="EM_ATENDIMENTO" {% if status_filtro == 'EM_ATENDIMENTO' %}selected{% endif %}>Em Atendimento</option>
+                    <option value="PAUSADO" {% if status_filtro == 'PAUSADO' %}selected{% endif %}>Pausado</option>
+                    <option value="CONCLUIDO" {% if status_filtro == 'CONCLUIDO' %}selected{% endif %}>Concluído</option>
+                    <option value="CANCELADO" {% if status_filtro == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="prioridade" class="form-label">
+                    <i class="bi bi-exclamation-triangle me-1"></i> Prioridade
+                </label>
+                <select name="prioridade" id="prioridade" class="form-select">
+                    <option value="">Todas as Prioridades</option>
+                    <option value="BAIXA" {% if prioridade_filtro == 'BAIXA' %}selected{% endif %}>Baixa</option>
+                    <option value="MEDIA" {% if prioridade_filtro == 'MEDIA' %}selected{% endif %}>Média</option>
+                    <option value="ALTA" {% if prioridade_filtro == 'ALTA' %}selected{% endif %}>Alta</option>
+                    <option value="CRITICA" {% if prioridade_filtro == 'CRITICA' %}selected{% endif %}>Crítica</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100 me-2">
+                    <i class="bi bi-funnel me-1"></i>
+                    Filtrar
+                </button>
+            </div>
+        </form>
+        <div class="row mt-2">
+            <div class="col-12">
+                <a href="{% url 'frota_locada:listar_chamados' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Limpar Filtros
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Chamados -->
+    <div class="row">
+        {% if page_obj %}
+            {% for chamado in page_obj %}
+                <div class="col-lg-6 col-xl-4">
+                    <div class="card chamado-card">
+                        <div class="chamado-header {{ chamado.status|lower|cut:' '|cut:'_' }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="chamado-numero">{{ chamado.numero_chamado }}</h5>
+                                    <p class="chamado-maquina">{{ chamado.equipamento_nome }}</p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge {{ chamado.prioridade_badge_class }} priority-badge">
+                                        {{ chamado.get_prioridade_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-1">Problema:</h6>
+                                <p class="mb-2">{{ chamado.get_tipo_problema_display }}</p>
+                                <small class="text-muted">{{ chamado.descricao_problema|truncatechars:100 }}</small>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Solicitante:</small>
+                                    <strong>{{ chamado.solicitante.get_full_name|default:chamado.solicitante.username }}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Aberto em:</small>
+                                    <strong>{{ chamado.data_abertura|date:"d/m/Y H:i" }}</strong>
+                                </div>
+                            </div>
+
+                            <!-- Tempo de Espera -->
+                            {% if chamado.tempo_aguardando %}
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <small class="text-muted d-block">
+                                        <i class="bi bi-hourglass-split text-warning"></i>
+                                        Tempo de Espera:
+                                    </small>
+                                    <strong class="text-warning">
+                                        {{ chamado.tempo_aguardando_formatado }}
+                                        {% if chamado.status == 'AGUARDANDO' %}
+                                            <small class="text-muted">(aguardando)</small>
+                                        {% endif %}
+                                    </strong>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if chamado.mecanico %}
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Mecânico:</small>
+                                        <strong>{{ chamado.mecanico.get_full_name|default:chamado.mecanico.username }}</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-wrench"></i>
+                                            {% if chamado.status == 'CONCLUIDO' %}
+                                                Tempo de Reparo:
+                                            {% else %}
+                                                Tempo Decorrido:
+                                            {% endif %}
+                                        </small>
+                                        <strong class="tempo-info">
+                                            {% if chamado.status == 'CONCLUIDO' %}
+                                                <span class="text-success">{{ chamado.tempo_atendimento_formatado }}</span>
+                                            {% elif chamado.status == 'EM_ATENDIMENTO' %}
+                                                <span class="text-primary">Em andamento...</span>
+                                            {% else %}
+                                                {{ chamado.tempo_aguardando_formatado }}
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <!-- Tempo Total de Indisponibilidade (apenas para chamados concluídos) -->
+                            {% if chamado.status == 'CONCLUIDO' and chamado.tempo_total_indisponibilidade %}
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <small class="text-muted d-block">
+                                        <i class="bi bi-exclamation-triangle text-danger"></i>
+                                        Tempo Total de Indisponibilidade:
+                                    </small>
+                                    <strong class="text-danger">
+                                        {{ chamado.tempo_total_indisponibilidade_formatado }}
+                                        <small class="text-muted">(Espera + Reparo)</small>
+                                    </strong>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge {{ chamado.status_badge_class }}">
+                                    {{ chamado.get_status_display }}
+                                </span>
+
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'frota_locada:detalhes_chamado' chamado.id %}"
+                                       class="btn btn-outline-info btn-sm btn-action">
+                                        <i class="bi bi-eye"></i>
+                                        Ver
+                                    </a>
+
+                                    {% if chamado.pode_iniciar_atendimento and chamado.usuario_pode_iniciar %}
+                                        <a href="{% url 'frota_locada:iniciar_atendimento' chamado.id %}"
+                                           class="btn btn-primary btn-sm btn-action">
+                                            <i class="bi bi-play-circle"></i>
+                                            Iniciar
+                                        </a>
+                                    {% elif chamado.pode_finalizar_atendimento and chamado.usuario_pode_finalizar %}
+                                        <a href="{% url 'frota_locada:finalizar_chamado' chamado.id %}"
+                                           class="btn btn-success btn-sm btn-action">
+                                            <i class="bi bi-check-circle"></i>
+                                            Finalizar
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="bi bi-tools text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="text-muted mt-3">Nenhum chamado encontrado</h4>
+                    <p class="text-muted">Não há chamados de manutenção cadastrados ou que atendam aos filtros aplicados.</p>
+                    {% if request.user.perfil.pode_abrir_chamados_manutencao %}
+                    <a href="{% url 'frota_locada:abrir_chamado' %}" class="btn btn-danger">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Abrir Primeiro Chamado
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Paginação -->
+    {% if page_obj.has_other_pages %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <nav aria-label="Navegação de páginas">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if tipo_equipamento_filtro %}&tipo_equipamento={{ tipo_equipamento_filtro }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if prioridade_filtro %}&prioridade={{ prioridade_filtro }}{% endif %}">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if tipo_equipamento_filtro %}&tipo_equipamento={{ tipo_equipamento_filtro }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if prioridade_filtro %}&prioridade={{ prioridade_filtro }}{% endif %}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if tipo_equipamento_filtro %}&tipo_equipamento={{ tipo_equipamento_filtro }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if prioridade_filtro %}&prioridade={{ prioridade_filtro }}{% endif %}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if tipo_equipamento_filtro %}&tipo_equipamento={{ tipo_equipamento_filtro }}{% endif %}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if prioridade_filtro %}&prioridade={{ prioridade_filtro }}{% endif %}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

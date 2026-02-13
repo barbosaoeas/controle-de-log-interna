@@ -1,0 +1,415 @@
+{% extends 'base.html' %}
+
+{% block title %}Mapa de Operadores{% endblock %}
+
+{% block extra_css %}
+<style>
+    #mapa {
+        height: 70vh;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .operador-card {
+        background: white;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        border-left: 4px solid #007bff;
+    }
+    
+    .operador-online {
+        border-left-color: #28a745;
+    }
+    
+    .operador-offline {
+        border-left-color: #dc3545;
+    }
+    
+    .operador-recente {
+        border-left-color: #ffc107;
+    }
+    
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    .status-online {
+        background-color: #28a745;
+        animation: pulse 2s infinite;
+    }
+    
+    .status-offline {
+        background-color: #dc3545;
+    }
+    
+    .status-recente {
+        background-color: #ffc107;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .refresh-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #007bff;
+        color: white;
+        border: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        z-index: 1000;
+    }
+    
+    .refresh-btn:hover {
+        background: #0056b3;
+        transform: scale(1.1);
+    }
+    
+    .operadores-list {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    /* Responsivo mobile */
+    @media (max-width: 768px) {
+        #mapa {
+            height: 50vh;
+        }
+        
+        .operadores-list {
+            max-height: 40vh;
+        }
+        
+        .stats-card {
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .operador-card {
+            padding: 8px;
+            margin-bottom: 6px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-geo-alt"></i>
+        Mapa de Operadores
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <span class="badge bg-primary fs-6">
+            <i class="bi bi-person-gear"></i>
+            Supervisor
+        </span>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">Total Operadores</h6>
+                    <h3 class="mb-0">{{ total_operadores }}</h3>
+                </div>
+                <i class="bi bi-people fs-2"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">Online</h6>
+                    <h3 class="mb-0">{{ operadores_online }}</h3>
+                </div>
+                <i class="bi bi-wifi fs-2"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">Offline</h6>
+                    <h3 class="mb-0">{{ operadores_offline }}</h3>
+                </div>
+                <i class="bi bi-wifi-off fs-2"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">Com GPS</h6>
+                    <h3 class="mb-0">{{ operadores_com_localizacao }}</h3>
+                </div>
+                <i class="bi bi-geo-alt fs-2"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mapa e Lista -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-map"></i>
+                    Localização em Tempo Real
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="mapa"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul"></i>
+                    Operadores
+                    <span class="badge bg-secondary ms-2" id="contador-operadores">0</span>
+                </h5>
+            </div>
+            <div class="card-body p-2">
+                <div class="operadores-list" id="lista-operadores">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Carregando operadores...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botão de atualização -->
+<button class="refresh-btn" onclick="atualizarMapa()" title="Atualizar localização">
+    <i class="bi bi-arrow-clockwise fs-4"></i>
+</button>
+
+<!-- Legenda -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">Legenda:</h6>
+                <div class="row">
+                    <div class="col-md-3">
+                        <span class="status-indicator status-online"></span>
+                        <small>Online (últimos 5 min)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="status-indicator status-recente"></span>
+                        <small>Recente (5-30 min)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="status-indicator status-offline"></span>
+                        <small>Offline (mais de 30 min)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <small><i class="bi bi-geo-alt text-primary"></i> Localização atual</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet CSS e JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+let mapa;
+let markersGroup;
+let atualizacaoInterval;
+
+// Inicializar mapa
+function inicializarMapa() {
+    // Coordenadas padrão (centro do Brasil)
+    const latDefault = -15.7942;
+    const lngDefault = -47.8822;
+    
+    mapa = L.map('mapa').setView([latDefault, lngDefault], 6);
+    
+    // Adicionar camada do mapa
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(mapa);
+    
+    // Grupo para os marcadores
+    markersGroup = L.layerGroup().addTo(mapa);
+    
+    // Carregar operadores
+    atualizarMapa();
+    
+    // Atualizar automaticamente a cada 30 segundos
+    atualizacaoInterval = setInterval(atualizarMapa, 30000);
+}
+
+// Atualizar mapa com localizações
+function atualizarMapa() {
+    fetch('/api/localizacoes-operadores/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                atualizarMarcadores(data.operadores);
+                atualizarListaOperadores(data.operadores);
+                document.getElementById('contador-operadores').textContent = data.total;
+            } else {
+                console.error('Erro ao carregar operadores:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Erro na requisição:', error);
+        });
+}
+
+// Atualizar marcadores no mapa
+function atualizarMarcadores(operadores) {
+    // Limpar marcadores existentes
+    markersGroup.clearLayers();
+    
+    if (operadores.length === 0) return;
+    
+    const bounds = [];
+    
+    operadores.forEach(operador => {
+        // Definir cor do marcador baseado no status
+        let cor = '#dc3545'; // offline
+        if (operador.status === 'online') cor = '#28a745';
+        else if (operador.status === 'recente') cor = '#ffc107';
+        
+        // Criar ícone personalizado
+        const icone = L.divIcon({
+            html: `<div style="background-color: ${cor}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+            iconSize: [20, 20],
+            className: 'custom-marker'
+        });
+        
+        // Criar popup com informações
+        const popup = `
+            <div style="min-width: 200px;">
+                <h6>${operador.nome}</h6>
+                <p class="mb-1"><strong>Setor:</strong> ${operador.setor}</p>
+                <p class="mb-1"><strong>Status:</strong> 
+                    <span class="badge bg-${operador.status === 'online' ? 'success' : operador.status === 'recente' ? 'warning' : 'danger'}">
+                        ${operador.status === 'online' ? 'Online' : operador.status === 'recente' ? 'Recente' : 'Offline'}
+                    </span>
+                </p>
+                ${operador.ultima_atualizacao ? `<p class="mb-1"><small>Última atualização: ${new Date(operador.ultima_atualizacao).toLocaleString('pt-BR')}</small></p>` : ''}
+                ${operador.precisao ? `<p class="mb-1"><small>Precisão: ${Math.round(operador.precisao)}m</small></p>` : ''}
+                ${operador.telefone ? `<p class="mb-0"><small>Telefone: ${operador.telefone}</small></p>` : ''}
+            </div>
+        `;
+        
+        // Adicionar marcador
+        const marker = L.marker([operador.latitude, operador.longitude], { icon: icone })
+            .bindPopup(popup)
+            .addTo(markersGroup);
+        
+        bounds.push([operador.latitude, operador.longitude]);
+    });
+    
+    // Ajustar zoom para mostrar todos os marcadores
+    if (bounds.length > 0) {
+        mapa.fitBounds(bounds, { padding: [20, 20] });
+    }
+}
+
+// Atualizar lista de operadores
+function atualizarListaOperadores(operadores) {
+    const lista = document.getElementById('lista-operadores');
+    
+    if (operadores.length === 0) {
+        lista.innerHTML = `
+            <div class="text-center py-4">
+                <i class="bi bi-geo-alt-slash fs-1 text-muted"></i>
+                <p class="mt-2 text-muted">Nenhum operador com localização encontrado</p>
+            </div>
+        `;
+        return;
+    }
+    
+    lista.innerHTML = operadores.map(operador => {
+        const statusClass = operador.status === 'online' ? 'operador-online' : 
+                           operador.status === 'recente' ? 'operador-recente' : 'operador-offline';
+        
+        const statusText = operador.status === 'online' ? 'Online' : 
+                          operador.status === 'recente' ? 'Recente' : 'Offline';
+        
+        const tempoOffline = operador.tempo_offline_minutos ? 
+            `${Math.round(operador.tempo_offline_minutos)} min atrás` : '';
+        
+        return `
+            <div class="operador-card ${statusClass}" onclick="centralizarOperador(${operador.latitude}, ${operador.longitude})">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">${operador.nome}</h6>
+                        <small class="text-muted">${operador.setor}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="status-indicator status-${operador.status}"></span>
+                        <small>${statusText}</small>
+                        ${tempoOffline ? `<br><small class="text-muted">${tempoOffline}</small>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Centralizar mapa em um operador
+function centralizarOperador(lat, lng) {
+    mapa.setView([lat, lng], 15);
+}
+
+// Inicializar quando a página carregar
+document.addEventListener('DOMContentLoaded', inicializarMapa);
+
+// Limpar interval quando sair da página
+window.addEventListener('beforeunload', () => {
+    if (atualizacaoInterval) {
+        clearInterval(atualizacaoInterval);
+    }
+});
+</script>
+{% endblock %}

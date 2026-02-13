@@ -1,0 +1,634 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastrar Usuário{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-person-plus"></i>
+        Cadastrar Novo Usuário
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'listar_usuarios' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Voltar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-badge"></i>
+                    Dados do Usuário
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Dados de Login -->
+                    <div class="form-section mb-4">
+                        <h6 class="mb-3">
+                            <i class="bi bi-key"></i>
+                            Dados de Acesso
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">
+                                        <i class="bi bi-person"></i>
+                                        Nome de Usuário *
+                                    </label>
+                                    <input type="text" class="form-control" id="username" name="username" required
+                                           style="text-transform: capitalize;"
+                                           oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle"></i>
+                                        Será usado para fazer login no sistema
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="bi bi-envelope"></i>
+                                        Email
+                                    </label>
+                                    <input type="email" class="form-control" id="email" name="email">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dados Pessoais -->
+                    <div class="form-section mb-4">
+                        <h6 class="mb-3">
+                            <i class="bi bi-person-badge"></i>
+                            Dados Pessoais
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">
+                                        <i class="bi bi-person"></i>
+                                        Primeiro Nome
+                                    </label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name"
+                                           style="text-transform: capitalize;"
+                                           oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">
+                                        <i class="bi bi-person"></i>
+                                        Sobrenome
+                                    </label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name"
+                                           style="text-transform: capitalize;"
+                                           oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1).toLowerCase()">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="telefone" class="form-label">
+                                <i class="bi bi-telephone"></i>
+                                Telefone
+                            </label>
+                            <input type="text" class="form-control" id="telefone" name="telefone">
+                        </div>
+                    </div>
+                    
+                    <!-- Dados do Sistema -->
+                    <div class="form-section mb-4">
+                        <h6 class="mb-3">
+                            <i class="bi bi-building"></i>
+                            Dados do Sistema
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="setor" class="form-label">
+                                        <i class="bi bi-building"></i>
+                                        Setor *
+                                    </label>
+                                    <div class="input-group">
+                                        <select class="form-select" id="setor" name="setor" required>
+                                            <option value="">Selecione o setor</option>
+                                            {% for setor in setores %}
+                                                <option value="{{ setor.id }}">{{ setor.nome }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button class="btn btn-outline-primary" type="button" onclick="abrirModalSetores()" title="Gerenciar Setores">
+                                            <i class="bi bi-plus-circle"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="perfil" class="form-label">
+                                        <i class="bi bi-shield"></i>
+                                        Perfil de Acesso *
+                                    </label>
+                                    <select class="form-select" id="perfil" name="perfil" required>
+                                        <option value="">Carregando perfis...</option>
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle"></i>
+                                        Selecione o perfil de acesso do usuário
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'listar_usuarios' %}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-x-circle"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i>
+                            Cadastrar Usuário
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Informações Importantes
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h6><i class="bi bi-key"></i> Senha Padrão</h6>
+                    <p class="mb-2">O usuário será criado com a senha padrão:</p>
+                    <code class="fs-5">123456</code>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-shield-check"></i> Primeiro Acesso</h6>
+                    <p class="mb-0">No primeiro login, o usuário será obrigado a alterar a senha padrão para uma senha personalizada.</p>
+                </div>
+                
+                <div class="alert alert-secondary">
+                    <h6><i class="bi bi-arrow-clockwise"></i> Reset de Senha</h6>
+                    <p class="mb-0">Caso o usuário esqueça a senha, você pode resetá-la para a senha padrão através da lista de usuários.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Gerenciamento de Setores -->
+<div class="modal fade" id="modalSetores" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-building"></i>
+                    Gerenciar Setores
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário para adicionar setor -->
+                <div class="card mb-4" id="cardNovoSetor">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-plus-circle"></i>
+                            Adicionar Novo Setor
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formNovoSetor">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="nomeSetor" class="form-label">Nome do Setor *</label>
+                                        <input type="text" class="form-control" id="nomeSetor" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="responsavelSetor" class="form-label">Responsável</label>
+                                        <input type="text" class="form-control" id="responsavelSetor">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="descricaoSetor" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="descricaoSetor" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i>
+                                Adicionar Setor
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Formulário para editar setor (inicialmente oculto) -->
+                <div class="card mb-4" id="cardEditarSetor" style="display: none;">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="bi bi-pencil"></i>
+                            Editar Setor
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formEditarSetor">
+                            <input type="hidden" id="editSetorId">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editNomeSetor" class="form-label">Nome do Setor *</label>
+                                        <input type="text" class="form-control" id="editNomeSetor" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editResponsavelSetor" class="form-label">Responsável</label>
+                                        <input type="text" class="form-control" id="editResponsavelSetor">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editDescricaoSetor" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="editDescricaoSetor" rows="2"></textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle"></i>
+                                    Salvar Alterações
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelarEdicao()">
+                                    <i class="bi bi-x-circle"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Lista de setores -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-list"></i>
+                            Setores Cadastrados
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Responsável</th>
+                                        <th>Descrição</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaSetores">
+                                    <!-- Setores serão carregados aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Carregar perfis dinamicamente ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    carregarPerfisDisponiveis();
+});
+
+// Função para carregar perfis da API
+function carregarPerfisDisponiveis() {
+    const select = document.getElementById('perfil');
+    if (!select) return;
+
+    fetch('/api/perfis-disponiveis/', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        select.innerHTML = '<option value="">Selecione o perfil</option>';
+
+        if (data.success && data.perfis) {
+            // Filtrar apenas perfis ativos
+            data.perfis.filter(p => p.ativo).forEach(perfil => {
+                const option = document.createElement('option');
+                option.value = perfil.codigo;
+                option.textContent = perfil.nome;
+                select.appendChild(option);
+            });
+            console.log(`✅ ${data.perfis.filter(p => p.ativo).length} perfis carregados`);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Erro ao carregar perfis:', error);
+        select.innerHTML = '<option value="">Erro ao carregar perfis</option>';
+    });
+}
+
+// Função auxiliar para obter cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Validação do formulário principal
+document.querySelector('form').addEventListener('submit', function(e) {
+    const username = document.getElementById('username').value.trim();
+    const setor = document.getElementById('setor').value;
+    const perfil = document.getElementById('perfil').value;
+
+    if (!username) {
+        alert('Nome de usuário é obrigatório');
+        e.preventDefault();
+        return;
+    }
+
+    if (!setor) {
+        alert('Setor é obrigatório');
+        e.preventDefault();
+        return;
+    }
+
+    if (!perfil) {
+        alert('Perfil de acesso é obrigatório');
+        e.preventDefault();
+        return;
+    }
+});
+
+// ==================== MODAL DE SETORES ====================
+
+function abrirModalSetores() {
+    carregarSetores();
+    new bootstrap.Modal(document.getElementById('modalSetores')).show();
+}
+
+function carregarSetores() {
+    fetch('/api/setores/')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('listaSetores');
+            tbody.innerHTML = '';
+
+            data.forEach(setor => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${setor.nome}</strong></td>
+                    <td>${setor.responsavel || '-'}</td>
+                    <td>${setor.descricao || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-1" onclick="editarSetor(${setor.id})" title="Editar setor">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="removerSetor(${setor.id}, '${setor.nome}')" title="Remover setor">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao carregar setores:', error);
+            alert('Erro ao carregar setores');
+        });
+}
+
+// Formulário de novo setor
+document.getElementById('formNovoSetor').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const nome = document.getElementById('nomeSetor').value.trim();
+    const responsavel = document.getElementById('responsavelSetor').value.trim();
+    const descricao = document.getElementById('descricaoSetor').value.trim();
+
+    if (!nome) {
+        alert('Nome do setor é obrigatório');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('nome', nome);
+    formData.append('responsavel', responsavel);
+    formData.append('descricao', descricao);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch('/api/setores/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Limpar formulário
+            document.getElementById('formNovoSetor').reset();
+
+            // Recarregar lista
+            carregarSetores();
+
+            // Atualizar select do formulário principal
+            atualizarSelectSetores();
+
+            alert('Setor adicionado com sucesso!');
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao adicionar setor');
+    });
+});
+
+function removerSetor(setorId, nomeSetor) {
+    if (!confirm(`Tem certeza que deseja remover o setor "${nomeSetor}"?`)) {
+        return;
+    }
+
+    fetch(`/api/setores/${setorId}/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            carregarSetores();
+            atualizarSelectSetores();
+            alert(data.message);
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao remover setor');
+    });
+}
+
+function atualizarSelectSetores() {
+    fetch('/api/setores/')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('setor');
+            const valorAtual = select.value;
+
+            // Limpar opções (exceto a primeira)
+            select.innerHTML = '<option value="">Selecione o setor</option>';
+
+            // Adicionar setores
+            data.forEach(setor => {
+                const option = document.createElement('option');
+                option.value = setor.id;
+                option.textContent = setor.nome;
+                if (setor.id == valorAtual) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao atualizar select:', error);
+        });
+}
+
+// ==================== EDIÇÃO DE SETORES ====================
+
+function editarSetor(setorId) {
+    // Buscar dados do setor
+    fetch(`/api/setores/${setorId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const setor = data.setor;
+
+                // Preencher formulário de edição
+                document.getElementById('editSetorId').value = setor.id;
+                document.getElementById('editNomeSetor').value = setor.nome;
+                document.getElementById('editResponsavelSetor').value = setor.responsavel || '';
+                document.getElementById('editDescricaoSetor').value = setor.descricao || '';
+
+                // Mostrar formulário de edição e ocultar o de adicionar
+                document.getElementById('cardNovoSetor').style.display = 'none';
+                document.getElementById('cardEditarSetor').style.display = 'block';
+
+                // Focar no campo nome
+                document.getElementById('editNomeSetor').focus();
+            } else {
+                alert('Erro ao carregar dados do setor: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao carregar dados do setor');
+        });
+}
+
+function cancelarEdicao() {
+    // Ocultar formulário de edição e mostrar o de adicionar
+    document.getElementById('cardEditarSetor').style.display = 'none';
+    document.getElementById('cardNovoSetor').style.display = 'block';
+
+    // Limpar formulário de edição
+    document.getElementById('formEditarSetor').reset();
+}
+
+// Formulário de editar setor
+document.getElementById('formEditarSetor').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const setorId = document.getElementById('editSetorId').value;
+    const nome = document.getElementById('editNomeSetor').value.trim();
+    const responsavel = document.getElementById('editResponsavelSetor').value.trim();
+    const descricao = document.getElementById('editDescricaoSetor').value.trim();
+
+    if (!nome) {
+        alert('Nome do setor é obrigatório');
+        return;
+    }
+
+    const data = {
+        nome: nome,
+        responsavel: responsavel,
+        descricao: descricao
+    };
+
+    fetch(`/api/setores/${setorId}/`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Cancelar edição
+            cancelarEdicao();
+
+            // Recarregar lista
+            carregarSetores();
+
+            // Atualizar select do formulário principal
+            atualizarSelectSetores();
+
+            alert(data.message || 'Setor atualizado com sucesso!');
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar setor');
+    });
+});
+</script>
+{% endblock %}

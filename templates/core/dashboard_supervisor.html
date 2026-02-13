@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ perfil.nome_perfil|title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .border-left-primary {
+        border-left: 0.25rem solid #4e73df !important;
+    }
+    .border-left-success {
+        border-left: 0.25rem solid #1cc88a !important;
+    }
+    .border-left-info {
+        border-left: 0.25rem solid #36b9cc !important;
+    }
+    .border-left-warning {
+        border-left: 0.25rem solid #f6c23e !important;
+    }
+    .text-gray-300 {
+        color: #dddfeb !important;
+    }
+    .text-gray-800 {
+        color: #5a5c69 !important;
+    }
+    .btn-block {
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-speedometer2"></i>
+        Dashboard - {{ perfil.nome_perfil }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <span class="badge bg-primary fs-6">
+            <i class="bi bi-shield-check"></i>
+            {{ perfil.nome_perfil }}
+        </span>
+    </div>
+</div>
+
+<!-- Cards de Estatísticas -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total de Pedidos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_pedidos }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-list-ul fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Pendentes
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pendentes }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Em Andamento
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.em_andamento }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-arrow-clockwise fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Concluídos Hoje
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.concluidos_hoje }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Operadores Online -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-people"></i>
+                    Status dos Operadores
+                </h6>
+                <a href="{% url 'mapa_operadores' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-geo-alt"></i>
+                    Ver Mapa
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-success">{{ operadores_online }}</div>
+                            <small class="text-muted">Online</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-secondary">{{ total_operadores }}</div>
+                            <small class="text-muted">Total</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress mt-3">
+                    {% if total_operadores > 0 %}
+                        {% widthratio operadores_online total_operadores 100 as percentage %}
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ percentage }}%"></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-building"></i>
+                    Ações Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <a href="{% url 'criar_pedido' %}" class="btn btn-primary btn-block">
+                            <i class="bi bi-plus-circle"></i>
+                            Novo Pedido
+                        </a>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <a href="{% url 'listar_usuarios' %}" class="btn btn-info btn-block">
+                            <i class="bi bi-people"></i>
+                            Usuários
+                        </a>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <a href="{% url 'mapa_operadores' %}" class="btn btn-success btn-block">
+                            <i class="bi bi-geo-alt"></i>
+                            Mapa
+                        </a>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <a href="{% url 'listar_pedidos' %}" class="btn btn-warning btn-block">
+                            <i class="bi bi-list-ul"></i>
+                            Todos Pedidos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pedidos Pendentes e Em Andamento -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-warning">
+                    <i class="bi bi-clock"></i>
+                    Pedidos Pendentes
+                </h6>
+                <span class="badge bg-warning">{{ stats.pendentes }}</span>
+            </div>
+            <div class="card-body">
+                {% if pedidos_pendentes %}
+                    {% for pedido in pedidos_pendentes %}
+                        <div class="d-flex align-items-center py-2 border-bottom">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">#{{ pedido.id }} - {{ pedido.descricao|truncatechars:40 }}</h6>
+                                <small class="text-muted">
+                                    {{ pedido.setor_solicitante.nome }} • 
+                                    {{ pedido.data_solicitacao|timesince }} atrás
+                                </small>
+                            </div>
+                            <div>
+                                <a href="{% url 'detalhes_pedido' pedido.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'listar_pedidos' %}?status=PENDENTE" class="btn btn-sm btn-warning">
+                            Ver Todos Pendentes
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-check-circle text-success fs-1"></i>
+                        <p class="text-muted mt-2">Nenhum pedido pendente</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Em Andamento
+                </h6>
+                <span class="badge bg-info">{{ stats.em_andamento }}</span>
+            </div>
+            <div class="card-body">
+                {% if pedidos_andamento %}
+                    {% for pedido in pedidos_andamento %}
+                        <div class="d-flex align-items-center py-2 border-bottom">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">#{{ pedido.id }} - {{ pedido.descricao|truncatechars:40 }}</h6>
+                                <small class="text-muted">
+                                    {{ pedido.setor_solicitante.nome }} • 
+                                    Iniciado {{ pedido.data_inicio|timesince }} atrás
+                                </small>
+                            </div>
+                            <div>
+                                <a href="{% url 'detalhes_pedido' pedido.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'listar_pedidos' %}?status=EM_ANDAMENTO" class="btn btn-sm btn-info">
+                            Ver Todos em Andamento
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-pause-circle text-muted fs-1"></i>
+                        <p class="text-muted mt-2">Nenhum pedido em andamento</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas por Setor -->
+{% if setores_stats %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-building"></i>
+                    Estatísticas por Setor
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Setor</th>
+                                <th>Total</th>
+                                <th>Pendentes</th>
+                                <th>Em Andamento</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in setores_stats %}
+                                <tr>
+                                    <td>{{ item.setor.nome }}</td>
+                                    <td><span class="badge bg-secondary">{{ item.total }}</span></td>
+                                    <td><span class="badge bg-warning">{{ item.pendentes }}</span></td>
+                                    <td><span class="badge bg-info">{{ item.em_andamento }}</span></td>
+                                    <td>
+                                        <a href="{% url 'listar_pedidos' %}?setor={{ item.setor.id }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                            Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
