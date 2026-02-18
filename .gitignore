@@ -256,3 +256,30 @@ temp/
 
 # Custom ignores for this project
 # Add any project-specific files to ignore here
+
+# Arquivos de backup e documentação temporária
+BACKUP_*.md
+*_backup_*.md
+
+# Arquivos de teste CSV
+teste_*.csv
+dados_teste_*.csv
+teste_importacao.csv
+teste_registro_problema.csv
+
+# Scripts de teste e debug
+test_*.py
+debug_*.py
+testar_*.py
+verificar_*.py
+validar_*.py
+criar_*_teste.py
+aplicar_migracoes*.py
+adicionar_*.py
+calcular_*.py
+check_*.py
+corrigir_*.py
+marcar_*.py
+migrar_*.py
+preencher_*.py
+resetar_*.py
