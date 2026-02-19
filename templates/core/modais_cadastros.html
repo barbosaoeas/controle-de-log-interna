@@ -98,6 +98,126 @@
     </div>
 </div>
 
+<!-- Modal de Gerenciamento de Áreas -->
+<div class="modal fade" id="modalAreasGlobal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="bi bi-geo-alt"></i>
+                    Gerenciar Áreas
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulário para adicionar área -->
+                <div class="card mb-4" id="cardNovaAreaGlobal">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-plus-circle"></i>
+                            Adicionar Nova Área
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formNovaAreaGlobal">
+                            <div class="mb-3">
+                                <label for="nomeAreaGlobal" class="form-label">Nome da Área *</label>
+                                <input type="text" class="form-control" id="nomeAreaGlobal" required
+                                       placeholder="Ex: Oficina Tubulação, Oficina Elétrica, Paiol de Tinta, etc.">
+                            </div>
+                            <div class="mb-3">
+                                <label for="localizacaoAreaGlobal" class="form-label">Localização</label>
+                                <input type="text" class="form-control" id="localizacaoAreaGlobal"
+                                       placeholder="Ex: Galpão 1, Área Externa, Prédio Administrativo, etc.">
+                            </div>
+                            <div class="mb-3">
+                                <label for="descricaoAreaGlobal" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="descricaoAreaGlobal" rows="2"
+                                          placeholder="Descrição detalhada da área (opcional)"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-plus-circle"></i>
+                                Adicionar Área
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Formulário para editar área (inicialmente oculto) -->
+                <div class="card mb-4" id="cardEditarAreaGlobal" style="display: none;">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-pencil"></i>
+                            Editar Área
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="formEditarAreaGlobal">
+                            <input type="hidden" id="editAreaIdGlobal">
+                            <div class="mb-3">
+                                <label for="editNomeAreaGlobal" class="form-label">Nome da Área *</label>
+                                <input type="text" class="form-control" id="editNomeAreaGlobal" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editLocalizacaoAreaGlobal" class="form-label">Localização</label>
+                                <input type="text" class="form-control" id="editLocalizacaoAreaGlobal">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editDescricaoAreaGlobal" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="editDescricaoAreaGlobal" rows="2"></textarea>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="editAreaAtivaGlobal">
+                                <label class="form-check-label" for="editAreaAtivaGlobal">Área Ativa</label>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i>
+                                    Salvar Alterações
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelarEdicaoAreaGlobal()">
+                                    <i class="bi bi-x-circle"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Lista de áreas -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-list"></i>
+                            Áreas Cadastradas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Localização</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaAreasGlobal">
+                                    <!-- Áreas serão carregadas aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal de Gerenciamento de Equipamentos -->
 <div class="modal fade" id="modalEquipamentosGlobal" tabindex="-1">
     <div class="modal-dialog modal-lg">

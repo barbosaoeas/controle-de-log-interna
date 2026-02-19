@@ -3445,6 +3445,251 @@
             }
         }
 
+        // FUNÇÕES PARA MODAL DE ÁREAS
+        function abrirModalAreasGlobal() {
+            console.log('📍 Abrindo modal de áreas...');
+            const modalElement = document.getElementById('modalAreasGlobal');
+            console.log('🔍 Elemento modal áreas encontrado:', !!modalElement);
+
+            if (!modalElement) {
+                alert('❌ Modal de áreas não encontrado! Verifique se você tem permissão de administrador.');
+                return;
+            }
+
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            carregarAreasGlobal();
+        }
+
+        function carregarAreasGlobal() {
+            console.log('📋 Carregando áreas...');
+
+            fetch('/api/areas/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(areas => {
+                console.log('✅ Áreas recebidas:', areas);
+                const tbody = document.getElementById('listaAreasGlobal');
+                if (!tbody) {
+                    console.error('❌ Elemento listaAreasGlobal não encontrado!');
+                    return;
+                }
+
+                if (areas.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                <i class="bi bi-inbox"></i><br>
+                                Nenhuma área cadastrada
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = areas.map(area => `
+                    <tr>
+                        <td><strong>${area.nome}</strong></td>
+                        <td>${area.localizacao || '<em class="text-muted">Não informada</em>'}</td>
+                        <td>
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> Ativa
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editarAreaGlobal(${area.id})" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="removerAreaGlobal(${area.id}, '${area.nome}')" title="Remover">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                console.log(`✅ ${areas.length} áreas carregadas na tabela!`);
+            })
+            .catch(error => {
+                console.error('❌ Erro ao carregar áreas:', error);
+                const tbody = document.getElementById('listaAreasGlobal');
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-danger">
+                                <i class="bi bi-exclamation-triangle"></i><br>
+                                Erro ao carregar áreas: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+        }
+
+        // Adicionar área
+        document.addEventListener('DOMContentLoaded', function() {
+            const formNovaArea = document.getElementById('formNovaAreaGlobal');
+            if (formNovaArea) {
+                formNovaArea.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const nome = document.getElementById('nomeAreaGlobal').value.trim();
+                    const localizacao = document.getElementById('localizacaoAreaGlobal').value.trim();
+                    const descricao = document.getElementById('descricaoAreaGlobal').value.trim();
+
+                    if (!nome) {
+                        alert('❌ Nome da área é obrigatório!');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('nome', nome);
+                    formData.append('localizacao', localizacao);
+                    formData.append('descricao', descricao);
+
+                    fetch('/api/areas/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookieLocal('csrftoken')
+                        },
+                        body: formData,
+                        credentials: 'same-origin'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ Área adicionada com sucesso!');
+                            formNovaArea.reset();
+                            carregarAreasGlobal();
+                        } else {
+                            alert('❌ ' + (data.error || 'Erro ao adicionar área'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('❌ Erro ao adicionar área');
+                    });
+                });
+            }
+
+            // Editar área
+            const formEditarArea = document.getElementById('formEditarAreaGlobal');
+            if (formEditarArea) {
+                formEditarArea.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const areaId = document.getElementById('editAreaIdGlobal').value;
+                    const nome = document.getElementById('editNomeAreaGlobal').value.trim();
+                    const localizacao = document.getElementById('editLocalizacaoAreaGlobal').value.trim();
+                    const descricao = document.getElementById('editDescricaoAreaGlobal').value.trim();
+                    const ativa = document.getElementById('editAreaAtivaGlobal').checked;
+
+                    if (!nome) {
+                        alert('❌ Nome da área é obrigatório!');
+                        return;
+                    }
+
+                    const formData = new URLSearchParams();
+                    formData.append('nome', nome);
+                    formData.append('localizacao', localizacao);
+                    formData.append('descricao', descricao);
+                    formData.append('ativa', ativa);
+
+                    fetch(`/api/areas/${areaId}/`, {
+                        method: 'PUT',
+                        headers: {
+                            'X-CSRFToken': getCookieLocal('csrftoken'),
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: formData.toString(),
+                        credentials: 'same-origin'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ Área atualizada com sucesso!');
+                            cancelarEdicaoAreaGlobal();
+                            carregarAreasGlobal();
+                        } else {
+                            alert('❌ ' + (data.error || 'Erro ao atualizar área'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('❌ Erro ao atualizar área');
+                    });
+                });
+            }
+        });
+
+        function editarAreaGlobal(areaId) {
+            console.log('✏️ Editando área:', areaId);
+
+            fetch(`/api/areas/${areaId}/`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookieLocal('csrftoken')
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(area => {
+                document.getElementById('editAreaIdGlobal').value = area.id;
+                document.getElementById('editNomeAreaGlobal').value = area.nome;
+                document.getElementById('editLocalizacaoAreaGlobal').value = area.localizacao || '';
+                document.getElementById('editDescricaoAreaGlobal').value = area.descricao || '';
+                document.getElementById('editAreaAtivaGlobal').checked = area.ativa;
+
+                document.getElementById('cardNovaAreaGlobal').style.display = 'none';
+                document.getElementById('cardEditarAreaGlobal').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('❌ Erro ao carregar dados da área');
+            });
+        }
+
+        function cancelarEdicaoAreaGlobal() {
+            document.getElementById('cardNovaAreaGlobal').style.display = 'block';
+            document.getElementById('cardEditarAreaGlobal').style.display = 'none';
+            document.getElementById('formEditarAreaGlobal').reset();
+        }
+
+        function removerAreaGlobal(areaId, nomeArea) {
+            if (confirm(`Tem certeza que deseja remover a área "${nomeArea}"?\n\nSe a área estiver sendo usada em pedidos, ela será apenas desativada.`)) {
+                fetch(`/api/areas/${areaId}/delete/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookieLocal('csrftoken')
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        carregarAreasGlobal();
+                    } else {
+                        alert('❌ ' + (data.error || 'Erro ao remover área'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('❌ Erro ao remover área');
+                });
+            }
+        }
+
         function abrirModalClientesGlobal() {
             console.log('👥 Abrindo modal de clientes...');
             const modal = new bootstrap.Modal(document.getElementById('modalClientesGlobal'));
