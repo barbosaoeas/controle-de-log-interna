@@ -120,6 +120,7 @@
                     </div>
                     <div class="card-body">
                         <form id="formNovaAreaGlobal">
+                            {% csrf_token %}
                             <div class="mb-3">
                                 <label for="nomeAreaGlobal" class="form-label">Nome da Área *</label>
                                 <input type="text" class="form-control" id="nomeAreaGlobal" required
@@ -153,6 +154,7 @@
                     </div>
                     <div class="card-body">
                         <form id="formEditarAreaGlobal">
+                            {% csrf_token %}
                             <input type="hidden" id="editAreaIdGlobal">
                             <div class="mb-3">
                                 <label for="editNomeAreaGlobal" class="form-label">Nome da Área *</label>
