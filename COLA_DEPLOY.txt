@@ -1,0 +1,99 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                    🚀 COLA DE DEPLOY - COPIAR E COLAR                ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ 1️⃣  NO SEU COMPUTADOR (LOCAL)                                        │
+└──────────────────────────────────────────────────────────────────────┘
+
+git add .
+git commit -m "Descrição do que você fez"
+git push origin main
+
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ 2️⃣  NO PYTHONANYWHERE (SERVIDOR)                                     │
+└──────────────────────────────────────────────────────────────────────┘
+
+cd ~/controle-de-log-interna
+source ~/.virtualenvs/venv/bin/activate
+git pull origin main
+python manage.py collectstatic --noinput
+python manage.py migrate
+
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ 3️⃣  NO PAINEL WEB DO PYTHONANYWHERE                                  │
+└──────────────────────────────────────────────────────────────────────┘
+
+Clicar no botão verde "Reload easmanutencao.pythonanywhere.com"
+
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ 4️⃣  NO NAVEGADOR                                                     │
+└──────────────────────────────────────────────────────────────────────┘
+
+Pressionar: Ctrl + Shift + R
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                         🆘 SE DER ERRO                               ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ ❌ Erro: "Your local changes would be overwritten"                   │
+└──────────────────────────────────────────────────────────────────────┘
+
+git reset --hard origin/main
+git pull origin main
+
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ ❌ Alterações não aparecem no site                                   │
+└──────────────────────────────────────────────────────────────────────┘
+
+1. Rodar collectstatic novamente
+2. Clicar em Reload novamente
+3. Ctrl + Shift + R novamente
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                    ⚡ COMANDO ÚNICO (AVANÇADO)                       ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ LOCAL (tudo de uma vez):                                             │
+└──────────────────────────────────────────────────────────────────────┘
+
+git add . && git commit -m "Atualização" && git push origin main
+
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ PYTHONANYWHERE (tudo de uma vez):                                    │
+└──────────────────────────────────────────────────────────────────────┘
+
+cd ~/controle-de-log-interna && source ~/.virtualenvs/venv/bin/activate && git pull origin main && python manage.py collectstatic --noinput && python manage.py migrate
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                         ✅ CHECKLIST                                 ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+[ ] git push no local
+[ ] git pull no servidor
+[ ] collectstatic
+[ ] migrate
+[ ] Reload no painel Web
+[ ] Ctrl + Shift + R no navegador
+[ ] Testei a funcionalidade
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                    💡 LEMBRE-SE SEMPRE                               ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+1. LOCAL → GITHUB → SERVIDOR → RELOAD → TESTE
+2. NUNCA pule o collectstatic
+3. SEMPRE limpe o cache (Ctrl + Shift + R)
+4. Se der erro, veja os logs: tail -n 50 /var/log/*.error.log
+
